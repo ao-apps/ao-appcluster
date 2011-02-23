@@ -76,7 +76,7 @@ public class AppCluster {
     /**
      * Performs a consistency check on a configuration.
      */
-    public static void checkConfiguration(AppClusterConfiguration configuration) throws IllegalArgumentException {
+    public static void checkConfiguration(AppClusterConfiguration configuration) throws AppClusterConfiguration.AppClusterConfigurationException {
         // TODO: Each node must have a distinct display
         // TODO: Each node must have a distinct hostname
         // TODO: Each resource must have a distinct display
@@ -90,14 +90,22 @@ public class AppCluster {
     /**
      * When the configuration changes, do shutdown and startUp.
      */
-    private final AppClusterConfiguration.ConfigurationChangeListener configUpdated = new AppClusterConfiguration.ConfigurationChangeListener() {
+    private final AppClusterConfiguration.ConfigurationListener configUpdated = new AppClusterConfiguration.ConfigurationListener() {
         @Override
         public void onConfigurationChanged() {
             synchronized(startedLock) {
                 if(started) {
-                    if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.configUpdated.message", configuration.getDisplay()));
+                    try {
+                        if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.configUpdated.message", configuration.getDisplay()));
+                    } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
+                        logger.log(Level.SEVERE, null, exc);
+                    }
                     shutdown();
-                    startUp();
+                    try {
+                        startUp();
+                    } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
+                        logger.log(Level.SEVERE, null, exc);
+                    }
                 }
             }
         }
@@ -111,7 +119,7 @@ public class AppCluster {
      *
      * @see #stop()
      */
-    public void start() throws AppClusterException {
+    public void start() throws AppClusterConfiguration.AppClusterConfigurationException {
         synchronized(startedLock) {
             if(!started) {
                 configuration.start();
@@ -131,7 +139,11 @@ public class AppCluster {
     public void stop() {
         synchronized(startedLock) {
             if(started) {
-                if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.stop.message", configuration.getDisplay()));
+                try {
+                    if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.stop.message", configuration.getDisplay()));
+                } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
+                    logger.log(Level.SEVERE, null, exc);
+                }
                 shutdown();
                 started = false;
                 configuration.removeConfigurationChangeListener(configUpdated);
@@ -169,9 +181,9 @@ public class AppCluster {
      * These are the start/stop components.
      */
     private AppClusterLogger clusterLogger;
-    private Map<String,NodeMonitor> nodeMonitors;
+    private Map<String,ResourceMonitor> resourceMonitors;
 
-    private void startUp() {
+    private void startUp() throws AppClusterConfiguration.AppClusterConfigurationException {
         synchronized(startedLock) {
             if(started) {
                 // Check the configuration for consistency
@@ -180,21 +192,20 @@ public class AppCluster {
                 // Get the configuration values.
                 enabled = configuration.isEnabled();
                 display = configuration.getDisplay();
-                Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations = configuration.getNodeConfigurations();
+                //Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations = configuration.getNodeConfigurations();
+                Set<AppClusterConfiguration.ResourceConfiguration> resourceConfigurations = configuration.getResourceConfigurations();
 
                 // Start the logger
                 clusterLogger = configuration.getClusterLogger();
                 clusterLogger.start();
 
-                // Start per-node monitoring thread
-                nodeMonitors = new LinkedHashMap<String,NodeMonitor>(nodeConfigurations.size()*4/3+1);
-                for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
-                    NodeMonitor nodeMonitor = new NodeMonitor(this, nodeConfiguration);
-                    nodeMonitors.put(nodeConfiguration.getId(), nodeMonitor);
-                    nodeMonitor.start();
+                // Start per-resource monitoring threads
+                resourceMonitors = new LinkedHashMap<String,ResourceMonitor>(resourceConfigurations.size()*4/3+1);
+                for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
+                    ResourceMonitor resourceMonitor = new ResourceMonitor(this, resourceConfiguration);
+                    resourceMonitors.put(resourceConfiguration.getId(), resourceMonitor);
+                    resourceMonitor.start();
                 }
-
-                // TODO: Start per-resource monitoring thread
             }
         }
     }
@@ -202,12 +213,10 @@ public class AppCluster {
     private void shutdown() {
         synchronized(startedLock) {
             if(started) {
-                // TODO: Stop per-resource monitoring thread
-
-                // Stop per-node monitoring threads
-                if(nodeMonitors!=null) {
-                    for(NodeMonitor nodeMonitor : nodeMonitors.values()) nodeMonitor.stop();
-                    nodeMonitors = null;
+                // Stop per-resource monitoring threads
+                if(resourceMonitors!=null) {
+                    for(ResourceMonitor resourceMonitor : resourceMonitors.values()) resourceMonitor.stop();
+                    resourceMonitors = null;
                 }
 
                 // Stop the logger

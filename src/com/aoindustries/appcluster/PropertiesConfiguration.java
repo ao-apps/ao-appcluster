@@ -52,7 +52,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
      */
     private static final long FILE_CHECK_INTERVAL = 5000;
 
-    private final List<ConfigurationChangeListener> listeners = new ArrayList<ConfigurationChangeListener>();
+    private final List<ConfigurationListener> listeners = new ArrayList<ConfigurationListener>();
 
     private final File file;
 
@@ -81,7 +81,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
     }
 
     @Override
-    public void start() throws AppClusterException {
+    public void start() throws AppClusterConfigurationException {
         if(file!=null) {
             try {
                 synchronized(fileMonitorLock) {
@@ -129,7 +129,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
                                                 }
                                                 if(notifyListeners) {
                                                     synchronized(listeners) {
-                                                        for(ConfigurationChangeListener listener : listeners) listener.onConfigurationChanged();
+                                                        for(ConfigurationListener listener : listeners) listener.onConfigurationChanged();
                                                     }
                                                 }
                                             } catch(Exception exc) {
@@ -144,7 +144,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
                     }
                 }
             } catch(IOException exc) {
-                throw new AppClusterException(exc);
+                throw new AppClusterConfigurationException(exc);
             }
         }
     }
@@ -160,10 +160,10 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
     }
 
     @Override
-    public void addConfigurationChangeListener(ConfigurationChangeListener listener) {
+    public void addConfigurationChangeListener(ConfigurationListener listener) {
         synchronized(listeners) {
             boolean found = false;
-            for(ConfigurationChangeListener existing : listeners) {
+            for(ConfigurationListener existing : listeners) {
                 if(existing==listener) {
                     found = true;
                     break;
@@ -174,7 +174,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
     }
 
     @Override
-    public void removeConfigurationChangeListener(ConfigurationChangeListener listener) {
+    public void removeConfigurationChangeListener(ConfigurationListener listener) {
         synchronized(listeners) {
             for(int i=0; i<listeners.size(); i++) {
                 if(listeners.get(i)==listener) listeners.remove(i--);
@@ -185,55 +185,55 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
     /**
      * Gets a trimmed property value, not allowing null or empty string.
      */
-    private String getString(String propertyName) throws IllegalArgumentException {
+    private String getString(String propertyName) throws AppClusterConfigurationException {
         String value;
         synchronized(fileMonitorLock) {
             value = properties.getProperty(propertyName);
         }
-        if(value==null || (value=value.trim()).length()==0) throw new IllegalArgumentException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getString.missingValue", propertyName));
+        if(value==null || (value=value.trim()).length()==0) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getString.missingValue", propertyName));
         return value;
     }
 
-    private boolean getBoolean(String propertyName) throws IllegalArgumentException {
+    private boolean getBoolean(String propertyName) throws AppClusterConfigurationException {
         String value = getString(propertyName);
         if("true".equals(value)) return true;
         if("false".equals(value)) return false;
-        throw new IllegalArgumentException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getBoolean.validValue", propertyName, value));
+        throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getBoolean.validValue", propertyName, value));
     }
 
     /**
      * Gets a unique set of trimmed strings.  Must have at least one value.
      */
-    private Set<String> getUniqueStrings(String propertyName) throws IllegalArgumentException {
+    private Set<String> getUniqueStrings(String propertyName) throws AppClusterConfigurationException {
         List<String> values = StringUtility.splitStringCommaSpace(getString("appcluster.nodes"));
         Set<String> set = new LinkedHashSet<String>(values.size()*4/3+1);
         for(String value : values) {
             value = value.trim();
             if(value.length()>0 && !set.add(value)) {
-                throw new IllegalArgumentException(
+                throw new AppClusterConfigurationException(
                     ApplicationResources.accessor.getMessage("PropertiesConfiguration.getStrings.duplicate", propertyName, value)
                 );
             }
         }
-        if(set.isEmpty()) throw new IllegalArgumentException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getString.missingValue", propertyName));
+        if(set.isEmpty()) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getString.missingValue", propertyName));
         return set;
     }
 
     @Override
-    public boolean isEnabled() {
+    public boolean isEnabled() throws AppClusterConfigurationException {
         return getBoolean("appcluster.enabled");
     }
 
     @Override
-    public String getDisplay() {
+    public String getDisplay() throws AppClusterConfigurationException {
         return getString("appcluster.display");
     }
 
     @Override
-    public AppClusterLogger getClusterLogger() {
+    public AppClusterLogger getClusterLogger() throws AppClusterConfigurationException {
         String logType = getString("appcluster.log.type");
         if("jdbc".equals(logType)) return new JdbcClusterLogger(getString("appcluster.log.name"));
-        throw new IllegalArgumentException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getClusterLogger.expectedType", "appcluster.log.type", logType));
+        throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getClusterLogger.expectedType", "appcluster.log.type", logType));
     }
 
     static class PropertiesNodeConfiguration implements NodeConfiguration {
@@ -295,7 +295,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
     }
 
     @Override
-    public Set<NodeConfiguration> getNodeConfigurations() {
+    public Set<NodeConfiguration> getNodeConfigurations() throws AppClusterConfigurationException {
         Set<String> ids = getUniqueStrings("appcluster.nodes");
         Set<NodeConfiguration> nodes = new LinkedHashSet<NodeConfiguration>(ids.size()*4/3+1);
         for(String id : ids) {
@@ -420,7 +420,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         }
 
         @Override
-        public Set<ResourceNodeConfiguration> getResourceNodeConfigurations() {
+        public Set<ResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
             Set<String> nodeIds = getUniqueStrings("appcluster.resource."+id+"nodes");
             Set<ResourceNodeConfiguration> resourceNodes = new LinkedHashSet<ResourceNodeConfiguration>(nodeIds.size()*4/3+1);
             for(String nodeId : nodeIds) {
@@ -439,7 +439,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
     }
 
     @Override
-    public Set<ResourceConfiguration> getResourceConfigurations() {
+    public Set<ResourceConfiguration> getResourceConfigurations() throws AppClusterConfigurationException {
         Set<String> ids = getUniqueStrings("appcluster.resources");
         Set<ResourceConfiguration> resources = new LinkedHashSet<ResourceConfiguration>(ids.size()*4/3+1);
         for(String id : ids) {

@@ -31,14 +31,34 @@ import java.util.Set;
  */
 public interface AppClusterConfiguration {
 
-    public static interface ConfigurationChangeListener {
+    public static interface ConfigurationListener {
         void onConfigurationChanged();
+    }
+
+    public static class AppClusterConfigurationException extends AppClusterException {
+
+        // TODO: private static final long serialVersionUID = 4796418579890653703L;
+
+        public AppClusterConfigurationException() {
+        }
+
+        public AppClusterConfigurationException(String message) {
+            super(message);
+        }
+
+        public AppClusterConfigurationException(Throwable cause) {
+            super(cause);
+        }
+
+        public AppClusterConfigurationException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 
     /**
      * Called as the AppCluster starts, before any configuration values are accessed or listeners are added.
      */
-    void start() throws AppClusterException;
+    void start() throws AppClusterConfigurationException;
 
     /**
      * Called as the AppCluster stops, after all configuration values have been accessed and all listeners have been removed.
@@ -48,27 +68,27 @@ public interface AppClusterConfiguration {
     /**
      * Will be called when the configuration has changed in any way.
      */
-    void addConfigurationChangeListener(ConfigurationChangeListener listener);
+    void addConfigurationChangeListener(ConfigurationListener listener);
 
     /**
      * Removes listener of configuration changes.
      */
-    void removeConfigurationChangeListener(ConfigurationChangeListener listener);
+    void removeConfigurationChangeListener(ConfigurationListener listener);
 
     /**
      * @see  AppCluster#isEnabled()
      */
-    boolean isEnabled();
+    boolean isEnabled() throws AppClusterConfigurationException;
 
     /**
      * @see  AppCluster#getDisplay()
      */
-    String getDisplay();
+    String getDisplay() throws AppClusterConfigurationException;
 
     /**
      * Gets the logger for the cluster.
      */
-    AppClusterLogger getClusterLogger();
+    AppClusterLogger getClusterLogger() throws AppClusterConfigurationException;
 
     public static interface NodeConfiguration {
 
@@ -82,27 +102,27 @@ public interface AppClusterConfiguration {
         int hashCode();
 
         /**
-         * @see NodeMonitor#getId()
+         * @see ResourceMonitor#getId()
          */
         String getId();
 
         /**
-         * @see NodeMonitor#isEnabled()
+         * @see ResourceMonitor#isEnabled()
          */
         boolean isEnabled();
 
         /**
-         * @see NodeMonitor#getDisplay()
+         * @see ResourceMonitor#getDisplay()
          */
         String getDisplay();
 
         /**
-         * @see NodeMonitor#getHostname()
+         * @see ResourceMonitor#getHostname()
          */
         String getHostname();
 
         /**
-         * @see NodeMonitor#getNameservers()
+         * @see ResourceMonitor#getNameservers()
          */
         Set<String> getNameservers();
     }
@@ -110,7 +130,7 @@ public interface AppClusterConfiguration {
     /**
      * Gets the set of nodes for the cluster.
      */
-    Set<NodeConfiguration> getNodeConfigurations();
+    Set<NodeConfiguration> getNodeConfigurations() throws AppClusterConfigurationException;
 
     public static interface ResourceNodeConfiguration {
 
@@ -184,11 +204,11 @@ public interface AppClusterConfiguration {
         /**
          * Gets the source of per-node resource configurations.
          */
-        Set<ResourceNodeConfiguration> getResourceNodeConfigurations();
+        Set<ResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
     }
 
     /**
      * Gets the set of resources for the cluster.
      */
-    Set<ResourceConfiguration> getResourceConfigurations();
+    Set<ResourceConfiguration> getResourceConfigurations() throws AppClusterConfigurationException;
 }

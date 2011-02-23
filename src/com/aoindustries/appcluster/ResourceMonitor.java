@@ -29,13 +29,31 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Monitors the status of a node given its DNS entries.
+ * Monitors the status of a resource by monitoring its role based on DNS entries
+ * and synchronizing the resource on an as-needed and/or scheduled basis.
+ *
+ * There are two threads involved in the resource monitoring.  The first
+ * monitors DNS entries to determine if this node is the master or a slave (or
+ * some inconsistent state in-between).
+ *
+ * The second thread only runs when we are a master with no DNS inconsistencies.
+ * It pushes the resources to slaves on an as-needed and/or scheduled basis.
  *
  * @author  AO Industries, Inc.
  */
-public class NodeMonitor {
+public class ResourceMonitor {
 
-    private static final Logger logger = Logger.getLogger(NodeMonitor.class.getName());
+    private static final Logger logger = Logger.getLogger(ResourceMonitor.class.getName());
+
+    /**
+     * Checks the DNS settings once every 30 seconds.
+     */
+    private static final long DNS_CHECK_INTERVAL = 30000;
+
+    /**
+     * DNS queries time-out at 30 seconds.
+     */
+    private static final long DNS_CHECK_TIMEOUT = 30000;
 
     private final AppCluster cluster;
     private final String id;
@@ -47,19 +65,22 @@ public class NodeMonitor {
     public enum Status {
         STOPPED,
         DISABLED,
-        UNKNOWN;
+        UNKNOWN,
+        INCONSISTENT_DNS,
+        SLAVE,
+        MASTER;
 
         @Override
         public String toString() {
-            return ApplicationResources.accessor.getMessage("NodeMonitor.Status." + name());
+            return ApplicationResources.accessor.getMessage("ResourceMonitor.Status." + name());
         }
     }
 
-    private final Object nodeMonitorLock = new Object();
-    private Thread nodeMonitorThread; // All access uses nodeMonitorLock
-    private Status status = Status.STOPPED; // All access uses nodeMonitorLock
+    private final Object resourceMonitorLock = new Object();
+    private Thread resourceMonitorThread; // All access uses resourceMonitorLock
+    private Status status = Status.STOPPED; // All access uses resourceMonitorLock
 
-    public NodeMonitor(AppCluster cluster, AppClusterConfiguration.NodeConfiguration nodeConfiguration) throws IllegalArgumentException {
+    ResourceMonitor(AppCluster cluster, AppClusterConfiguration.ResourceConfiguration resourceConfiguration) {
         this.cluster = cluster;
         this.id = nodeConfiguration.getId();
         this.enabled = nodeConfiguration.isEnabled();
@@ -106,13 +127,13 @@ public class NodeMonitor {
     /**
      * If both the cluster and this node are enabled, starts the node monitor.
      */
-    public void start() {
-        synchronized(nodeMonitorLock) {
+    void start() {
+        synchronized(resourceMonitorLock) {
             if(cluster.isEnabled() && isEnabled()) {
-                if(nodeMonitorThread==null) {
+                if(resourceMonitorThread==null) {
                     status = Status.UNKNOWN;
                     (
-                        nodeMonitorThread = new Thread(
+                        resourceMonitorThread = new Thread(
                             new Runnable() {
                                 @Override
                                 public void run() {
@@ -124,23 +145,25 @@ public class NodeMonitor {
                                             } catch(InterruptedException exc) {
                                                 logger.log(Level.WARNING, null, exc);
                                             }
-                                            synchronized(nodeMonitorLock) {
-                                                if(currentThread!=nodeMonitorThread) break;
+                                            synchronized(resourceMonitorLock) {
+                                                if(currentThread!=resourceMonitorThread) break;
                                             }
                                             // TODO: Get new status
                                             Status newStatus = status.UNKNOWN;
-                                            boolean notifyListeners;
-                                            synchronized(nodeMonitorLock) {
-                                                if(currentThread!=nodeMonitorThread) break;
+                                            boolean notifyListeners = false;
+                                            synchronized(resourceMonitorLock) {
+                                                if(currentThread!=resourceMonitorThread) break;
                                                 if(newStatus!=status) {
                                                     notifyListeners = true;
                                                     status = newStatus;
                                                 }
                                             }
                                             if(notifyListeners) {
+                                                /* TODO
                                                 synchronized(listeners) {
                                                     for(NodeStatusChangeListener listener : listeners) listener.onNodeStatusChanged(newStatus);
                                                 }
+                                                 */
                                             }
                                         } catch(Exception exc) {
                                             logger.log(Level.SEVERE, null, exc);
@@ -161,9 +184,9 @@ public class NodeMonitor {
     /**
      * Stops this node monitor.
      */
-    public void stop() {
-        synchronized(nodeMonitorLock) {
-            nodeMonitorThread = null;
+    void stop() {
+        synchronized(resourceMonitorLock) {
+            resourceMonitorThread = null;
             status = Status.STOPPED;
         }
     }
@@ -172,7 +195,7 @@ public class NodeMonitor {
      * Gets the current status of this node.
      */
     public Status getStatus() {
-        synchronized(nodeMonitorLock) {
+        synchronized(resourceMonitorLock) {
             return status;
         }
     }
