@@ -23,10 +23,14 @@
 package com.aoindustries.appcluster;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,7 +43,21 @@ public class AppCluster {
 
     private static final Logger logger = Logger.getLogger(AppCluster.class.getName());
 
+    private static final int EXECUTOR_THREAD_PRIORITY = Thread.NORM_PRIORITY - 1;
+
     private final AppClusterConfiguration configuration;
+
+    /**
+     * Started flag.
+     */
+    private final Object startedLock = new Object();
+    private boolean started = false; // Protected by startedLock
+    private boolean enabled; // Protected by startedLock
+    private String display; // Protected by startedLock
+    private ExecutorService executorService; // Protected by startLock
+    private AppClusterLogger clusterLogger; // Protected by startedLock
+    private Map<String,Node> nodes; // Protected by startedLock
+    private Map<String,Resource> resources; // Protected by startedLock
 
     /**
      * Creates a cluster with the provided configuration.
@@ -96,11 +114,11 @@ public class AppCluster {
             synchronized(startedLock) {
                 if(started) {
                     try {
-                        if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.configUpdated.message", configuration.getDisplay()));
+                        if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.configUpdated.info", configuration.getDisplay()));
                     } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
                         logger.log(Level.SEVERE, null, exc);
                     }
-                    shutdown();
+                    shutdown(true);
                     try {
                         startUp();
                     } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
@@ -111,9 +129,6 @@ public class AppCluster {
         }
     };
 
-    private final Object startedLock = new Object();
-    private boolean started = false;
-
     /**
      * Starts this cluster manager.
      *
@@ -123,8 +138,8 @@ public class AppCluster {
         synchronized(startedLock) {
             if(!started) {
                 configuration.start();
-                if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.start.message", configuration.getDisplay()));
-                configuration.addConfigurationChangeListener(configUpdated);
+                if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.start.info", configuration.getDisplay()));
+                configuration.addConfigurationListener(configUpdated);
                 started = true;
                 startUp();
             }
@@ -140,48 +155,88 @@ public class AppCluster {
         synchronized(startedLock) {
             if(started) {
                 try {
-                    if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.stop.message", configuration.getDisplay()));
+                    if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.stop.info", configuration.getDisplay()));
                 } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
                     logger.log(Level.SEVERE, null, exc);
                 }
-                shutdown();
+                shutdown(false);
                 started = false;
-                configuration.removeConfigurationChangeListener(configUpdated);
+                configuration.removeConfigurationListener(configUpdated);
                 configuration.stop();
             }
         }
     }
 
-    /*
-     * These configuration values represent what exists at the time of last startUp.
-     */
-    private boolean enabled;
-    private String display;
-
     /**
      * If the cluster is disabled, every node and resource will also be disabled.
      */
-    public boolean isEnabled() {
-        return enabled;
+    public boolean isEnabled() throws IllegalStateException {
+        synchronized(startedLock) {
+            if(!started) throw new IllegalStateException();
+            return enabled;
+        }
     }
 
     /**
      * Gets the display name for this cluster.
      */
-    public String getDisplay() {
-        return display;
+    public String getDisplay() throws IllegalStateException {
+        synchronized(startedLock) {
+            if(display==null) throw new IllegalStateException();
+            return display;
+        }
     }
 
     @Override
     public String toString() {
-        return display;
+        try {
+            return getDisplay();
+        } catch(IllegalStateException exc) {
+            logger.log(Level.WARNING, null, exc);
+            return super.toString();
+        }
     }
 
-    /*
-     * These are the start/stop components.
+    /**
+     * Gets the executor service for this cluster.
+     * Only available when started.
      */
-    private AppClusterLogger clusterLogger;
-    private Map<String,ResourceMonitor> resourceMonitors;
+    ExecutorService getExecutorService() throws IllegalStateException {
+        synchronized(startedLock) {
+            if(executorService==null) throw new IllegalStateException();
+            return executorService;
+        }
+    }
+
+    /**
+     * Only available when started.
+     */
+    public AppClusterLogger getClusterLogger() throws IllegalStateException {
+        synchronized(startedLock) {
+            if(clusterLogger==null) throw new IllegalStateException();
+            return clusterLogger;
+        }
+    }
+
+    /**
+     * Only available when started.
+     */
+    public Map<String,Node> getNodes() throws IllegalStateException {
+        synchronized(startedLock) {
+            if(nodes==null) throw new IllegalStateException();
+            return nodes;
+        }
+    }
+
+    /**
+     * Only available when started.
+     */
+    public Map<String,Resource> getResources() throws IllegalStateException {
+        synchronized(startedLock) {
+            if(!started) throw new IllegalStateException();
+            return resources;
+        }
+    }
 
     private void startUp() throws AppClusterConfiguration.AppClusterConfigurationException {
         synchronized(startedLock) {
@@ -192,31 +247,56 @@ public class AppCluster {
                 // Get the configuration values.
                 enabled = configuration.isEnabled();
                 display = configuration.getDisplay();
-                //Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations = configuration.getNodeConfigurations();
+                Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations = configuration.getNodeConfigurations();
                 Set<AppClusterConfiguration.ResourceConfiguration> resourceConfigurations = configuration.getResourceConfigurations();
+
+                // Create the nodes
+                Map<String,Node> newNodes = new LinkedHashMap<String,Node>(nodeConfigurations.size()*4/3+1);
+                for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
+                    Node node = new Node(this, nodeConfiguration);
+                    newNodes.put(node.getId(), node);
+                }
+                nodes = Collections.unmodifiableMap(newNodes);
+
+                // Start the executor service
+                executorService = Executors.newCachedThreadPool(
+                    new ThreadFactory() {
+                        @Override
+                        public Thread newThread(Runnable r) {
+                            Thread thread = new Thread(r, AppCluster.class.getName()+".executorService");
+                            thread.setPriority(EXECUTOR_THREAD_PRIORITY);
+                            return thread;
+                        }
+                    }
+                );
 
                 // Start the logger
                 clusterLogger = configuration.getClusterLogger();
                 clusterLogger.start();
 
                 // Start per-resource monitoring threads
-                resourceMonitors = new LinkedHashMap<String,ResourceMonitor>(resourceConfigurations.size()*4/3+1);
+                Map<String,Resource> newResources = new LinkedHashMap<String,Resource>(resourceConfigurations.size()*4/3+1);
                 for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
-                    ResourceMonitor resourceMonitor = new ResourceMonitor(this, resourceConfiguration);
-                    resourceMonitors.put(resourceConfiguration.getId(), resourceMonitor);
-                    resourceMonitor.start();
+                    if(resourceConfiguration instanceof AppClusterConfiguration.RsyncResourceConfiguration) {
+                         RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration);
+                         newResources.put(resourceConfiguration.getId(), resource);
+                         resource.start();
+                    } else {
+                        throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.startUp.unexpectedType", resourceConfiguration.getId(), resourceConfiguration.getClass().getName()));
+                    }
                 }
+                resources = Collections.unmodifiableMap(newResources);
             }
         }
     }
 
-    private void shutdown() {
+    private void shutdown(boolean isReloadingConfiguration) {
         synchronized(startedLock) {
             if(started) {
                 // Stop per-resource monitoring threads
-                if(resourceMonitors!=null) {
-                    for(ResourceMonitor resourceMonitor : resourceMonitors.values()) resourceMonitor.stop();
-                    resourceMonitors = null;
+                if(resources!=null) {
+                    for(Resource resource : resources.values()) resource.stop(isReloadingConfiguration);
+                    resources = null;
                 }
 
                 // Stop the logger
@@ -224,6 +304,15 @@ public class AppCluster {
                     clusterLogger.stop();
                     clusterLogger = null;
                 }
+
+                // Stop the executor service
+                if(executorService!=null) {
+                    executorService.shutdown();
+                    executorService = null;
+                }
+
+                // Clear the nodes
+                nodes = null;
 
                 // Clear the configuration values.
                 enabled = false;
