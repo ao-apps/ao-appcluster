@@ -120,7 +120,7 @@ public interface AppClusterConfiguration {
         /**
          * @see Node#getHostname()
          */
-        String getHostname();
+        Name getHostname();
 
         /**
          * @see Node#getNameservers()
@@ -210,14 +210,19 @@ public interface AppClusterConfiguration {
         String getDisplay();
 
         /**
+         * @see Resource#getAllowMultiMaster()
+         */
+        boolean getAllowMultiMaster();
+
+        /**
          * @see Resource#getMasterRecords()
          */
         Set<Name> getMasterRecords();
 
         /**
-         * @see Resource#getAllowMultiMaster()
+         * @see Resource#getMasterRecordTtl() ()
          */
-        boolean getAllowMultiMaster();
+        int getMasterRecordsTtl();
 
         /**
          * Gets the source of per-node resource configurations.

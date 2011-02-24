@@ -254,6 +254,17 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         }
     }
 
+    /**
+     * Gets a unique set of trimmed names.  Must have at least one value.
+     */
+    private Name getName(String propertyName) throws AppClusterConfigurationException {
+        try {
+            return Name.fromString(getString(propertyName));
+        } catch(TextParseException exc) {
+            throw new AppClusterConfigurationException(exc);
+        }
+    }
+
     @Override
     public boolean isEnabled() throws AppClusterConfigurationException {
         return getBoolean("appcluster.enabled");
@@ -278,10 +289,10 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         private final String id;
         private final boolean enabled;
         private final String display;
-        private final String hostname;
+        private final Name hostname;
         private final Set<Name> nameservers;
 
-        PropertiesNodeConfiguration(String id, boolean enabled, String display, String hostname, Collection<Name> nameservers) {
+        PropertiesNodeConfiguration(String id, boolean enabled, String display, Name hostname, Collection<Name> nameservers) {
             this.id = id;
             this.enabled = enabled;
             this.display = display;
@@ -321,7 +332,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         }
 
         @Override
-        public String getHostname() {
+        public Name getHostname() {
             return hostname;
         }
 
@@ -342,7 +353,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
                         id,
                         getBoolean("appcluster.node."+id+".enabled"),
                         getString("appcluster.node."+id+".display"),
-                        getString("appcluster.node."+id+".hostname"),
+                        getName("appcluster.node."+id+".hostname"),
                         getUniqueNames("appcluster.node."+id+".nameservers")
                     )
                 )
@@ -440,15 +451,17 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         private final String id;
         private final boolean enabled;
         private final String display;
-        private final Set<Name> masterRecords;
         private final boolean allowMultiMaster;
+        private final Set<Name> masterRecords;
+        private final int masterRecordsTtl;
 
-        PropertiesResourceConfiguration(String id, boolean enabled, String display, Collection<Name> masterRecords, boolean allowMultiMaster) {
+        PropertiesResourceConfiguration(String id, boolean enabled, String display, boolean allowMultiMaster, Collection<Name> masterRecords, int masterRecordsTtl) {
             this.id = id;
             this.enabled = enabled;
             this.display = display;
-            this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(masterRecords));
             this.allowMultiMaster = allowMultiMaster;
+            this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(masterRecords));
+            this.masterRecordsTtl = masterRecordsTtl;
         }
 
         @Override
@@ -483,13 +496,18 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         }
 
         @Override
+        public boolean getAllowMultiMaster() {
+            return allowMultiMaster;
+        }
+
+        @Override
         public Set<Name> getMasterRecords() {
             return masterRecords;
         }
 
         @Override
-        public boolean getAllowMultiMaster() {
-            return allowMultiMaster;
+        public int getMasterRecordsTtl() {
+            return masterRecordsTtl;
         }
 
         @Override
@@ -500,8 +518,8 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
 
         private final boolean delete;
 
-        RsyncPropertiesResourceConfiguration(String id, boolean enabled, String display, Collection<Name> masterRecords, boolean allowMultiMaster, boolean delete) {
-            super(id, enabled, display, masterRecords, allowMultiMaster);
+        RsyncPropertiesResourceConfiguration(String id, boolean enabled, String display, boolean allowMultiMaster, Collection<Name> masterRecords, int masterRecordsTtl, boolean delete) {
+            super(id, enabled, display, allowMultiMaster, masterRecords, masterRecordsTtl);
             this.delete = delete;
         }
 
@@ -548,8 +566,9 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
                             id,
                             getBoolean("appcluster.resource."+id+".enabled"),
                             getString("appcluster.resource."+id+".display"),
-                            getUniqueNames("appcluster.resource."+id+".masterRecords"),
                             getBoolean("appcluster.resource."+id+".allowMultiMaster"),
+                            getUniqueNames("appcluster.resource."+id+".masterRecords"),
+                            getInt("appcluster.resource."+id+".masterRecordsTtl"),
                             getBoolean("appcluster.resource."+id+".delete")
                         )
                     )

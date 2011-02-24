@@ -36,7 +36,7 @@ public class PropertiesClusterLogger implements AppClusterLogger {
     private final File propertiesFile;
 
     public PropertiesClusterLogger(File propertiesFile) {
-        // TODO: Check that properties file exists, including all the .new, .old stuff.
+        // Check that properties file exists, including all the .new, .old stuff.
         this.propertiesFile = propertiesFile;
     }
 

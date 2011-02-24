@@ -22,6 +22,8 @@
  */
 package com.aoindustries.appcluster;
 
+import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurationException;
+
 /**
  * The node settings for rsync synchronization.
  *
@@ -36,11 +38,15 @@ public class RsyncResourceNode extends ResourceNode<RsyncResource,RsyncResourceN
     private final String backupDir;
     private final int backupDays;
 
-    RsyncResourceNode(RsyncResource resource, Node node, AppClusterConfiguration.RsyncResourceNodeConfiguration resourceNodeConfiguration) {
+    RsyncResourceNode(RsyncResource resource, Node node, AppClusterConfiguration.RsyncResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
         super(resource, node, resourceNodeConfiguration);
         this.username = resourceNodeConfiguration.getUsername();
         this.path = resourceNodeConfiguration.getPath();
+        //  Each resource-node path must not end in slash (/) since it changes the meaning in rsync
+        if(this.path.endsWith("/")) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResourceNode.init.path.endsSlash", this.path));
+        //  Each resource-node backup directory must not end in slash (/) since it changes the meaning in rsync
         this.backupDir = resourceNodeConfiguration.getBackupDir();
+        if(this.backupDir.endsWith("/")) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResourceNode.init.backupDir.endsSlash", this.backupDir));
         this.backupDays = resourceNodeConfiguration.getBackupDays();
     }
 

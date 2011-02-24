@@ -24,6 +24,7 @@ package com.aoindustries.appcluster;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -33,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.xbill.DNS.Name;
 
 /**
  * Central AppCluster manager.
@@ -94,15 +96,67 @@ public class AppCluster {
     /**
      * Performs a consistency check on a configuration.
      */
+    /*
     public static void checkConfiguration(AppClusterConfiguration configuration) throws AppClusterConfiguration.AppClusterConfigurationException {
-        // TODO: Each node must have a distinct display
-        // TODO: Each node must have a distinct hostname
-        // TODO: Each resource must have a distinct display
-        // TODO: Each resource-node must have slaveRecords != masterRecords
-        // TODO: Each resource-node must have distinct slaveRecords
-        // TODO: Each resource-node path must not end in slash (/)
-        // TODO: Each resource-node backupDir must not end in slash (/)
-        // TODO: This host must be one of the nodes
+        checkConfiguration(
+            configuration.getNodeConfigurations(),
+            configuration.getResourceConfigurations()
+        );
+    }*/
+
+    /**
+     * Performs a consistency check on a configuration.
+     */
+    public static void checkConfiguration(Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations, Set<AppClusterConfiguration.ResourceConfiguration> resourceConfigurations) throws AppClusterConfiguration.AppClusterConfigurationException {
+        // Each node must have a distinct display
+        Set<String> strings = new HashSet<String>(nodeConfigurations.size()*4/3+1);
+        for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
+            String display = nodeConfiguration.getDisplay();
+            if(!strings.add(display)) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateNodeDisplay", display));
+        }
+
+        // Each node must have a distinct hostname
+        Set<Name> names = new HashSet<Name>(nodeConfigurations.size()*4/3+1);
+        for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
+            Name hostname = nodeConfiguration.getHostname();
+            if(!names.add(hostname)) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateNodeHostname", hostname));
+        }
+
+        // Each node must have a distinct display
+        strings.clear();
+        for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
+            String display = resourceConfiguration.getDisplay();
+            if(!strings.add(display)) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateResourceDisplay", display));
+        }
+
+        // Each resource-node must have no overlap between slaveRecords and masterRecords of the resource
+        for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
+            Set<Name> masterRecords = resourceConfiguration.getMasterRecords();
+            for(AppClusterConfiguration.ResourceNodeConfiguration rnc : resourceConfiguration.getResourceNodeConfigurations()) {
+                for(Name slaveRecord : rnc.getSlaveRecords()) {
+                    if(masterRecords.contains(slaveRecord)) {
+                        throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.slaveMatchesMaster", slaveRecord));
+                    }
+                }
+            }
+        }
+
+        // Each resource-node must have no overlap between slaveRecords and slaveRecords of any other resource-node of the resource
+        for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
+            Set<? extends AppClusterConfiguration.ResourceNodeConfiguration> resourceNodeConfigurations = resourceConfiguration.getResourceNodeConfigurations();
+            for(AppClusterConfiguration.ResourceNodeConfiguration rnc1 : resourceNodeConfigurations) {
+                Set<Name> slaveRecords1 = rnc1.getSlaveRecords();
+                for(AppClusterConfiguration.ResourceNodeConfiguration rnc2 : resourceNodeConfigurations) {
+                    if(!rnc1.equals(rnc2)) {
+                        for(Name slaveRecord : rnc2.getSlaveRecords()) {
+                            if(slaveRecords1.contains(slaveRecord)) {
+                                throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.slaveMatchesOtherSlave", slaveRecord));
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -241,14 +295,14 @@ public class AppCluster {
     private void startUp() throws AppClusterConfiguration.AppClusterConfigurationException {
         synchronized(startedLock) {
             if(started) {
-                // Check the configuration for consistency
-                checkConfiguration(configuration);
-
                 // Get the configuration values.
                 enabled = configuration.isEnabled();
                 display = configuration.getDisplay();
                 Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations = configuration.getNodeConfigurations();
                 Set<AppClusterConfiguration.ResourceConfiguration> resourceConfigurations = configuration.getResourceConfigurations();
+
+                // Check the configuration for consistency
+                checkConfiguration(nodeConfigurations, resourceConfigurations);
 
                 // Create the nodes
                 Map<String,Node> newNodes = new LinkedHashMap<String,Node>(nodeConfigurations.size()*4/3+1);

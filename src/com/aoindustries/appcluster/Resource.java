@@ -22,9 +22,11 @@
  */
 package com.aoindustries.appcluster;
 
-import com.aoindustries.util.i18n.ThreadLocale;
+import com.aoindustries.util.StringUtility;
+import java.math.BigDecimal;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,11 +37,13 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.xbill.DNS.ARecord;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.Record;
@@ -56,6 +60,8 @@ import org.xbill.DNS.Type;
  *
  * The second thread only runs when we are a master with no DNS inconsistencies.
  * It pushes the resources to slaves on an as-needed and/or scheduled basis.
+ * 
+ * TODO: Alert administrators on certain statuses
  *
  * @author  AO Industries, Inc.
  */
@@ -100,8 +106,9 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private final String id;
     private final boolean enabled;
     private final String display;
-    private final Set<Name> masterRecords;
     private final boolean allowMultiMaster;
+    private final Set<Name> masterRecords;
+    private final int masterRecordsTtl;
 
     public enum DnsStatus {
         STOPPED,
@@ -121,14 +128,17 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private Thread dnsMonitorThread; // All access uses dnsMonitorLock
     private DnsStatus dnsStatus = DnsStatus.STOPPED; // All access uses dnsMonitorLock
     private String dnsStatusMessage = null; // All access uses dnsMonitorLock
+    private List<String> warnings = null; // All access uses dnsMonitorLock
+    private List<String> errors = null; // All access uses dnsMonitorLock
 
     Resource(AppCluster cluster, AppClusterConfiguration.ResourceConfiguration resourceConfiguration) {
         this.cluster = cluster;
         this.id = resourceConfiguration.getId();
         this.enabled = resourceConfiguration.isEnabled();
         this.display = resourceConfiguration.getDisplay();
-        this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
+        this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
+        this.masterRecordsTtl = resourceConfiguration.getMasterRecordsTtl();
     }
 
     @Override
@@ -175,12 +185,26 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     }
 
     // TODO: Start/stop the synchronization thread as needed
-    private void setDnsStatus(DnsStatus newDnsStatus, String dnsStatusMessage) {
+    private void setDnsStatus(DnsStatus newDnsStatus, String dnsStatusMessage, Set<String> warnings, Set<String> errors) {
         assert Thread.holdsLock(dnsMonitorLock);
         DnsStatus oldDnsStatus = this.dnsStatus;
         this.dnsStatus = newDnsStatus;
         String oldDnsStatusMessage = this.dnsStatusMessage;
         this.dnsStatusMessage = dnsStatusMessage;
+        List<String> oldWarnings = this.warnings;
+        if(warnings==null) this.warnings = Collections.emptyList();
+        else {
+            List<String> sortedWarnings = new ArrayList<String>(warnings);
+            Collections.sort(sortedWarnings);
+            this.warnings = Collections.unmodifiableList(sortedWarnings);
+        }
+        List<String> oldErrors = this.errors;
+        if(errors==null) this.errors = Collections.emptyList();
+        else {
+            List<String> sortedErrors = new ArrayList<String>(errors);
+            Collections.sort(sortedErrors);
+            this.errors = Collections.unmodifiableList(sortedErrors);
+        }
         // Notify listeners only when changed
         if(oldDnsStatus!=newDnsStatus) {
             if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("Resource.setDnsStatus.info", cluster, id, oldDnsStatus, newDnsStatus));
@@ -192,6 +216,16 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         }
         if(!dnsStatusMessage.equals(oldDnsStatusMessage)) {
             if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("Resource.setDnsStatus.newStatusMessage.info", cluster, id, dnsStatusMessage));
+        }
+        if(!this.warnings.equals(oldWarnings)) {
+            for(String warning : this.warnings) {
+                if(logger.isLoggable(Level.WARNING)) logger.warning(ApplicationResources.accessor.getMessage("Resource.setDnsStatus.warning", cluster, id, warning));
+            }
+        }
+        if(!this.errors.equals(oldErrors)) {
+            for(String error : this.errors) {
+                if(logger.isLoggable(Level.SEVERE)) logger.severe(ApplicationResources.accessor.getMessage("Resource.setDnsStatus.error", cluster, id, error));
+            }
         }
     }
 
@@ -217,6 +251,13 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     }
 
     /**
+     * Gets if this resource allows multiple master servers.
+     */
+    public boolean getAllowMultiMaster() {
+        return allowMultiMaster;
+    }
+
+    /**
      * Gets the set of master records that must all by the same.
      * The master node is determined by matching these records against
      * the resource node configuration's slave records.
@@ -226,10 +267,10 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     }
 
     /**
-     * Gets if this resource allows multiple master servers.
+     * Gets the expected TTL value for the master record.
      */
-    public boolean getAllowMultiMaster() {
-        return allowMultiMaster;
+    public int getMasterRecordTtl() {
+        return masterRecordsTtl;
     }
 
     abstract public Map<Node,RN> getResourceNodes();
@@ -242,12 +283,12 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     void start() {
         synchronized(dnsMonitorLock) {
             if(!cluster.isEnabled()) {
-                setDnsStatus(DnsStatus.DISABLED, ApplicationResources.accessor.getMessage("Resource.start.clusterDisabled.statusMessage"));
+                setDnsStatus(DnsStatus.DISABLED, ApplicationResources.accessor.getMessage("Resource.start.clusterDisabled.statusMessage"), null, null);
             } else if(!isEnabled()) {
-                setDnsStatus(DnsStatus.DISABLED, ApplicationResources.accessor.getMessage("Resource.start.resourceDisabled.statusMessage"));
+                setDnsStatus(DnsStatus.DISABLED, ApplicationResources.accessor.getMessage("Resource.start.resourceDisabled.statusMessage"), null, null);
             } else {
                 if(dnsMonitorThread==null) {
-                    setDnsStatus(DnsStatus.UNKNOWN, ApplicationResources.accessor.getMessage("Resource.start.newThread.statusMessage"));
+                    setDnsStatus(DnsStatus.UNKNOWN, ApplicationResources.accessor.getMessage("Resource.start.newThread.statusMessage"), null, null);
                     final ExecutorService executorService = cluster.getExecutorService();
                     dnsMonitorThread = new Thread(
                         new Runnable() {
@@ -282,23 +323,62 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                         }
 
                                         // Query all nameservers for all involved dns entries in parallel, getting all A records
+                                        // Add any errors or warnings to the lists and return null if unable to get A records.
                                         long queryStart = System.nanoTime();
-                                        Map<Name,Map<Name,Future<Record[]>>> futures = new HashMap<Name,Map<Name,Future<Record[]>>>(allNameservers.size()*4/3+1);
-                                        for(Name nameserver : allNameservers) {
+                                        final Set<String> newWarnings = Collections.synchronizedSet(new HashSet<String>());
+                                        final Set<String> newErrors = Collections.synchronizedSet(new HashSet<String>());
+                                        Map<Name,Map<Name,Future<String[]>>> futures = new HashMap<Name,Map<Name,Future<String[]>>>(allNameservers.size()*4/3+1);
+                                        for(final Name nameserver : allNameservers) {
                                             final SimpleResolver resolver = getSimpleResolver(nameserver);
-                                            Map<Name,Future<Record[]>> hostnameFutures = new HashMap<Name,Future<Record[]>>(allHostnames.size()*4/3+1);
+                                            Map<Name,Future<String[]>> hostnameFutures = new HashMap<Name,Future<String[]>>(allHostnames.size()*4/3+1);
                                             for(final Name hostname : allHostnames) {
                                                 hostnameFutures.put(
                                                     hostname,
                                                     executorService.submit(
-                                                        new Callable<Record[]>() {
+                                                        new Callable<String[]>() {
                                                             @Override
-                                                            public Record[] call() {
+                                                            public String[] call() {
                                                                 Lookup lookup = new Lookup(hostname, Type.A);
                                                                 lookup.setCache(null);
                                                                 lookup.setResolver(resolver);
                                                                 lookup.setSearchPath(emptySearchPath);
-                                                                return lookup.run();
+                                                                Record[] records = lookup.run();
+                                                                int result = lookup.getResult();
+                                                                switch(result) {
+                                                                    case Lookup.SUCCESSFUL :
+                                                                        if(records==null || records.length==0) {
+                                                                            newErrors.add(ApplicationResources.accessor.getMessage("Resource.lookup.HOST_NOT_FOUND", nameserver, hostname));
+                                                                            return null;
+                                                                        }
+                                                                        String[] addresses = new String[records.length];
+                                                                        for(int c=0;c<records.length;c++) {
+                                                                            ARecord aRecord = (ARecord)records[c];
+                                                                            // Verify masterDomain TTL settings match expected values, issue as a warning
+                                                                            if(masterRecords.contains(hostname)) {
+                                                                                long ttl = aRecord.getTTL();
+                                                                                if(ttl!=masterRecordsTtl) newWarnings.add(ApplicationResources.accessor.getMessage("Resource.lookup.unexpectedTtl", nameserver, hostname, masterRecordsTtl, ttl));
+                                                                            }
+                                                                            addresses[c] = aRecord.getAddress().getHostAddress();
+                                                                        }
+                                                                        // Sort all addresses returned, so we may easily compare for equality
+                                                                        if(addresses.length>1) Arrays.sort(addresses);
+                                                                        return addresses;
+                                                                    case Lookup.UNRECOVERABLE :
+                                                                        newErrors.add(ApplicationResources.accessor.getMessage("Resource.lookup.UNRECOVERABLE", nameserver, hostname));
+                                                                        return null;
+                                                                    case Lookup.TRY_AGAIN :
+                                                                        newWarnings.add(ApplicationResources.accessor.getMessage("Resource.lookup.TRY_AGAIN", nameserver, hostname));
+                                                                        return null;
+                                                                    case Lookup.HOST_NOT_FOUND :
+                                                                        newErrors.add(ApplicationResources.accessor.getMessage("Resource.lookup.HOST_NOT_FOUND", nameserver, hostname));
+                                                                        return null;
+                                                                    case Lookup.TYPE_NOT_FOUND :
+                                                                        newErrors.add(ApplicationResources.accessor.getMessage("Resource.lookup.TYPE_NOT_FOUND", nameserver, hostname));
+                                                                        return null;
+                                                                    default :
+                                                                        newErrors.add(ApplicationResources.accessor.getMessage("Resource.lookup.unexpectedResultCode", nameserver, hostname, result));
+                                                                        return null;
+                                                                }
                                                             }
                                                         }
                                                     )
@@ -308,40 +388,108 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                         }
 
                                         // Get all the results, ensuring consistency between multiple results.
-                                        // If any single result is inconsistent, set inconsistent status.
+                                        // If any single result is inconsistent (not exactly the same set of A records), set inconsistent status and message.
+                                        Map<Name,String[]> aRecords = new HashMap<Name,String[]>(allHostnames.size()*4/3+1);
                                         DnsStatus newDnsStatus = null;
                                         String newDnsStatusMessage = null;
                                         for(Name nameserver : allNameservers) {
-                                            Map<Name,Future<Record[]>> hostnameFutures = new HashMap<Name,Future<Record[]>>(allHostnames.size()*4/3+1);
-                                            // TODO
+                                            Map<Name,Future<String[]>> hostnameFutures = futures.get(nameserver);
+                                            for(Name hostname : allHostnames) {
+                                                try {
+                                                    String[] records = hostnameFutures.get(hostname).get();
+                                                    if(records!=null) {
+                                                        String[] existing = aRecords.get(hostname);
+                                                        if(existing==null) aRecords.put(hostname, records);
+                                                        else if(!Arrays.equals(existing, records)) {
+                                                            if(newDnsStatus==null) {
+                                                                newDnsStatus = DnsStatus.INCONSISTENT;
+                                                                newDnsStatusMessage = ApplicationResources.accessor.getMessage(
+                                                                    "Resource.aRecords.inconsistent",
+                                                                    nameserver,
+                                                                    hostname,
+                                                                    StringUtility.buildList(existing),
+                                                                    StringUtility.buildList(records)
+                                                                );
+                                                            }
+                                                        }
+                                                    }
+                                                } catch(ExecutionException exc) {
+                                                    logger.log(Level.SEVERE, null, exc);
+                                                    newErrors.add(exc.toString());
+                                                } catch(InterruptedException exc) {
+                                                    // Normal during shutdown
+                                                    boolean needsLogged;
+                                                    synchronized(dnsMonitorLock) {
+                                                        needsLogged = currentThread==dnsMonitorThread;
+                                                    }
+                                                    if(needsLogged) {
+                                                        logger.log(Level.WARNING, null, exc);
+                                                        newWarnings.add(exc.toString());
+                                                    }
+                                                }
+                                            }
                                         }
 
-                                        // TODO: Quorum for dns entries by nameserver counts?
+                                        // Log query time
+                                        long timeNanos = System.nanoTime() - queryStart;
+                                        if(logger.isLoggable(Level.FINE)) logger.fine(ApplicationResources.accessor.getMessage("Resource.allQueries.timeMillis", cluster, id, BigDecimal.valueOf(timeNanos, 6)));
 
-                                        // TODO: Alert administrators on certain statuses
-                                        
-                                        // TODO: Log query time
+                                        // Make sure we got at least one response for every master
+                                        for(Name masterRecord : masterRecords) {
+                                            String[] addresses = aRecords.get(masterRecord);
+                                            if(addresses==null || addresses.length==0) {
+                                                newDnsStatus = DnsStatus.UNKNOWN; // Override any inconsistent with higher-level problem
+                                                newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.masterRecord.missing", masterRecord);
+                                                break; // This is the highest-level problem that will be detected in this loop
+                                            }
+                                            // Check for multi-master violation
+                                            if(newDnsStatus==null && addresses.length>1 && !allowMultiMaster) {
+                                                newDnsStatus = DnsStatus.INCONSISTENT;
+                                                newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.masterRecord.multiMasterNotAllowed", masterRecord, StringUtility.buildList(addresses));
+                                            }
+                                        }
 
-                                        // TODO: Inconsistent if any A record is outside the expected slaveDomains
+                                        // Make sure we got one and only one response for every slave
+                                        if(newDnsStatus!=DnsStatus.UNKNOWN) {
+                                            RNLoop:
+                                            for(RN resourceNode : resourceNodes.values()) {
+                                                Set<Name> slaveRecords = resourceNode.getSlaveRecords();
+                                                for(Name slaveRecord : slaveRecords) {
+                                                    String[] addresses = aRecords.get(slaveRecord);
+                                                    if(addresses==null || addresses.length==0) {
+                                                        newDnsStatus = DnsStatus.UNKNOWN; // Override any inconsistent with higher-level problem
+                                                        newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.missing", slaveRecord);
+                                                        break RNLoop; // This is the highest-level problem that will be detected in this loop
+                                                    }
+                                                    // Must be only one a record
+                                                    if(newDnsStatus==null && addresses.length>1) {
+                                                        newDnsStatus = DnsStatus.INCONSISTENT;
+                                                        newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.onlyOneAllowed", slaveRecord, StringUtility.buildList(addresses));
+                                                    }
+                                                }
+                                            }
+                                        }
 
-                                        // TODO: Each slaveDomain should resolve to only one A record?  Significance/Complications?
-                                        // TODO: All multi-slave records must have the same IP address
-                                        // TODO: All multi-master records must have the same IP address(es)
-                                        // TODO: Make sure we got at least one response for every hostname
-                                        // UNKNOWN if didn't get a response, this will override inconsistent
-                                        
+                                        // Additional inconsistency checks
+                                        if(newDnsStatus!=DnsStatus.UNKNOWN) {
+                                            // TODO: Inconsistent if any master A record is outside the expected slaveDomains
+
+                                            // TODO: All multi-slave records must have the same IP address
+
+                                            // TODO: All multi-master records must have the same IP address(es)
+                                        }
+
                                         // TODO: If consistent and at least one response, make sure there is
                                         // exactly one master if not allowMultiMaster.
                                         // to one of UNKNOWN, INCONSISTENT, SLAVE, or MASTER
 
-                                        // TODO: Verify masterDomain TTL settings match expected values, issue as a warning
+                                        // TODO: This host must be one of the nodes
 
-                                        // TODO: Get new status based on current DNS settings
                                         if(newDnsStatus==null) newDnsStatus = dnsStatus.UNKNOWN;
                                         if(newDnsStatusMessage==null) newDnsStatusMessage = "TODO";
                                         synchronized(dnsMonitorLock) {
                                             if(currentThread!=dnsMonitorThread) break;
-                                            setDnsStatus(newDnsStatus, newDnsStatusMessage);
+                                            setDnsStatus(newDnsStatus, newDnsStatusMessage, newWarnings, newErrors);
                                         }
                                     } catch(RejectedExecutionException exc) {
                                         // Normal during shutdown
@@ -376,8 +524,8 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     void stop(boolean isReloadingConfiguration) {
         synchronized(dnsMonitorLock) {
             dnsMonitorThread = null;
-            if(isReloadingConfiguration) setDnsStatus(DnsStatus.STOPPED, ApplicationResources.accessor.getMessage("Resource.stop.reloadingConfiguration.statusMessage"));
-            else setDnsStatus(DnsStatus.STOPPED, ApplicationResources.accessor.getMessage("Resource.stop.statusMessage"));
+            if(isReloadingConfiguration) setDnsStatus(DnsStatus.STOPPED, ApplicationResources.accessor.getMessage("Resource.stop.reloadingConfiguration.statusMessage"), null, null);
+            else setDnsStatus(DnsStatus.STOPPED, ApplicationResources.accessor.getMessage("Resource.stop.statusMessage"), null, null);
         }
     }
 
@@ -398,6 +546,26 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     public String getDnsStatusMessage() {
         synchronized(dnsMonitorLock) {
             return dnsStatusMessage;
+        }
+    }
+
+    /**
+     * Gets the most recent warnings for this resource.
+     */
+    public List<String> getWarnings() {
+        synchronized(dnsMonitorLock) {
+            if(warnings==null) return Collections.emptyList();
+            else return warnings;
+        }
+    }
+
+    /**
+     * Gets the most recent errors for this resource.
+     */
+    public List<String> getErrors() {
+        synchronized(dnsMonitorLock) {
+            if(errors==null) return Collections.emptyList();
+            else return errors;
         }
     }
 }

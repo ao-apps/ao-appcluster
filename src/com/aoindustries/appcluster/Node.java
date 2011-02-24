@@ -40,7 +40,7 @@ public class Node {
     private final String id;
     private final boolean enabled;
     private final String display;
-    private final String hostname;
+    private final Name hostname;
     private final Set<Name> nameservers;
 
     Node(AppCluster cluster, AppClusterConfiguration.NodeConfiguration nodeConfiguration) {
@@ -92,7 +92,7 @@ public class Node {
     /**
      * Gets the hostname of the machine that runs this node.
      */
-    public String getHostname() {
+    public Name getHostname() {
         return hostname;
     }
 
