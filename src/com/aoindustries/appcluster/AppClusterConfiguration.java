@@ -155,9 +155,9 @@ public interface AppClusterConfiguration {
         String getNodeId();
 
         /**
-         * @see ResourceNode#getSlaveRecords()
+         * @see ResourceNode#getNodeRecords()
          */
-        Set<Name> getSlaveRecords();
+        Set<Name> getNodeRecords();
     }
 
     public static interface RsyncResourceNodeConfiguration extends ResourceNodeConfiguration {

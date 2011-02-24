@@ -38,12 +38,12 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
 
     private final R resource;
     private final Node node;
-    private final Set<Name> slaveRecords;
+    private final Set<Name> nodeRecords;
 
     ResourceNode(R resource, Node node, AppClusterConfiguration.ResourceNodeConfiguration resourceNodeConfiguration) {
         this.resource = resource;
         this.node = node;
-        this.slaveRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceNodeConfiguration.getSlaveRecords()));
+        this.nodeRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceNodeConfiguration.getNodeRecords()));
     }
 
     @Override
@@ -81,11 +81,11 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
     }
 
     /**
-     * Gets the set of slave DNS records that must all the the same and
+     * Gets the set of node DNS records that must all the the same and
      * match the resource's masterRecords for this node to be considered
-     * master.
+     * a master.
      */
-    public Set<Name> getSlaveRecords() {
-        return slaveRecords;
+    public Set<Name> getNodeRecords() {
+        return nodeRecords;
     }
 }

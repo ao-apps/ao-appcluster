@@ -129,28 +129,28 @@ public class AppCluster {
             if(!strings.add(display)) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateResourceDisplay", display));
         }
 
-        // Each resource-node must have no overlap between slaveRecords and masterRecords of the resource
+        // Each resource-node must have no overlap between nodeRecords and masterRecords of the resource
         for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
             Set<Name> masterRecords = resourceConfiguration.getMasterRecords();
             for(AppClusterConfiguration.ResourceNodeConfiguration rnc : resourceConfiguration.getResourceNodeConfigurations()) {
-                for(Name slaveRecord : rnc.getSlaveRecords()) {
-                    if(masterRecords.contains(slaveRecord)) {
-                        throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.slaveMatchesMaster", slaveRecord));
+                for(Name nodeRecord : rnc.getNodeRecords()) {
+                    if(masterRecords.contains(nodeRecord)) {
+                        throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.nodeMatchesMaster", nodeRecord));
                     }
                 }
             }
         }
 
-        // Each resource-node must have no overlap between slaveRecords and slaveRecords of any other resource-node of the resource
+        // Each resource-node must have no overlap between nodeRecords and nodeRecords of any other resource-node of the resource
         for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
             Set<? extends AppClusterConfiguration.ResourceNodeConfiguration> resourceNodeConfigurations = resourceConfiguration.getResourceNodeConfigurations();
             for(AppClusterConfiguration.ResourceNodeConfiguration rnc1 : resourceNodeConfigurations) {
-                Set<Name> slaveRecords1 = rnc1.getSlaveRecords();
+                Set<Name> nodeRecords1 = rnc1.getNodeRecords();
                 for(AppClusterConfiguration.ResourceNodeConfiguration rnc2 : resourceNodeConfigurations) {
                     if(!rnc1.equals(rnc2)) {
-                        for(Name slaveRecord : rnc2.getSlaveRecords()) {
-                            if(slaveRecords1.contains(slaveRecord)) {
-                                throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.slaveMatchesOtherSlave", slaveRecord));
+                        for(Name nodeRecord : rnc2.getNodeRecords()) {
+                            if(nodeRecords1.contains(nodeRecord)) {
+                                throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.nodeMatchesOtherNode", nodeRecord));
                             }
                         }
                     }

@@ -59,8 +59,9 @@ import org.xbill.DNS.Type;
  * some inconsistent state in-between).
  *
  * The second thread only runs when we are a master with no DNS inconsistencies.
- * It pushes the resources to slaves on an as-needed and/or scheduled basis.
- * 
+ * It pushes the resources to all other nodes (including any other masters)
+ * on an as-needed and/or scheduled basis.
+ *
  * TODO: Alert administrators on certain statuses
  *
  * @author  AO Industries, Inc.
@@ -260,7 +261,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     /**
      * Gets the set of master records that must all by the same.
      * The master node is determined by matching these records against
-     * the resource node configuration's slave records.
+     * the resource node configuration's node records.
      */
     public Set<Name> getMasterRecords() {
         return masterRecords;
@@ -308,7 +309,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                             Node node = entry.getKey();
                                             if(node.isEnabled()) {
                                                 totalNameservers += node.getNameservers().size();
-                                                totalHostnames += entry.getValue().getSlaveRecords().size();
+                                                totalHostnames += entry.getValue().getNodeRecords().size();
                                             }
                                         }
                                         Set<Name> allNameservers = new HashSet<Name>(totalNameservers*4/3+1);
@@ -318,7 +319,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                             Node node = entry.getKey();
                                             if(node.isEnabled()) {
                                                 allNameservers.addAll(node.getNameservers());
-                                                allHostnames.addAll(entry.getValue().getSlaveRecords());
+                                                allHostnames.addAll(entry.getValue().getNodeRecords());
                                             }
                                         }
 
@@ -469,8 +470,8 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                             }
                                         }
 
-                                        // Make sure we got one and only one response for every slave
-                                        Map<String,Name> slaveAddresses = new HashMap<String,Name>(); // Will be incomplete when newDnsStatus is set
+                                        // Make sure we got one and only one response for every node
+                                        Map<String,Name> nodeAddresses = new HashMap<String,Name>(); // Will be incomplete when newDnsStatus is set
                                         if(newDnsStatus==null) {
 
                                             RN_LOOP:
@@ -478,37 +479,37 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                                 if(entry.getKey().isEnabled()) {
                                                     Name firstRecord = null;
                                                     String[] firstAddresses = null;
-                                                    for(Name slaveRecord : entry.getValue().getSlaveRecords()) {
-                                                        String[] addresses = aRecords.get(slaveRecord);
+                                                    for(Name nodeRecord : entry.getValue().getNodeRecords()) {
+                                                        String[] addresses = aRecords.get(nodeRecord);
                                                         if(addresses==null || addresses.length==0) {
                                                             newDnsStatus = DnsStatus.INCONSISTENT;
-                                                            newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.missing", slaveRecord);
+                                                            newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.nodeRecord.missing", nodeRecord);
                                                             break RN_LOOP;
                                                         }
                                                         // Must be only one A record
                                                         if(addresses.length>1) {
                                                             newDnsStatus = DnsStatus.INCONSISTENT;
-                                                            newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.onlyOneAllowed", slaveRecord, StringUtility.buildList(addresses));
+                                                            newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.nodeRecord.onlyOneAllowed", nodeRecord, StringUtility.buildList(addresses));
                                                             break RN_LOOP;
                                                         }
-                                                        // All multi-record slaves must have the same IP address(es) within a single node (like for domain aliases)
                                                         if(firstRecord==null) {
-                                                            firstRecord = slaveRecord;
+                                                            firstRecord = nodeRecord;
                                                             firstAddresses = addresses;
-                                                            // Each slave must have a different A record
-                                                            Name duplicateSlave = slaveAddresses.put(addresses[0], slaveRecord);
-                                                            if(duplicateSlave!=null) {
+                                                            // Each node must have a different A record
+                                                            Name duplicateNode = nodeAddresses.put(addresses[0], nodeRecord);
+                                                            if(duplicateNode!=null) {
                                                                 newDnsStatus = DnsStatus.INCONSISTENT;
-                                                                newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.duplicateA", duplicateSlave, slaveRecord, addresses[0]);
+                                                                newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.nodeRecord.duplicateA", duplicateNode, nodeRecord, addresses[0]);
                                                                 break RN_LOOP;
                                                             }
                                                         } else if(!Arrays.equals(firstAddresses, addresses)) {
+                                                            // All multi-record nodes must have the same IP address(es) within a single node (like for domain aliases)
                                                             newDnsStatus = DnsStatus.INCONSISTENT;
                                                             newDnsStatusMessage = ApplicationResources.accessor.getMessage(
-                                                                "Resource.multiRecordSlave.mismatch",
+                                                                "Resource.multiRecordNode.mismatch",
                                                                 firstRecord,
                                                                 StringUtility.buildList(firstAddresses),
-                                                                slaveRecord,
+                                                                nodeRecord,
                                                                 StringUtility.buildList(addresses)
                                                             );
                                                             break RN_LOOP;
@@ -519,14 +520,14 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                         }
 
                                         if(newDnsStatus==null) {
-                                            // Inconsistent if any master A record is outside the expected slaveDomains
+                                            // Inconsistent if any master A record is outside the expected nodeDomains
                                         MASTER_LOOP :
                                             for(Name masterRecord : masterRecords) {
                                                 for(String address : aRecords.get(masterRecord)) {
-                                                    if(!slaveAddresses.containsKey(address)) {
+                                                    if(!nodeAddresses.containsKey(address)) {
                                                         newDnsStatus = DnsStatus.INCONSISTENT;
                                                         newDnsStatusMessage = ApplicationResources.accessor.getMessage(
-                                                            "Resource.masterARecordDoesntMatchSlave",
+                                                            "Resource.masterARecordDoesntMatchNode",
                                                             masterRecord,
                                                             address
                                                         );

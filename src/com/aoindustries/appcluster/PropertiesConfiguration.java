@@ -366,12 +366,12 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
 
         private final String resourceId;
         private final String nodeId;
-        private final Set<Name> slaveRecords;
+        private final Set<Name> nodeRecords;
 
-        PropertiesResourceNodeConfiguration(String resourceId, String nodeId, Collection<Name> slaveRecords) {
+        PropertiesResourceNodeConfiguration(String resourceId, String nodeId, Collection<Name> nodeRecords) {
             this.resourceId = resourceId;
             this.nodeId = nodeId;
-            this.slaveRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(slaveRecords));
+            this.nodeRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(nodeRecords));
         }
 
         @Override
@@ -405,8 +405,8 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         }
 
         @Override
-        public Set<Name> getSlaveRecords() {
-            return slaveRecords;
+        public Set<Name> getNodeRecords() {
+            return nodeRecords;
         }
     }
 
@@ -417,8 +417,8 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         private final String backupDir;
         private final int backupDays;
 
-        PropertiesRsyncResourceNodeConfiguration(String resourceId, String nodeId, Collection<Name> slaveRecords, String username, String path, String backupDir, int backupDays) {
-            super(resourceId, nodeId, slaveRecords);
+        PropertiesRsyncResourceNodeConfiguration(String resourceId, String nodeId, Collection<Name> nodeRecords, String username, String path, String backupDir, int backupDays) {
+            super(resourceId, nodeId, nodeRecords);
             this.username = username;
             this.path = path;
             this.backupDir = backupDir;
@@ -539,7 +539,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
                         new PropertiesRsyncResourceNodeConfiguration(
                             resourceId,
                             nodeId,
-                            getUniqueNames("appcluster.resource."+resourceId+".node."+nodeId+".slaveRecords"),
+                            getUniqueNames("appcluster.resource."+resourceId+".node."+nodeId+".nodeRecords"),
                             getString("appcluster.resource."+resourceId+".node."+nodeId+".username"),
                             getString("appcluster.resource."+resourceId+".node."+nodeId+".path"),
                             getString("appcluster.resource."+resourceId+".node."+nodeId+".backupDir"),
