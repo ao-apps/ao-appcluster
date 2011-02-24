@@ -214,7 +214,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                 }
             }
         }
-        if(!dnsStatusMessage.equals(oldDnsStatusMessage)) {
+        if(dnsStatusMessage!=null && !dnsStatusMessage.equals(oldDnsStatusMessage)) {
             if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("Resource.setDnsStatus.newStatusMessage.info", cluster, id, dnsStatusMessage));
         }
         if(!this.warnings.equals(oldWarnings)) {
@@ -434,59 +434,112 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                         long timeNanos = System.nanoTime() - queryStart;
                                         if(logger.isLoggable(Level.FINE)) logger.fine(ApplicationResources.accessor.getMessage("Resource.allQueries.timeMillis", cluster, id, BigDecimal.valueOf(timeNanos, 6)));
 
-                                        // Make sure we got at least one response for every master
-                                        for(Name masterRecord : masterRecords) {
-                                            String[] addresses = aRecords.get(masterRecord);
-                                            if(addresses==null || addresses.length==0) {
-                                                newDnsStatus = DnsStatus.UNKNOWN; // Override any inconsistent with higher-level problem
-                                                newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.masterRecord.missing", masterRecord);
-                                                break; // This is the highest-level problem that will be detected in this loop
-                                            }
-                                            // Check for multi-master violation
-                                            if(newDnsStatus==null && addresses.length>1 && !allowMultiMaster) {
-                                                newDnsStatus = DnsStatus.INCONSISTENT;
-                                                newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.masterRecord.multiMasterNotAllowed", masterRecord, StringUtility.buildList(addresses));
+                                        // Make sure we got at least one response for every master and check multi-master support
+                                        if(newDnsStatus==null) {
+                                            Name firstRecord = null;
+                                            String[] firstAddresses = null;
+                                            for(Name masterRecord : masterRecords) {
+                                                String[] addresses = aRecords.get(masterRecord);
+                                                if(addresses==null || addresses.length==0) {
+                                                    newDnsStatus = DnsStatus.INCONSISTENT;
+                                                    newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.masterRecord.missing", masterRecord);
+                                                    break;
+                                                }
+                                                // Check for multi-master violation
+                                                if(addresses.length>1 && !allowMultiMaster) {
+                                                    newDnsStatus = DnsStatus.INCONSISTENT;
+                                                    newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.masterRecord.multiMasterNotAllowed", masterRecord, StringUtility.buildList(addresses));
+                                                    break;
+                                                }
+                                                // All multi-record masters must have the same IP address(es) within a single node (like for domain aliases)
+                                                if(firstRecord==null) {
+                                                    firstRecord = masterRecord;
+                                                    firstAddresses = addresses;
+                                                } else if(!Arrays.equals(firstAddresses, addresses)) {
+                                                    newDnsStatus = DnsStatus.INCONSISTENT;
+                                                    newDnsStatusMessage = ApplicationResources.accessor.getMessage(
+                                                        "Resource.multiRecordMaster.mismatch",
+                                                        firstRecord,
+                                                        StringUtility.buildList(firstAddresses),
+                                                        masterRecord,
+                                                        StringUtility.buildList(addresses)
+                                                    );
+                                                    break;
+                                                }
                                             }
                                         }
 
                                         // Make sure we got one and only one response for every slave
-                                        if(newDnsStatus!=DnsStatus.UNKNOWN) {
-                                            RNLoop:
-                                            for(RN resourceNode : resourceNodes.values()) {
-                                                Set<Name> slaveRecords = resourceNode.getSlaveRecords();
-                                                for(Name slaveRecord : slaveRecords) {
-                                                    String[] addresses = aRecords.get(slaveRecord);
-                                                    if(addresses==null || addresses.length==0) {
-                                                        newDnsStatus = DnsStatus.UNKNOWN; // Override any inconsistent with higher-level problem
-                                                        newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.missing", slaveRecord);
-                                                        break RNLoop; // This is the highest-level problem that will be detected in this loop
-                                                    }
-                                                    // Must be only one a record
-                                                    if(newDnsStatus==null && addresses.length>1) {
-                                                        newDnsStatus = DnsStatus.INCONSISTENT;
-                                                        newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.onlyOneAllowed", slaveRecord, StringUtility.buildList(addresses));
+                                        Map<String,Name> slaveAddresses = new HashMap<String,Name>(); // Will be incomplete when newDnsStatus is set
+                                        if(newDnsStatus==null) {
+
+                                            RN_LOOP:
+                                            for(Map.Entry<Node,RN> entry : resourceNodes.entrySet()) {
+                                                if(entry.getKey().isEnabled()) {
+                                                    Name firstRecord = null;
+                                                    String[] firstAddresses = null;
+                                                    for(Name slaveRecord : entry.getValue().getSlaveRecords()) {
+                                                        String[] addresses = aRecords.get(slaveRecord);
+                                                        if(addresses==null || addresses.length==0) {
+                                                            newDnsStatus = DnsStatus.INCONSISTENT;
+                                                            newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.missing", slaveRecord);
+                                                            break RN_LOOP;
+                                                        }
+                                                        // Must be only one A record
+                                                        if(addresses.length>1) {
+                                                            newDnsStatus = DnsStatus.INCONSISTENT;
+                                                            newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.onlyOneAllowed", slaveRecord, StringUtility.buildList(addresses));
+                                                            break RN_LOOP;
+                                                        }
+                                                        // All multi-record slaves must have the same IP address(es) within a single node (like for domain aliases)
+                                                        if(firstRecord==null) {
+                                                            firstRecord = slaveRecord;
+                                                            firstAddresses = addresses;
+                                                            // Each slave must have a different A record
+                                                            Name duplicateSlave = slaveAddresses.put(addresses[0], slaveRecord);
+                                                            if(duplicateSlave!=null) {
+                                                                newDnsStatus = DnsStatus.INCONSISTENT;
+                                                                newDnsStatusMessage = ApplicationResources.accessor.getMessage("Resource.slaveRecord.duplicateA", duplicateSlave, slaveRecord, addresses[0]);
+                                                                break RN_LOOP;
+                                                            }
+                                                        } else if(!Arrays.equals(firstAddresses, addresses)) {
+                                                            newDnsStatus = DnsStatus.INCONSISTENT;
+                                                            newDnsStatusMessage = ApplicationResources.accessor.getMessage(
+                                                                "Resource.multiRecordSlave.mismatch",
+                                                                firstRecord,
+                                                                StringUtility.buildList(firstAddresses),
+                                                                slaveRecord,
+                                                                StringUtility.buildList(addresses)
+                                                            );
+                                                            break RN_LOOP;
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
 
-                                        // Additional inconsistency checks
-                                        if(newDnsStatus!=DnsStatus.UNKNOWN) {
-                                            // TODO: Inconsistent if any master A record is outside the expected slaveDomains
-
-                                            // TODO: All multi-slave records must have the same IP address
-
-                                            // TODO: All multi-master records must have the same IP address(es)
+                                        if(newDnsStatus==null) {
+                                            // Inconsistent if any master A record is outside the expected slaveDomains
+                                        MASTER_LOOP :
+                                            for(Name masterRecord : masterRecords) {
+                                                for(String address : aRecords.get(masterRecord)) {
+                                                    if(!slaveAddresses.containsKey(address)) {
+                                                        newDnsStatus = DnsStatus.INCONSISTENT;
+                                                        newDnsStatusMessage = ApplicationResources.accessor.getMessage(
+                                                            "Resource.masterARecordDoesntMatchSlave",
+                                                            masterRecord,
+                                                            address
+                                                        );
+                                                        break MASTER_LOOP;
+                                                    }
+                                                }
+                                            }
                                         }
 
-                                        // TODO: If consistent and at least one response, make sure there is
-                                        // exactly one master if not allowMultiMaster.
-                                        // to one of UNKNOWN, INCONSISTENT, SLAVE, or MASTER
-
-                                        // TODO: This host must be one of the nodes
+                                        // TODO: Now one of SLAVE or MASTER depending on hostname match
+                                        //       TODO: This host must be one of the nodes
 
                                         if(newDnsStatus==null) newDnsStatus = dnsStatus.UNKNOWN;
-                                        if(newDnsStatusMessage==null) newDnsStatusMessage = "TODO";
                                         synchronized(dnsMonitorLock) {
                                             if(currentThread!=dnsMonitorThread) break;
                                             setDnsStatus(newDnsStatus, newDnsStatusMessage, newWarnings, newErrors);
@@ -539,7 +592,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     }
 
     /**
-     * Gets the current DNS status message in the ThreadLocale of the user.
+     * Gets the current DNS status message or <code>null</code> if none.
      *
      * @see ThreadLocale
      */
