@@ -57,8 +57,6 @@ import org.xbill.DNS.Type;
  * The second thread only runs when we are a master with no DNS inconsistencies.
  * It pushes the resources to slaves on an as-needed and/or scheduled basis.
  *
- * TODO: Monitor TTL settings, too.
- *
  * @author  AO Industries, Inc.
  */
 abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> {
@@ -318,6 +316,10 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                             // TODO
                                         }
 
+                                        // TODO: Quorum for dns entries by nameserver counts?
+
+                                        // TODO: Alert administrators on certain statuses
+                                        
                                         // TODO: Log query time
 
                                         // TODO: Inconsistent if any A record is outside the expected slaveDomains
@@ -331,6 +333,8 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                                         // TODO: If consistent and at least one response, make sure there is
                                         // exactly one master if not allowMultiMaster.
                                         // to one of UNKNOWN, INCONSISTENT, SLAVE, or MASTER
+
+                                        // TODO: Verify masterDomain TTL settings match expected values, issue as a warning
 
                                         // TODO: Get new status based on current DNS settings
                                         if(newDnsStatus==null) newDnsStatus = dnsStatus.UNKNOWN;
