@@ -586,7 +586,17 @@ public class ResourceDnsMonitor {
                                         if(newDnsStatus==null) newDnsStatus = NodeDnsStatus.UNKNOWN;
                                         synchronized(threadLock) {
                                             if(currentThread!=thread) break;
-                                            setDnsResult(new ResourceDnsResult(startTime, endTime, newDnsStatus, newDnsStatusMessage, newWarnings, newErrors));
+                                            setDnsResult(
+                                                new ResourceDnsResult(
+                                                    resource,
+                                                    startTime,
+                                                    endTime,
+                                                    newDnsStatus,
+                                                    newDnsStatusMessage,
+                                                    newWarnings,
+                                                    newErrors
+                                                )
+                                            );
                                         }
                                     } catch(RejectedExecutionException exc) {
                                         // Normal during shutdown

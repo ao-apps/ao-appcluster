@@ -23,6 +23,8 @@
 package com.aoindustries.appcluster;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -35,6 +37,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.xbill.DNS.Name;
+import org.xbill.DNS.TextParseException;
 
 /**
  * Central AppCluster manager.
@@ -59,6 +62,7 @@ public class AppCluster {
     private ExecutorService executorService; // Protected by startLock
     private AppClusterLogger clusterLogger; // Protected by startedLock
     private Map<String,Node> nodes; // Protected by startedLock
+    private Node thisNode; // Protected by startedLock
     private Map<String,Resource> resources; // Protected by startedLock
 
     /**
@@ -283,6 +287,18 @@ public class AppCluster {
     }
 
     /**
+     * Gets the node this machine represents or <code>null</code> if this
+     * machine is not one of the nodes.
+     * Only available when started.
+     */
+    public Node getThisNode() throws IllegalStateException {
+        synchronized(startedLock) {
+            if(!started) throw new IllegalStateException();
+            return thisNode;
+        }
+    }
+
+    /**
      * Only available when started.
      */
     public Map<String,Resource> getResources() throws IllegalStateException {
@@ -295,51 +311,69 @@ public class AppCluster {
     private void startUp() throws AppClusterConfiguration.AppClusterConfigurationException {
         synchronized(startedLock) {
             if(started) {
-                // Get the configuration values.
-                enabled = configuration.isEnabled();
-                display = configuration.getDisplay();
-                Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations = configuration.getNodeConfigurations();
-                Set<AppClusterConfiguration.ResourceConfiguration> resourceConfigurations = configuration.getResourceConfigurations();
+                try {
+                    // Get system-local values
+                    Name thisHostname = Name.fromString(InetAddress.getLocalHost().getHostName());
 
-                // Check the configuration for consistency
-                checkConfiguration(nodeConfigurations, resourceConfigurations);
+                    // Get the configuration values.
+                    enabled = configuration.isEnabled();
+                    display = configuration.getDisplay();
+                    Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations = configuration.getNodeConfigurations();
+                    Set<AppClusterConfiguration.ResourceConfiguration> resourceConfigurations = configuration.getResourceConfigurations();
 
-                // Create the nodes
-                Map<String,Node> newNodes = new LinkedHashMap<String,Node>(nodeConfigurations.size()*4/3+1);
-                for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
-                    Node node = new Node(this, nodeConfiguration);
-                    newNodes.put(node.getId(), node);
-                }
-                nodes = Collections.unmodifiableMap(newNodes);
+                    // Check the configuration for consistency
+                    checkConfiguration(nodeConfigurations, resourceConfigurations);
 
-                // Start the executor service
-                executorService = Executors.newCachedThreadPool(
-                    new ThreadFactory() {
-                        @Override
-                        public Thread newThread(Runnable r) {
-                            Thread thread = new Thread(r, AppCluster.class.getName()+".executorService");
-                            thread.setPriority(EXECUTOR_THREAD_PRIORITY);
-                            return thread;
+                    // Create the nodes
+                    Map<String,Node> newNodes = new LinkedHashMap<String,Node>(nodeConfigurations.size()*4/3+1);
+                    for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
+                        Node node = new Node(this, nodeConfiguration);
+                        newNodes.put(node.getId(), node);
+                    }
+                    nodes = Collections.unmodifiableMap(newNodes);
+
+                    // Find this node
+                    thisNode = null;
+                    for(Node node : nodes.values()) {
+                        if(node.getHostname().equals(thisHostname)) {
+                            thisNode = node;
+                            break;
                         }
                     }
-                );
 
-                // Start the logger
-                clusterLogger = configuration.getClusterLogger();
-                clusterLogger.start();
+                    // Start the executor service
+                    executorService = Executors.newCachedThreadPool(
+                        new ThreadFactory() {
+                            @Override
+                            public Thread newThread(Runnable r) {
+                                Thread thread = new Thread(r, AppCluster.class.getName()+".executorService");
+                                thread.setPriority(EXECUTOR_THREAD_PRIORITY);
+                                return thread;
+                            }
+                        }
+                    );
 
-                // Start per-resource monitoring threads
-                Map<String,Resource> newResources = new LinkedHashMap<String,Resource>(resourceConfigurations.size()*4/3+1);
-                for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
-                    if(resourceConfiguration instanceof AppClusterConfiguration.RsyncResourceConfiguration) {
-                         RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration);
-                         newResources.put(resourceConfiguration.getId(), resource);
-                         resource.getDnsMonitor().start();
-                    } else {
-                        throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.startUp.unexpectedType", resourceConfiguration.getId(), resourceConfiguration.getClass().getName()));
+                    // Start the logger
+                    clusterLogger = configuration.getClusterLogger();
+                    clusterLogger.start();
+
+                    // Start per-resource monitoring threads
+                    Map<String,Resource> newResources = new LinkedHashMap<String,Resource>(resourceConfigurations.size()*4/3+1);
+                    for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
+                        if(resourceConfiguration instanceof AppClusterConfiguration.RsyncResourceConfiguration) {
+                             RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration);
+                             newResources.put(resourceConfiguration.getId(), resource);
+                             resource.getDnsMonitor().start();
+                        } else {
+                            throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.startUp.unexpectedType", resourceConfiguration.getId(), resourceConfiguration.getClass().getName()));
+                        }
                     }
+                    resources = Collections.unmodifiableMap(newResources);
+                } catch(TextParseException exc) {
+                    throw new AppClusterConfiguration.AppClusterConfigurationException(exc);
+                } catch(UnknownHostException exc) {
+                    throw new AppClusterConfiguration.AppClusterConfigurationException(exc);
                 }
-                resources = Collections.unmodifiableMap(newResources);
             }
         }
     }
@@ -367,6 +401,7 @@ public class AppCluster {
 
                 // Clear the nodes
                 nodes = null;
+                thisNode = null;
 
                 // Clear the configuration values.
                 enabled = false;
