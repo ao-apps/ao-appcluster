@@ -105,7 +105,7 @@ public class ResourceDnsResult {
         this.resource = resource;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.masterRecordLookups = getUnmodifiableDnsLookupResults(masterRecordLookups, resource.getMasterRecords(), resource.getEnabledNameservers());
+        this.masterRecordLookups = masterRecordLookups==null ? null : getUnmodifiableDnsLookupResults(masterRecordLookups, resource.getMasterRecords(), resource.getEnabledNameservers());
         this.masterStatus = masterStatus;
         this.masterStatusMessages = getUnmodifiableSortedSet(masterStatusMessages, defaultLocaleCollator);
         Set<Node> nodes = resource.getResourceNodes().keySet();
@@ -134,7 +134,8 @@ public class ResourceDnsResult {
 
     /**
      * Gets the mapping of all masterRecord DNS lookups in the form masterRecord->enabledNameserver->result.
-     * It contains an entry for every masterRecord querying every enabled nameserver.
+     * If no lookups have been performed, such as during STOPPED or UNKNOWN state, returns <code>null</code>.
+     * Otherwise, it contains an entry for every masterRecord querying every enabled nameserver.
      */
     public Map<Name,Map<Name,DnsLookupResult>> getMasterRecordLookups() {
         return masterRecordLookups;

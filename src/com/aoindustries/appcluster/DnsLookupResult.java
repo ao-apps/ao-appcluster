@@ -33,8 +33,6 @@ import org.xbill.DNS.Name;
  */
 public class DnsLookupResult {
 
-    // private static final Logger logger = Logger.getLogger(DnsLookupResult.class.getName());
-
     private final Name name;
     private final DnsLookupStatus status;
     private final SortedSet<String> addresses;
@@ -57,6 +55,24 @@ public class DnsLookupResult {
         assert status==DnsLookupStatus.SUCCESSFUL ? !this.addresses.isEmpty() : this.addresses.isEmpty();
         this.warnings = ResourceDnsResult.getUnmodifiableSortedSet(warnings, ResourceDnsResult.defaultLocaleCollator);
         this.errors = ResourceDnsResult.getUnmodifiableSortedSet(errors, ResourceDnsResult.defaultLocaleCollator);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof DnsLookupResult)) return false;
+        DnsLookupResult other = (DnsLookupResult)o;
+        return
+            name.equals(other.name)
+            && status==other.status
+            && addresses.equals(other.addresses)
+            && warnings.equals(other.warnings)
+            && errors.equals(other.errors)
+        ;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode() * 31 + status.hashCode();
     }
 
     public Name getName() {

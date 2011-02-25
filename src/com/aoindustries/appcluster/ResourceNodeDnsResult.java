@@ -46,7 +46,7 @@ public class ResourceNodeDnsResult {
         Collection<String> nodeStatusMessages
     ) {
         this.resourceNode = resourceNode;
-        this.nodeRecordLookups = ResourceDnsResult.getUnmodifiableDnsLookupResults(nodeRecordLookups, resourceNode.getNodeRecords(), resourceNode.getResource().getEnabledNameservers());
+        this.nodeRecordLookups = nodeRecordLookups==null ? null : ResourceDnsResult.getUnmodifiableDnsLookupResults(nodeRecordLookups, resourceNode.getNodeRecords(), resourceNode.getResource().getEnabledNameservers());
         this.nodeStatus = nodeStatus;
         this.nodeStatusMessages = ResourceDnsResult.getUnmodifiableSortedSet(nodeStatusMessages, ResourceDnsResult.defaultLocaleCollator);
     }
@@ -57,7 +57,8 @@ public class ResourceNodeDnsResult {
 
     /**
      * Gets the mapping of all nodeRecord DNS lookups in the form nodeRecord->enabledNameserver->result.
-     * It contains an entry for every nodeRecord querying every enabled nameserver.
+     * If no lookups have been performed, such as during STOPPED or UNKNOWN state, returns <code>null</code>.
+     * Otherwise, it contains an entry for every nodeRecord querying every enabled nameserver.
      */
     public Map<Name,Map<Name,DnsLookupResult>> getNodeRecordLookups() {
         return nodeRecordLookups;
