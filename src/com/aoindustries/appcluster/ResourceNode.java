@@ -36,14 +36,16 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
 
     //private static final Logger logger = Logger.getLogger(ResourceNode.class.getName());
 
-    private final R resource;
     private final Node node;
     private final Set<Name> nodeRecords;
+    private R resource;
 
-    ResourceNode(R resource, Node node, AppClusterConfiguration.ResourceNodeConfiguration resourceNodeConfiguration) {
-        this.resource = resource;
+    ResourceNode(Node node, AppClusterConfiguration.ResourceNodeConfiguration resourceNodeConfiguration) {
         this.node = node;
         this.nodeRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceNodeConfiguration.getNodeRecords()));
+    }
+    void init(R resource) {
+        this.resource = resource;
     }
 
     @Override

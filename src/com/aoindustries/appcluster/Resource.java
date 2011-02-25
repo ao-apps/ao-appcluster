@@ -47,11 +47,15 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private final boolean allowMultiMaster;
     private final Set<Name> masterRecords;
     private final int masterRecordsTtl;
+    private final Map<Node,RN> resourceNodes;
     private final Set<Name> enabledNameservers;
 
     private final ResourceDnsMonitor dnsMonitor;
 
-    Resource(AppCluster cluster, AppClusterConfiguration.ResourceConfiguration resourceConfiguration) {
+    Resource(AppCluster cluster, AppClusterConfiguration.ResourceConfiguration resourceConfiguration, Map<Node,RN> resourceNodes) {
+        @SuppressWarnings("unchecked")
+        R rThis = (R)this;
+        for(RN resourceNode : resourceNodes.values()) resourceNode.init(rThis);
         this.cluster = cluster;
         this.id = resourceConfiguration.getId();
         this.enabled = resourceConfiguration.isEnabled();
@@ -59,8 +63,9 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
         this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
         this.masterRecordsTtl = resourceConfiguration.getMasterRecordsTtl();
+        this.resourceNodes = resourceNodes;
         final Set<Name> newEnabledNameservers = new LinkedHashSet<Name>();
-        for(Map.Entry<Node,RN> entry : getResourceNodes().entrySet()) {
+        for(Map.Entry<Node,RN> entry : resourceNodes.entrySet()) {
             Node node = entry.getKey();
             if(node.isEnabled()) newEnabledNameservers.addAll(node.getNameservers());
         }
@@ -150,5 +155,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         return dnsMonitor;
     }
 
-    abstract public Map<Node,RN> getResourceNodes();
+    public Map<Node,RN> getResourceNodes() {
+        return resourceNodes;
+    }
 }

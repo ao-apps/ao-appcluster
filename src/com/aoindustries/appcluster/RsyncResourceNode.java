@@ -38,8 +38,8 @@ public class RsyncResourceNode extends ResourceNode<RsyncResource,RsyncResourceN
     private final String backupDir;
     private final int backupDays;
 
-    RsyncResourceNode(RsyncResource resource, Node node, AppClusterConfiguration.RsyncResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
-        super(resource, node, resourceNodeConfiguration);
+    RsyncResourceNode(Node node, AppClusterConfiguration.RsyncResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
+        super(node, resourceNodeConfiguration);
         this.username = resourceNodeConfiguration.getUsername();
         this.path = resourceNodeConfiguration.getPath();
         //  Each resource-node path must not end in slash (/) since it changes the meaning in rsync

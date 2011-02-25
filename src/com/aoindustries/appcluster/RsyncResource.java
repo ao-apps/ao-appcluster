@@ -23,10 +23,7 @@
 package com.aoindustries.appcluster;
 
 import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurationException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Synchronizes resources using rsync.
@@ -39,29 +36,12 @@ public class RsyncResource extends Resource<RsyncResource,RsyncResourceNode> {
 
     private final boolean delete;
 
-    private final Map<Node,RsyncResourceNode> resourceNodes;
-
-    RsyncResource(AppCluster cluster, AppClusterConfiguration.RsyncResourceConfiguration resourceConfiguration) throws AppClusterConfigurationException {
-        super(cluster, resourceConfiguration);
-        Set<? extends AppClusterConfiguration.ResourceNodeConfiguration> nodeConfigs = resourceConfiguration.getResourceNodeConfigurations();
-        Map<Node,RsyncResourceNode> newResourceNodes = new LinkedHashMap<Node,RsyncResourceNode>(nodeConfigs.size()*4/3+1);
-        for(AppClusterConfiguration.ResourceNodeConfiguration nodeConfig : nodeConfigs) {
-            AppClusterConfiguration.RsyncResourceNodeConfiguration resyncConfig = (AppClusterConfiguration.RsyncResourceNodeConfiguration)nodeConfig;
-            String nodeId = resyncConfig.getNodeId();
-            Node node = cluster.getNodes().get(nodeId);
-            if(node==null) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResource.init.nodeNotFound", getId(), nodeId));
-            newResourceNodes.put(node, new RsyncResourceNode(this, node, resyncConfig));
-        }
+    RsyncResource(AppCluster cluster, AppClusterConfiguration.RsyncResourceConfiguration resourceConfiguration, Map<Node,RsyncResourceNode> resourceNodes) throws AppClusterConfigurationException {
+        super(cluster, resourceConfiguration, resourceNodes);
         this.delete = resourceConfiguration.isDelete();
-        this.resourceNodes = Collections.unmodifiableMap(newResourceNodes);
     }
 
     public boolean isDelete() {
         return delete;
-    }
-
-    @Override
-    public Map<Node,RsyncResourceNode> getResourceNodes() {
-        return resourceNodes;
     }
 }

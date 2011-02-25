@@ -53,6 +53,7 @@ public class PropertiesConfigurationTest {
             config = new PropertiesConfiguration(props);
         }
         AppCluster cluster = new AppCluster(config);
+        cluster.addResourceDnsListener(new LoggerResourceDnsListener());
         cluster.start();
         try {
             assertEquals("PCA Cluster", cluster.getDisplay());

@@ -88,8 +88,6 @@ public class ResourceDnsResult {
     private final MasterDnsStatus masterStatus;
     private final SortedSet<String> masterStatusMessages;
     private final Map<Node,ResourceNodeDnsResult> nodeResults;
-    private final SortedSet<String> warnings;
-    private final SortedSet<String> errors;
 
     ResourceDnsResult(
         Resource<?,?> resource,
@@ -98,9 +96,7 @@ public class ResourceDnsResult {
         Map<Name,Map<Name,DnsLookupResult>> masterRecordLookups,
         MasterDnsStatus masterStatus,
         Collection<String> masterStatusMessages,
-        Map<Node,ResourceNodeDnsResult> nodeResults,
-        Collection<String> warnings,
-        Collection<String> errors
+        Map<Node,ResourceNodeDnsResult> nodeResults
     ) {
         this.resource = resource;
         this.startTime = startTime;
@@ -116,8 +112,6 @@ public class ResourceDnsResult {
             newNodeResults.put(node, nodeResult);
         }
         this.nodeResults = Collections.unmodifiableMap(newNodeResults);
-        this.warnings = getUnmodifiableSortedSet(warnings, defaultLocaleCollator);
-        this.errors = getUnmodifiableSortedSet(errors, defaultLocaleCollator);
     }
 
     public Resource<?,?> getResource() {
@@ -162,19 +156,5 @@ public class ResourceDnsResult {
      */
     public Map<Node,ResourceNodeDnsResult> getNodeResults() {
         return nodeResults;
-    }
-
-    /**
-     * Gets the most recent warnings for this resource.
-     */
-    public SortedSet<String> getWarnings() {
-        return warnings;
-    }
-
-    /**
-     * Gets the most recent errors for this resource.
-     */
-    public SortedSet<String> getErrors() {
-        return errors;
     }
 }

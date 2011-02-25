@@ -25,9 +25,11 @@ package com.aoindustries.appcluster;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -64,6 +66,8 @@ public class AppCluster {
     private Map<String,Node> nodes; // Protected by startedLock
     private Node thisNode; // Protected by startedLock
     private Map<String,Resource> resources; // Protected by startedLock
+
+    private final List<ResourceDnsListener> dnsListeners = new ArrayList<ResourceDnsListener>();
 
     /**
      * Creates a cluster with the provided configuration.
@@ -160,6 +164,38 @@ public class AppCluster {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Will be called when the DNS result has changed in any way.
+     */
+    public void addResourceDnsListener(ResourceDnsListener dnsListener) {
+        synchronized(dnsListeners) {
+            for(ResourceDnsListener existing : dnsListeners) {
+                if(existing==dnsListener) return;
+            }
+            dnsListeners.add(dnsListener);
+        }
+    }
+
+    /**
+     * Removes listener of DNS result changes.
+     */
+    public void removeResourceDnsListener(ResourceDnsListener dnsListener) {
+        synchronized(dnsListeners) {
+            for(int i=0; i<dnsListeners.size(); i++) {
+                if(dnsListeners.get(i)==dnsListener) {
+                    dnsListeners.remove(i);
+                    return;
+                }
+            }
+        }
+    }
+
+    void notifyDnsListeners(ResourceDnsResult oldResult, ResourceDnsResult newResult) {
+        synchronized(dnsListeners) {
+            for(ResourceDnsListener dnsListener : dnsListeners) dnsListener.onResourceDnsResult(oldResult, newResult);
         }
     }
 
@@ -361,9 +397,18 @@ public class AppCluster {
                     Map<String,Resource> newResources = new LinkedHashMap<String,Resource>(resourceConfigurations.size()*4/3+1);
                     for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
                         if(resourceConfiguration instanceof AppClusterConfiguration.RsyncResourceConfiguration) {
-                             RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration);
-                             newResources.put(resourceConfiguration.getId(), resource);
-                             resource.getDnsMonitor().start();
+                            Set<? extends AppClusterConfiguration.ResourceNodeConfiguration> nodeConfigs = resourceConfiguration.getResourceNodeConfigurations();
+                            Map<Node,RsyncResourceNode> newResourceNodes = new LinkedHashMap<Node,RsyncResourceNode>(nodeConfigs.size()*4/3+1);
+                            for(AppClusterConfiguration.ResourceNodeConfiguration nodeConfig : nodeConfigs) {
+                                AppClusterConfiguration.RsyncResourceNodeConfiguration resyncConfig = (AppClusterConfiguration.RsyncResourceNodeConfiguration)nodeConfig;
+                                String nodeId = resyncConfig.getNodeId();
+                                Node node = getNodes().get(nodeId);
+                                if(node==null) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResource.init.nodeNotFound", resourceConfiguration.getId(), nodeId));
+                                newResourceNodes.put(node, new RsyncResourceNode(node, resyncConfig));
+                            }
+                            RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration, Collections.unmodifiableMap(newResourceNodes));
+                            newResources.put(resourceConfiguration.getId(), resource);
+                            resource.getDnsMonitor().start();
                         } else {
                             throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.startUp.unexpectedType", resourceConfiguration.getId(), resourceConfiguration.getClass().getName()));
                         }
