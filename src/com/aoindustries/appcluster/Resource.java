@@ -32,7 +32,7 @@ import org.xbill.DNS.Name;
  * Monitors the status of a resource by monitoring its role based on DNS entries
  * and synchronizing the resource on an as-needed and/or scheduled basis.
  *
- * @see  DnsMonitor
+ * @see  ResourceDnsMonitor
  * 
  * @author  AO Industries, Inc.
  */
@@ -48,7 +48,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private final Set<Name> masterRecords;
     private final int masterRecordsTtl;
 
-    private final DnsMonitor dnsMonitor;
+    private final ResourceDnsMonitor dnsMonitor;
 
     Resource(AppCluster cluster, AppClusterConfiguration.ResourceConfiguration resourceConfiguration) {
         this.cluster = cluster;
@@ -58,7 +58,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
         this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
         this.masterRecordsTtl = resourceConfiguration.getMasterRecordsTtl();
-        this.dnsMonitor = new DnsMonitor(this);
+        this.dnsMonitor = new ResourceDnsMonitor(this);
     }
 
     @Override
@@ -131,7 +131,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     /**
      * Gets the DNS monitor for this resource.
      */
-    public DnsMonitor getDnsMonitor() {
+    public ResourceDnsMonitor getDnsMonitor() {
         return dnsMonitor;
     }
 

@@ -172,7 +172,7 @@ public class AppCluster {
                     } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
                         logger.log(Level.SEVERE, null, exc);
                     }
-                    shutdown(true);
+                    shutdown();
                     try {
                         startUp();
                     } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
@@ -213,7 +213,7 @@ public class AppCluster {
                 } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
                     logger.log(Level.SEVERE, null, exc);
                 }
-                shutdown(false);
+                shutdown();
                 started = false;
                 configuration.removeConfigurationListener(configUpdated);
                 configuration.stop();
@@ -344,12 +344,12 @@ public class AppCluster {
         }
     }
 
-    private void shutdown(boolean isReloadingConfiguration) {
+    private void shutdown() {
         synchronized(startedLock) {
             if(started) {
                 // Stop per-resource monitoring threads
                 if(resources!=null) {
-                    for(Resource resource : resources.values()) resource.getDnsMonitor().stop(isReloadingConfiguration);
+                    for(Resource resource : resources.values()) resource.getDnsMonitor().stop();
                     resources = null;
                 }
 

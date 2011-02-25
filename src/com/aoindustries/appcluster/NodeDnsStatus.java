@@ -23,16 +23,21 @@
 package com.aoindustries.appcluster;
 
 /**
- * Is notified when the DNS status of a resource changes.
- *
- * TODO: Alert administrators on certain statuses
+ * Each node has a specific status as a result of its configuration
+ * and DNS responses.
  *
  * @author  AO Industries, Inc.
  */
-public interface DnsListener {
+public enum NodeDnsStatus {
+    STOPPED,
+    DISABLED,
+    UNKNOWN,
+    INCONSISTENT,
+    SLAVE,
+    MASTER;
 
-    /**
-     * Called whenever a new result is available.
-     */
-    void onDnsResult(DnsResult oldResult, DnsResult newResult);
+    @Override
+    public String toString() {
+        return ApplicationResources.accessor.getMessage("NodeDnsStatus." + name());
+    }
 }
