@@ -58,7 +58,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         for(RN resourceNode : resourceNodes.values()) resourceNode.init(rThis);
         this.cluster = cluster;
         this.id = resourceConfiguration.getId();
-        this.enabled = resourceConfiguration.isEnabled();
+        this.enabled = cluster.isEnabled() && resourceConfiguration.isEnabled();
         this.display = resourceConfiguration.getDisplay();
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
         this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
@@ -105,7 +105,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     }
 
     /**
-     * Determines if this resource is enabled.
+     * Determines if both the cluster and this resource are enabled.
      */
     public boolean isEnabled() {
         return enabled;
@@ -157,5 +157,24 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
 
     public Map<Node,RN> getResourceNodes() {
         return resourceNodes;
+    }
+
+    /**
+     * Gets the status of this resource based on the last monitoring results.
+     */
+    public ResourceStatus getStatus() {
+        if(!cluster.isRunning()) return ResourceStatus.STOPPED;
+        if(!isEnabled()) return ResourceStatus.DISABLED;
+        boolean hasUnknown = false;
+        boolean hasWarning = false;
+        boolean hasError = false;
+        boolean hasInconsistent = false;
+        ResourceDnsResult resourceDnsResult = getDnsMonitor().getLastResult();
+        // TODO
+        if(hasInconsistent) return ResourceStatus.INCONSISTENT;
+        if(hasError) return ResourceStatus.ERROR;
+        if(hasWarning) return ResourceStatus.WARNING;
+        if(hasUnknown) return ResourceStatus.UNKNOWN;
+        return ResourceStatus.HEALTHY;
     }
 }

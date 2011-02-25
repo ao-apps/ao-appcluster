@@ -46,7 +46,7 @@ public class Node {
     Node(AppCluster cluster, AppClusterConfiguration.NodeConfiguration nodeConfiguration) {
         this.cluster = cluster;
         this.id = nodeConfiguration.getId();
-        this.enabled = nodeConfiguration.isEnabled();
+        this.enabled = cluster.isEnabled() && nodeConfiguration.isEnabled();
         this.display = nodeConfiguration.getDisplay();
         this.hostname = nodeConfiguration.getHostname();
         this.nameservers = Collections.unmodifiableSet(new LinkedHashSet<Name>(nodeConfiguration.getNameservers()));
@@ -76,7 +76,7 @@ public class Node {
     }
 
     /**
-     * Determines if this node is enabled.
+     * Determines if both the cluster and this node are enabled.
      */
     public boolean isEnabled() {
         return enabled;

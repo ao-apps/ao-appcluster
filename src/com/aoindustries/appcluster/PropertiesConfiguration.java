@@ -132,7 +132,13 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
                                             }
                                             if(notifyListeners) {
                                                 synchronized(listeners) {
-                                                    for(ConfigurationListener listener : listeners) listener.onConfigurationChanged();
+                                                    for(ConfigurationListener listener : listeners) {
+                                                        try {
+                                                            listener.onConfigurationChanged();
+                                                        } catch(Exception exc) {
+                                                            logger.log(Level.SEVERE, null, exc);
+                                                        }
+                                                    }
                                                 }
                                             }
                                         } catch(Exception exc) {
