@@ -333,37 +333,31 @@ public class ResourceDnsMonitor {
                                 final Set<Name> masterRecords = resource.getMasterRecords();
                                 final int masterRecordsTtl = resource.getMasterRecordTtl();
                                 final boolean allowMultiMaster = resource.getAllowMultiMaster();
+                                final Name[] allNameservers = resource.getEnabledNameservers().toArray(new Name[resource.getEnabledNameservers().size()]);
 
                                 final ResourceNode<?,?>[] resourceNodes = resource.getResourceNodes().values().toArray(new ResourceNode<?,?>[resource.getResourceNodes().size()]);
 
                                 // Find all the unique hostnames and nameservers that will be queried
-                                final Name[] allNameservers;
                                 final Name[] allHostnames;
                                 {
-                                    final Set<Name> allNameserversSet = new HashSet<Name>();
                                     final Set<Name> allHostnamesSet = new HashSet<Name>();
                                     allHostnamesSet.addAll(masterRecords);
                                     for(ResourceNode<?,?> resourceNode : resourceNodes) {
-                                        Node node = resourceNode.getNode();
-                                        if(node.isEnabled()) {
-                                            allNameserversSet.addAll(node.getNameservers());
-                                            allHostnamesSet.addAll(resourceNode.getNodeRecords());
-                                        }
+                                        if(resourceNode.getNode().isEnabled()) allHostnamesSet.addAll(resourceNode.getNodeRecords());
                                     }
-                                    allNameservers = allNameserversSet.toArray(new Name[allNameserversSet.size()]);
                                     allHostnames = allHostnamesSet.toArray(new Name[allHostnamesSet.size()]);
                                 }
 
                                 // These objects are reused within the loop
                                 final List<String> newWarnings = Collections.synchronizedList(new ArrayList<String>());
                                 final List<String> newErrors = Collections.synchronizedList(new ArrayList<String>());
-                                final Map<Name,Map<Name,Future<String[]>>> futures = new HashMap<Name,Map<Name,Future<String[]>>>(allNameservers.length*4/3+1);
+                                final Map<Name,Map<Name,Future<DnsLookupResult>>> futures = new HashMap<Name,Map<Name,Future<DnsLookupResult>>>(allNameservers.length*4/3+1);
                                 for(Name nameserver : allNameservers) {
-                                    Map<Name,Future<String[]>> hostnameFutures = new HashMap<Name,Future<String[]>>(allHostnames.length*4/3+1);
+                                    Map<Name,Future<DnsLookupResult>> hostnameFutures = new HashMap<Name,Future<DnsLookupResult>>(allHostnames.length*4/3+1);
                                     for(Name hostname : allHostnames) hostnameFutures.put(hostname, null);
                                     futures.put(nameserver, hostnameFutures);
                                 }
-                                final Map<Name,String[]> aRecords = new HashMap<Name,String[]>(allHostnames.length*4/3+1);
+                                final Map<Name,DnsLookupResult> aRecords = new HashMap<Name,DnsLookupResult>(allHostnames.length*4/3+1);
                                 for(Name hostname: allHostnames) aRecords.put(hostname, null);
 
                                 while(true) {
@@ -377,14 +371,14 @@ public class ResourceDnsMonitor {
                                         // Add any errors or warnings to the lists and return null if unable to get A records.
                                         for(final Name nameserver : allNameservers) {
                                             final SimpleResolver resolver = getSimpleResolver(nameserver);
-                                            Map<Name,Future<String[]>> hostnameFutures = futures.get(nameserver);
+                                            Map<Name,Future<DnsLookupResult>> hostnameFutures = futures.get(nameserver);
                                             for(final Name hostname : allHostnames) {
                                                 hostnameFutures.put(
                                                     hostname,
                                                     executorService.submit(
-                                                        new Callable<String[]>() {
+                                                        new Callable<DnsLookupResult>() {
                                                             @Override
-                                                            public String[] call() {
+                                                            public DnsLookupResult call() {
                                                                 Lookup lookup = new Lookup(hostname, Type.A);
                                                                 lookup.setCache(null);
                                                                 lookup.setResolver(resolver);
@@ -394,7 +388,7 @@ public class ResourceDnsMonitor {
                                                                 switch(result) {
                                                                     case Lookup.SUCCESSFUL :
                                                                         if(records==null || records.length==0) {
-                                                                            newErrors.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.HOST_NOT_FOUND", nameserver, hostname));
+                                                                            newErrors.add(ApplicationResources.accessor.getMessage("DnsLookupStatus.HOST_NOT_FOUND"));
                                                                             return null;
                                                                         }
                                                                         String[] addresses = new String[records.length];
@@ -411,16 +405,16 @@ public class ResourceDnsMonitor {
                                                                         if(addresses.length>1) Arrays.sort(addresses);
                                                                         return addresses;
                                                                     case Lookup.UNRECOVERABLE :
-                                                                        newErrors.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.UNRECOVERABLE", nameserver, hostname));
+                                                                        newErrors.add(ApplicationResources.accessor.getMessage("DnsLookupStatus.UNRECOVERABLE"));
                                                                         return null;
                                                                     case Lookup.TRY_AGAIN :
-                                                                        newWarnings.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.TRY_AGAIN", nameserver, hostname));
+                                                                        newWarnings.add(ApplicationResources.accessor.getMessage("DnsLookupStatus.TRY_AGAIN"));
                                                                         return null;
                                                                     case Lookup.HOST_NOT_FOUND :
-                                                                        newErrors.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.HOST_NOT_FOUND", nameserver, hostname));
+                                                                        newErrors.add(ApplicationResources.accessor.getMessage("DnsLookupStatus.HOST_NOT_FOUND"));
                                                                         return null;
                                                                     case Lookup.TYPE_NOT_FOUND :
-                                                                        newErrors.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.TYPE_NOT_FOUND", nameserver, hostname));
+                                                                        newErrors.add(ApplicationResources.accessor.getMessage("DnsLookupStatus.TYPE_NOT_FOUND"));
                                                                         return null;
                                                                     default :
                                                                         newErrors.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedResultCode", nameserver, hostname, result));
@@ -438,7 +432,7 @@ public class ResourceDnsMonitor {
                                         NodeDnsStatus newDnsStatus = null;
                                         String newDnsStatusMessage = null;
                                         for(Name nameserver : allNameservers) {
-                                            Map<Name,Future<String[]>> hostnameFutures = futures.get(nameserver);
+                                            Map<Name,Future<DnsLookupResult>> hostnameFutures = futures.get(nameserver);
                                             for(Name hostname : allHostnames) {
                                                 try {
                                                     String[] records = hostnameFutures.get(hostname).get();
@@ -612,7 +606,7 @@ public class ResourceDnsMonitor {
                                         newWarnings.clear();
                                         newErrors.clear();
                                         for(Name nameserver : allNameservers) {
-                                            Map<Name,Future<String[]>> hostnameFutures = futures.get(nameserver);
+                                            Map<Name,Future<DnsLookupResult>> hostnameFutures = futures.get(nameserver);
                                             for(Name hostname : allHostnames) hostnameFutures.put(hostname, null); // Clear by setting to null to avoid recreating Entry objects
                                         }
                                         for(Name hostname: allHostnames) aRecords.put(hostname, null);

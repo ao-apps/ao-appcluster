@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.xbill.DNS.Name;
 
 /**
  * Contains the results of one DNS monitoring pass.
@@ -39,11 +40,9 @@ import java.util.TreeSet;
  */
 public class ResourceDnsResult {
 
-    // private static final Logger logger = Logger.getLogger(ResourceDnsResult.class.getName());
+    static final Comparator<Object> defaultLocaleCollator = Collator.getInstance();
 
-    private static final Comparator<Object> collator = Collator.getInstance();
-
-    private static SortedSet<String> getUnmodifiableSortedSet(Collection<String> collection) {
+    static SortedSet<String> getUnmodifiableSortedSet(Collection<String> collection, Comparator<Object> collator) {
         if(collection==null || collection.isEmpty()) return com.aoindustries.util.Collections.emptySortedSet();
         if(collection.size()==1) return com.aoindustries.util.Collections.singletonSortedSet(collection.iterator().next());
         SortedSet<String> sortedSet = new TreeSet<String>(collator);
@@ -51,13 +50,44 @@ public class ResourceDnsResult {
         return Collections.unmodifiableSortedSet(sortedSet);
     }
 
+    static SortedSet<String> getUnmodifiableSortedSet(String[] array, Comparator<Object> collator) {
+        if(array==null || array.length==0) return com.aoindustries.util.Collections.emptySortedSet();
+        if(array.length==1) return com.aoindustries.util.Collections.singletonSortedSet(array[0]);
+        SortedSet<String> sortedSet = new TreeSet<String>(collator);
+        for(String elem : array) sortedSet.add(elem);
+        return Collections.unmodifiableSortedSet(sortedSet);
+    }
+
+    /**
+     * Makes sure that every dnsRecord has a lookup for every nameserver.
+     * Also orders the maps by the dnsRecords and then nameservers.
+     * Returns a fully unmodifiable map.
+     *
+     * @exception  IllegalArgumentException  if any dnsRecord->nameserver result is missing.
+     */
+    static Map<Name,Map<Name,DnsLookupResult>> getUnmodifiableDnsLookupResults(Map<Name,Map<Name,DnsLookupResult>> dnsRecordLookups, Set<Name> dnsRecords, Set<Name> nameservers) throws IllegalArgumentException {
+        Map<Name,Map<Name,DnsLookupResult>> newDnsRecordLookups = new LinkedHashMap<Name,Map<Name,DnsLookupResult>>(dnsRecords.size()*4/3+1);
+        for(Name dnsRecord : dnsRecords) {
+            Map<Name,DnsLookupResult> dnsLookupResults = dnsRecordLookups.get(dnsRecord);
+            if(dnsLookupResults==null) throw new IllegalArgumentException("Missing DNS record " + dnsRecord);
+            Map<Name,DnsLookupResult> newDnsLookupResults = new LinkedHashMap<Name,DnsLookupResult>(nameservers.size()*4/3+1);
+            for(Name nameserver : nameservers) {
+                DnsLookupResult dnsLookupResult = dnsLookupResults.get(nameserver);
+                if(dnsLookupResult==null) throw new IllegalArgumentException("Missing DNS lookup result " + dnsLookupResult);
+                newDnsLookupResults.put(nameserver, dnsLookupResult);
+            }
+            newDnsRecordLookups.put(dnsRecord, Collections.unmodifiableMap(newDnsLookupResults));
+        }
+        return Collections.unmodifiableMap(newDnsRecordLookups);
+    }
+
     private final Resource<?,?> resource;
     private final long startTime;
     private final long endTime;
+    private final Map<Name,Map<Name,DnsLookupResult>> masterRecordLookups;
     private final MasterDnsStatus masterStatus;
     private final SortedSet<String> masterStatusMessages;
-    private final Map<Node,NodeDnsStatus> nodeStatuses;
-    private final Map<Node,SortedSet<String>> nodeStatusMessages;
+    private final Map<Node,ResourceNodeDnsResult> nodeResults;
     private final SortedSet<String> warnings;
     private final SortedSet<String> errors;
 
@@ -65,31 +95,29 @@ public class ResourceDnsResult {
         Resource<?,?> resource,
         long startTime,
         long endTime,
+        Map<Name,Map<Name,DnsLookupResult>> masterRecordLookups,
         MasterDnsStatus masterStatus,
         Collection<String> masterStatusMessages,
-        Map<Node,NodeDnsStatus> nodeStatuses,
-        Map<Node,? extends Collection<String>> nodeStatusMessages,
+        Map<Node,ResourceNodeDnsResult> nodeResults,
         Collection<String> warnings,
         Collection<String> errors
     ) {
         this.resource = resource;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.masterRecordLookups = getUnmodifiableDnsLookupResults(masterRecordLookups, resource.getMasterRecords(), resource.getEnabledNameservers());
         this.masterStatus = masterStatus;
-        this.masterStatusMessages = getUnmodifiableSortedSet(masterStatusMessages);
+        this.masterStatusMessages = getUnmodifiableSortedSet(masterStatusMessages, defaultLocaleCollator);
         Set<Node> nodes = resource.getResourceNodes().keySet();
-        Map<Node,NodeDnsStatus> newNodeStatuses = new LinkedHashMap<Node,NodeDnsStatus>(nodes.size()*4/3+1);
-        Map<Node,SortedSet<String>> newNodeStatusMessages = new LinkedHashMap<Node,SortedSet<String>>(nodes.size()*4/3+1);
+        Map<Node,ResourceNodeDnsResult> newNodeResults = new LinkedHashMap<Node,ResourceNodeDnsResult>(nodes.size()*4/3+1);
         for(Node node : nodes) {
-            NodeDnsStatus nodeStatus = nodeStatuses.get(node);
-            if(nodeStatus==null) throw new IllegalArgumentException("Missing node " + node);
-            newNodeStatuses.put(node, nodeStatus);
-            newNodeStatusMessages.put(node, getUnmodifiableSortedSet(nodeStatusMessages==null ? null : nodeStatusMessages.get(node)));
+            ResourceNodeDnsResult nodeResult = nodeResults.get(node);
+            if(nodeResult==null) throw new IllegalArgumentException("Missing node " + node);
+            newNodeResults.put(node, nodeResult);
         }
-        this.nodeStatuses = Collections.unmodifiableMap(newNodeStatuses);
-        this.nodeStatusMessages = Collections.unmodifiableMap(newNodeStatusMessages);
-        this.warnings = getUnmodifiableSortedSet(warnings);
-        this.errors = getUnmodifiableSortedSet(errors);
+        this.nodeResults = Collections.unmodifiableMap(newNodeResults);
+        this.warnings = getUnmodifiableSortedSet(warnings, defaultLocaleCollator);
+        this.errors = getUnmodifiableSortedSet(errors, defaultLocaleCollator);
     }
 
     public Resource<?,?> getResource() {
@@ -105,14 +133,22 @@ public class ResourceDnsResult {
     }
 
     /**
-     * Gets the current status of the master records.
+     * Gets the mapping of all masterRecord DNS lookups in the form masterRecord->enabledNameserver->result.
+     * It contains an entry for every masterRecord querying every enabled nameserver.
+     */
+    public Map<Name,Map<Name,DnsLookupResult>> getMasterRecordLookups() {
+        return masterRecordLookups;
+    }
+
+    /**
+     * Gets the status of the master records.
      */
     public MasterDnsStatus getMasterStatus() {
         return masterStatus;
     }
 
     /**
-     * Gets the current master status messages.
+     * Gets the master status messages.
      * If no message, returns an empty set.
      */
     public SortedSet<String> getMasterStatusMessages() {
@@ -120,19 +156,11 @@ public class ResourceDnsResult {
     }
 
     /**
-     * Gets the current status of each node.
+     * Gets the result of each node.
      * This has an entry for every node in this resource.
      */
-    public Map<Node,NodeDnsStatus> getNodeStatuses() {
-        return nodeStatuses;
-    }
-
-    /**
-     * Gets the current DNS status message on a per-node basis.
-     * This has an entry for every node in this resource, even if it is an empty set of messages.
-     */
-    public Map<Node,SortedSet<String>> getNodeStatusMessages() {
-        return nodeStatusMessages;
+    public Map<Node,ResourceNodeDnsResult> getNodeResults() {
+        return nodeResults;
     }
 
     /**

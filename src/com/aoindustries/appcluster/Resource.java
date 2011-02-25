@@ -47,6 +47,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private final boolean allowMultiMaster;
     private final Set<Name> masterRecords;
     private final int masterRecordsTtl;
+    private final Set<Name> enabledNameservers;
 
     private final ResourceDnsMonitor dnsMonitor;
 
@@ -58,6 +59,13 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
         this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
         this.masterRecordsTtl = resourceConfiguration.getMasterRecordsTtl();
+        final Set<Name> newEnabledNameservers = new LinkedHashSet<Name>();
+        for(Map.Entry<Node,RN> entry : getResourceNodes().entrySet()) {
+            Node node = entry.getKey();
+            if(node.isEnabled()) newEnabledNameservers.addAll(node.getNameservers());
+        }
+        this.enabledNameservers = Collections.unmodifiableSet(newEnabledNameservers);
+
         this.dnsMonitor = new ResourceDnsMonitor(this);
     }
 
@@ -126,6 +134,13 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
      */
     public int getMasterRecordTtl() {
         return masterRecordsTtl;
+    }
+
+    /**
+     * Gets the set of all nameservers used by all enabled nodes.
+     */
+    public Set<Name> getEnabledNameservers() {
+        return enabledNameservers;
     }
 
     /**
