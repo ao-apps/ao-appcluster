@@ -168,7 +168,7 @@ public class AppCluster {
             synchronized(startedLock) {
                 if(started) {
                     try {
-                        if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.configUpdated.info", configuration.getDisplay()));
+                        if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.onConfigurationChanged.info", configuration.getDisplay()));
                     } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
                         logger.log(Level.SEVERE, null, exc);
                     }
@@ -334,7 +334,7 @@ public class AppCluster {
                     if(resourceConfiguration instanceof AppClusterConfiguration.RsyncResourceConfiguration) {
                          RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration);
                          newResources.put(resourceConfiguration.getId(), resource);
-                         resource.start();
+                         resource.getDnsMonitor().start();
                     } else {
                         throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.startUp.unexpectedType", resourceConfiguration.getId(), resourceConfiguration.getClass().getName()));
                     }
@@ -349,7 +349,7 @@ public class AppCluster {
             if(started) {
                 // Stop per-resource monitoring threads
                 if(resources!=null) {
-                    for(Resource resource : resources.values()) resource.stop(isReloadingConfiguration);
+                    for(Resource resource : resources.values()) resource.getDnsMonitor().stop(isReloadingConfiguration);
                     resources = null;
                 }
 
