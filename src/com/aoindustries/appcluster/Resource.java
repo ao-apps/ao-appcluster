@@ -42,7 +42,6 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private final String id;
     private final boolean enabled;
     private final String display;
-    private final boolean allowMultiMaster;
     private final Set<Name> masterRecords;
     private final int masterRecordsTtl;
     private final Set<RN> resourceNodes;
@@ -55,7 +54,6 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         this.id = resourceConfiguration.getId();
         this.enabled = cluster.isEnabled() && resourceConfiguration.isEnabled();
         this.display = resourceConfiguration.getDisplay();
-        this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
         this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
         this.masterRecordsTtl = resourceConfiguration.getMasterRecordsTtl();
         @SuppressWarnings("unchecked")
@@ -123,9 +121,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     /**
      * Gets if this resource allows multiple master servers.
      */
-    public boolean getAllowMultiMaster() {
-        return allowMultiMaster;
-    }
+    abstract public boolean getAllowMultiMaster();
 
     /**
      * Gets the set of master records that must all by the same.

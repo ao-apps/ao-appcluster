@@ -457,15 +457,13 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         private final String id;
         private final boolean enabled;
         private final String display;
-        private final boolean allowMultiMaster;
         private final Set<Name> masterRecords;
         private final int masterRecordsTtl;
 
-        PropertiesResourceConfiguration(String id, boolean enabled, String display, boolean allowMultiMaster, Collection<Name> masterRecords, int masterRecordsTtl) {
+        PropertiesResourceConfiguration(String id, boolean enabled, String display, Collection<Name> masterRecords, int masterRecordsTtl) {
             this.id = id;
             this.enabled = enabled;
             this.display = display;
-            this.allowMultiMaster = allowMultiMaster;
             this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(masterRecords));
             this.masterRecordsTtl = masterRecordsTtl;
         }
@@ -502,11 +500,6 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         }
 
         @Override
-        public boolean getAllowMultiMaster() {
-            return allowMultiMaster;
-        }
-
-        @Override
         public Set<Name> getMasterRecords() {
             return masterRecords;
         }
@@ -522,11 +515,18 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
 
     class RsyncPropertiesResourceConfiguration extends PropertiesResourceConfiguration implements RsyncResourceConfiguration {
 
+        private final boolean allowMultiMaster;
         private final boolean delete;
 
-        RsyncPropertiesResourceConfiguration(String id, boolean enabled, String display, boolean allowMultiMaster, Collection<Name> masterRecords, int masterRecordsTtl, boolean delete) {
-            super(id, enabled, display, allowMultiMaster, masterRecords, masterRecordsTtl);
+        RsyncPropertiesResourceConfiguration(String id, boolean enabled, String display, Collection<Name> masterRecords, int masterRecordsTtl, boolean allowMultiMaster, boolean delete) {
+            super(id, enabled, display, masterRecords, masterRecordsTtl);
+            this.allowMultiMaster = allowMultiMaster;
             this.delete = delete;
+        }
+
+        @Override
+        public boolean getAllowMultiMaster() {
+            return allowMultiMaster;
         }
 
         @Override
@@ -572,10 +572,10 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
                             id,
                             getBoolean("appcluster.resource."+id+".enabled"),
                             getString("appcluster.resource."+id+".display"),
-                            getBoolean("appcluster.resource."+id+".allowMultiMaster"),
                             getUniqueNames("appcluster.resource."+id+".masterRecords"),
                             getInt("appcluster.resource."+id+".masterRecordsTtl"),
-                            getBoolean("appcluster.resource."+id+".delete")
+                            getBoolean("appcluster.resource."+id+".rsync.allowMultiMaster"),
+                            getBoolean("appcluster.resource."+id+".rsync.delete")
                         )
                     )
                 ) throw new AssertionError();

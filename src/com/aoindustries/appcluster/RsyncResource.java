@@ -32,11 +32,18 @@ import java.util.Collection;
  */
 public class RsyncResource extends Resource<RsyncResource,RsyncResourceNode> {
 
+    private final boolean allowMultiMaster;
     private final boolean delete;
 
     RsyncResource(AppCluster cluster, AppClusterConfiguration.RsyncResourceConfiguration resourceConfiguration, Collection<RsyncResourceNode> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
+        this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
         this.delete = resourceConfiguration.isDelete();
+    }
+
+    @Override
+    public boolean getAllowMultiMaster() {
+        return allowMultiMaster;
     }
 
     public boolean isDelete() {

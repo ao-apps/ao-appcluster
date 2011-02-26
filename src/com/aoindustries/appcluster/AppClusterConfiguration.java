@@ -210,11 +210,6 @@ public interface AppClusterConfiguration {
         String getDisplay();
 
         /**
-         * @see Resource#getAllowMultiMaster()
-         */
-        boolean getAllowMultiMaster();
-
-        /**
          * @see Resource#getMasterRecords()
          */
         Set<Name> getMasterRecords();
@@ -231,6 +226,11 @@ public interface AppClusterConfiguration {
     }
 
     public static interface RsyncResourceConfiguration extends ResourceConfiguration {
+
+        /**
+         * @see RsyncResource#getAllowMultiMaster()
+         */
+        boolean getAllowMultiMaster();
 
         /**
          * Gets if files will be deleted during the rsync.
