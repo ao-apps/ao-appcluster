@@ -23,7 +23,7 @@
 package com.aoindustries.appcluster;
 
 import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurationException;
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * Synchronizes resources using rsync.
@@ -32,11 +32,9 @@ import java.util.Map;
  */
 public class RsyncResource extends Resource<RsyncResource,RsyncResourceNode> {
 
-    //private static final Logger logger = Logger.getLogger(RsyncResource.class.getName());
-
     private final boolean delete;
 
-    RsyncResource(AppCluster cluster, AppClusterConfiguration.RsyncResourceConfiguration resourceConfiguration, Map<Node,RsyncResourceNode> resourceNodes) throws AppClusterConfigurationException {
+    RsyncResource(AppCluster cluster, AppClusterConfiguration.RsyncResourceConfiguration resourceConfiguration, Collection<RsyncResourceNode> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
         this.delete = resourceConfiguration.isDelete();
     }

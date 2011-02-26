@@ -104,9 +104,10 @@ public class ResourceDnsResult {
         this.masterRecordLookups = masterRecordLookups==null ? null : getUnmodifiableDnsLookupResults(masterRecordLookups, resource.getMasterRecords(), resource.getEnabledNameservers());
         this.masterStatus = masterStatus;
         this.masterStatusMessages = getUnmodifiableSortedSet(masterStatusMessages, defaultLocaleCollator);
-        Set<Node> nodes = resource.getResourceNodes().keySet();
-        Map<Node,ResourceNodeDnsResult> newNodeResults = new LinkedHashMap<Node,ResourceNodeDnsResult>(nodes.size()*4/3+1);
-        for(Node node : nodes) {
+        Set<? extends ResourceNode<?,?>> resourceNodes = resource.getResourceNodes();
+        Map<Node,ResourceNodeDnsResult> newNodeResults = new LinkedHashMap<Node,ResourceNodeDnsResult>(resourceNodes.size()*4/3+1);
+        for(ResourceNode<?,?> resourceNode : resourceNodes) {
+            Node node = resourceNode.getNode();
             ResourceNodeDnsResult nodeResult = nodeResults.get(node);
             if(nodeResult==null) throw new IllegalArgumentException("Missing node " + node);
             newNodeResults.put(node, nodeResult);

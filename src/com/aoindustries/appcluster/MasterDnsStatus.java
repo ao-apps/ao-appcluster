@@ -34,6 +34,7 @@ public enum MasterDnsStatus {
     STOPPED(ResourceStatus.STOPPED),
     STARTING(ResourceStatus.STARTING),
     CONSISTENT(ResourceStatus.HEALTHY),
+    WARNING(ResourceStatus.WARNING),
     INCONSISTENT(ResourceStatus.INCONSISTENT);
 
     private final ResourceStatus resourceStatus;

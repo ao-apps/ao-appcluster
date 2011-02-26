@@ -144,7 +144,7 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
                 }
             }
         }
-        for(ResourceNode<?,?> resourceNode : resource.getResourceNodes().values()) {
+        for(ResourceNode<?,?> resourceNode : resource.getResourceNodes()) {
             Node node = resourceNode.getNode();
             ResourceNodeDnsResult newNodeResult = newResult.getNodeResults().get(node);
             ResourceNodeDnsResult oldNodeResult = oldResult.getNodeResults().get(node);

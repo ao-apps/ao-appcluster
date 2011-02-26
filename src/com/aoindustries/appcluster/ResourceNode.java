@@ -90,4 +90,13 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
     public Set<Name> getNodeRecords() {
         return nodeRecords;
     }
+
+    /**
+     * Gets the current status of this resource node.
+     */
+    public NodeDnsStatus getNodeStatus() {
+        NodeDnsStatus status = NodeDnsStatus.UNKNOWN;
+        status = AppCluster.max(status, resource.getDnsMonitor().getLastResult().getNodeResults().get(getNode()).getNodeStatus());
+        return status;
+    }
 }

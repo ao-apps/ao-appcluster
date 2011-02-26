@@ -34,13 +34,20 @@ public enum NodeDnsStatus {
     STOPPED(ResourceStatus.STOPPED),
     STARTING(ResourceStatus.STARTING),
     SLAVE(ResourceStatus.HEALTHY),
-    MASTER(ResourceStatus.HEALTHY),
+    MASTER(ResourceStatus.HEALTHY, "font-weight:bold;"),
     INCONSISTENT(ResourceStatus.INCONSISTENT);
 
     private final ResourceStatus resourceStatus;
+    private final String cssStyle;
 
     private NodeDnsStatus(ResourceStatus resourceStatus) {
         this.resourceStatus = resourceStatus;
+        this.cssStyle = resourceStatus.getCssStyle();
+    }
+
+    private NodeDnsStatus(ResourceStatus resourceStatus, String cssStyle) {
+        this.resourceStatus = resourceStatus;
+        this.cssStyle = cssStyle;
     }
 
     @Override
@@ -53,5 +60,19 @@ public enum NodeDnsStatus {
      */
     public ResourceStatus getResourceStatus() {
         return resourceStatus;
+    }
+
+    /**
+     * JavaBeans compatibility.
+     */
+    public String getName() {
+        return name();
+    }
+
+    /**
+     * Gets the CSS style to use for this status or "" for no specific style requirement.
+     */
+    public String getCssStyle() {
+        return cssStyle;
     }
 }

@@ -22,9 +22,9 @@
  */
 package com.aoindustries.appcluster;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 import org.xbill.DNS.Name;
 
@@ -45,15 +45,12 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private final boolean allowMultiMaster;
     private final Set<Name> masterRecords;
     private final int masterRecordsTtl;
-    private final Map<Node,RN> resourceNodes;
+    private final Set<RN> resourceNodes;
     private final Set<Nameserver> enabledNameservers;
 
     private final ResourceDnsMonitor dnsMonitor;
 
-    Resource(AppCluster cluster, AppClusterConfiguration.ResourceConfiguration resourceConfiguration, Map<Node,RN> resourceNodes) {
-        @SuppressWarnings("unchecked")
-        R rThis = (R)this;
-        for(RN resourceNode : resourceNodes.values()) resourceNode.init(rThis);
+    Resource(AppCluster cluster, AppClusterConfiguration.ResourceConfiguration resourceConfiguration, Collection<RN> resourceNodes) {
         this.cluster = cluster;
         this.id = resourceConfiguration.getId();
         this.enabled = cluster.isEnabled() && resourceConfiguration.isEnabled();
@@ -61,10 +58,17 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
         this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
         this.masterRecordsTtl = resourceConfiguration.getMasterRecordsTtl();
-        this.resourceNodes = resourceNodes;
+        @SuppressWarnings("unchecked")
+        R rThis = (R)this;
+        Set<RN> newResourceNodes = new LinkedHashSet<RN>(resourceNodes.size()*4/3+1);
+        for(RN resourceNode : resourceNodes) {
+            resourceNode.init(rThis);
+            newResourceNodes.add(resourceNode);
+        }
+        this.resourceNodes = Collections.unmodifiableSet(newResourceNodes);
         final Set<Nameserver> newEnabledNameservers = new LinkedHashSet<Nameserver>();
-        for(Map.Entry<Node,RN> entry : resourceNodes.entrySet()) {
-            Node node = entry.getKey();
+        for(RN resourceNode : resourceNodes) {
+            Node node = resourceNode.getNode();
             if(node.isEnabled()) newEnabledNameservers.addAll(node.getNameservers());
         }
         this.enabledNameservers = Collections.unmodifiableSet(newEnabledNameservers);
@@ -153,14 +157,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         return dnsMonitor;
     }
 
-    /**
-     * Gets the set of all nodes used by this resource.
-     */
-    public Set<Node> getNodes() {
-        return resourceNodes.keySet();
-    }
-
-    public Map<Node,RN> getResourceNodes() {
+    public Set<RN> getResourceNodes() {
         return resourceNodes;
     }
 

@@ -52,7 +52,7 @@ public class DnsLookupResult {
         this.name = name;
         this.status = status;
         this.addresses = ResourceDnsResult.getUnmodifiableSortedSet(addresses, null); // Sorts lexically for speed since not human readable
-        assert status==DnsLookupStatus.SUCCESSFUL ? !this.addresses.isEmpty() : this.addresses.isEmpty();
+        assert status==DnsLookupStatus.SUCCESSFUL || status==DnsLookupStatus.WARNING ? !this.addresses.isEmpty() : this.addresses.isEmpty();
         this.warnings = ResourceDnsResult.getUnmodifiableSortedSet(warnings, ResourceDnsResult.defaultLocaleCollator);
         this.errors = ResourceDnsResult.getUnmodifiableSortedSet(errors, ResourceDnsResult.defaultLocaleCollator);
     }

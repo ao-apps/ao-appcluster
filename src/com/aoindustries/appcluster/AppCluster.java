@@ -27,13 +27,12 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -462,15 +461,15 @@ public class AppCluster {
                 for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
                     if(resourceConfiguration instanceof AppClusterConfiguration.RsyncResourceConfiguration) {
                         Set<? extends AppClusterConfiguration.ResourceNodeConfiguration> nodeConfigs = resourceConfiguration.getResourceNodeConfigurations();
-                        Map<Node,RsyncResourceNode> newResourceNodes = new LinkedHashMap<Node,RsyncResourceNode>(nodeConfigs.size()*4/3+1);
+                        Collection<RsyncResourceNode> newResourceNodes = new ArrayList<RsyncResourceNode>(nodeConfigs.size());
                         for(AppClusterConfiguration.ResourceNodeConfiguration nodeConfig : nodeConfigs) {
                             AppClusterConfiguration.RsyncResourceNodeConfiguration resyncConfig = (AppClusterConfiguration.RsyncResourceNodeConfiguration)nodeConfig;
                             String nodeId = resyncConfig.getNodeId();
                             Node node = getNode(nodeId);
                             if(node==null) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResource.init.nodeNotFound", resourceConfiguration.getId(), nodeId));
-                            newResourceNodes.put(node, new RsyncResourceNode(node, resyncConfig));
+                            newResourceNodes.add(new RsyncResourceNode(node, resyncConfig));
                         }
-                        RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration, Collections.unmodifiableMap(newResourceNodes));
+                        RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration, newResourceNodes);
                         newResources.add(resource);
                         resource.getDnsMonitor().start();
                     } else {
