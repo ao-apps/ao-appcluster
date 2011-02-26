@@ -30,14 +30,29 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public enum DnsLookupStatus {
-    SUCCESSFUL,
-    UNRECOVERABLE,
-    TRY_AGAIN,
-    HOST_NOT_FOUND,
-    TYPE_NOT_FOUND;
+    SUCCESSFUL(ResourceStatus.HEALTHY),
+    WARNING(ResourceStatus.WARNING),
+    TRY_AGAIN(ResourceStatus.WARNING),
+    HOST_NOT_FOUND(ResourceStatus.ERROR),
+    TYPE_NOT_FOUND(ResourceStatus.ERROR),
+    UNRECOVERABLE(ResourceStatus.ERROR),
+    ERROR(ResourceStatus.ERROR);
+
+    private final ResourceStatus resourceStatus;
+
+    private DnsLookupStatus(ResourceStatus resourceStatus) {
+        this.resourceStatus = resourceStatus;
+    }
 
     @Override
     public String toString() {
         return ApplicationResources.accessor.getMessage("DnsLookupStatus." + name());
+    }
+
+    /**
+     * Gets the resource status that this DNS lookup status will cause.
+     */
+    public ResourceStatus getResourceStatus() {
+        return resourceStatus;
     }
 }

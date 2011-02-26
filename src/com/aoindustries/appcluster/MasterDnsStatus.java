@@ -29,14 +29,28 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public enum MasterDnsStatus {
-    STOPPED,
-    DISABLED,
-    UNKNOWN,
-    INCONSISTENT,
-    CONSISTENT;
+    UNKNOWN(ResourceStatus.UNKNOWN),
+    DISABLED(ResourceStatus.DISABLED),
+    STOPPED(ResourceStatus.STOPPED),
+    STARTING(ResourceStatus.STARTING),
+    CONSISTENT(ResourceStatus.HEALTHY),
+    INCONSISTENT(ResourceStatus.INCONSISTENT);
+
+    private final ResourceStatus resourceStatus;
+
+    private MasterDnsStatus(ResourceStatus resourceStatus) {
+        this.resourceStatus = resourceStatus;
+    }
 
     @Override
     public String toString() {
         return ApplicationResources.accessor.getMessage("MasterDnsStatus." + name());
+    }
+
+    /**
+     * Gets the resource status that this master DNS status will cause.
+     */
+    public ResourceStatus getResourceStatus() {
+        return resourceStatus;
     }
 }

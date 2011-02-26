@@ -41,6 +41,11 @@ public class PropertiesClusterLogger implements AppClusterLogger {
     }
 
     @Override
+    public String toString() {
+        return propertiesFile.getPath();
+    }
+
+    @Override
     public void start() {
         // Nothing to do
     }

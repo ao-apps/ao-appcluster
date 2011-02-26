@@ -38,8 +38,6 @@ import org.xbill.DNS.Name;
  */
 abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> {
 
-    // private static final Logger logger = Logger.getLogger(Resource.class.getName());
-
     private final AppCluster cluster;
     private final String id;
     private final boolean enabled;
@@ -48,7 +46,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private final Set<Name> masterRecords;
     private final int masterRecordsTtl;
     private final Map<Node,RN> resourceNodes;
-    private final Set<Name> enabledNameservers;
+    private final Set<Nameserver> enabledNameservers;
 
     private final ResourceDnsMonitor dnsMonitor;
 
@@ -64,7 +62,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
         this.masterRecordsTtl = resourceConfiguration.getMasterRecordsTtl();
         this.resourceNodes = resourceNodes;
-        final Set<Name> newEnabledNameservers = new LinkedHashSet<Name>();
+        final Set<Nameserver> newEnabledNameservers = new LinkedHashSet<Nameserver>();
         for(Map.Entry<Node,RN> entry : resourceNodes.entrySet()) {
             Node node = entry.getKey();
             if(node.isEnabled()) newEnabledNameservers.addAll(node.getNameservers());
@@ -137,14 +135,14 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     /**
      * Gets the expected TTL value for the master record.
      */
-    public int getMasterRecordTtl() {
+    public int getMasterRecordsTtl() {
         return masterRecordsTtl;
     }
 
     /**
      * Gets the set of all nameservers used by all enabled nodes.
      */
-    public Set<Name> getEnabledNameservers() {
+    public Set<Nameserver> getEnabledNameservers() {
         return enabledNameservers;
     }
 
@@ -155,26 +153,24 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         return dnsMonitor;
     }
 
+    /**
+     * Gets the set of all nodes used by this resource.
+     */
+    public Set<Node> getNodes() {
+        return resourceNodes.keySet();
+    }
+
     public Map<Node,RN> getResourceNodes() {
         return resourceNodes;
     }
 
     /**
-     * Gets the status of this resource based on the last monitoring results.
+     * Gets the status of this resource based on disabled and the last monitoring results.
      */
     public ResourceStatus getStatus() {
-        if(!cluster.isRunning()) return ResourceStatus.STOPPED;
-        if(!isEnabled()) return ResourceStatus.DISABLED;
-        boolean hasUnknown = false;
-        boolean hasWarning = false;
-        boolean hasError = false;
-        boolean hasInconsistent = false;
-        ResourceDnsResult resourceDnsResult = getDnsMonitor().getLastResult();
-        // TODO
-        if(hasInconsistent) return ResourceStatus.INCONSISTENT;
-        if(hasError) return ResourceStatus.ERROR;
-        if(hasWarning) return ResourceStatus.WARNING;
-        if(hasUnknown) return ResourceStatus.UNKNOWN;
-        return ResourceStatus.HEALTHY;
+        ResourceStatus status = ResourceStatus.UNKNOWN;
+        if(!isEnabled()) status = AppCluster.max(status, ResourceStatus.DISABLED);
+        status = AppCluster.max(status, getDnsMonitor().getLastResult().getResourceStatus());
+        return status;
     }
 }

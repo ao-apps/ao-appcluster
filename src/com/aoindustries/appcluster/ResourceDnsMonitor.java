@@ -73,8 +73,8 @@ public class ResourceDnsMonitor {
     /**
      * Only one resolver will be created for each unique nameserver (case-insensitive on unique)
      */
-    private static final ConcurrentMap<Name,SimpleResolver> resolvers = new ConcurrentHashMap<Name,SimpleResolver>();
-    private static SimpleResolver getSimpleResolver(Name hostname) throws UnknownHostException {
+    private static final ConcurrentMap<Nameserver,SimpleResolver> resolvers = new ConcurrentHashMap<Nameserver,SimpleResolver>();
+    private static SimpleResolver getSimpleResolver(Nameserver hostname) throws UnknownHostException {
         SimpleResolver resolver = resolvers.get(hostname);
         if(resolver==null) {
             resolver = new SimpleResolver(hostname.toString());
@@ -88,7 +88,7 @@ public class ResourceDnsMonitor {
     /**
      * Gets a mapping for all nodes with the same status.
      */
-    private static Map<Node,ResourceNodeDnsResult> getNodeResults(Resource<?,?> resource, Map<Name,Map<Name,DnsLookupResult>> nodeRecordLookups, NodeDnsStatus nodeStatus, Collection<String> nodeStatusMessages) {
+    private static Map<Node,ResourceNodeDnsResult> getNodeResults(Resource<?,?> resource, Map<Name,Map<Nameserver,DnsLookupResult>> nodeRecordLookups, NodeDnsStatus nodeStatus, Collection<String> nodeStatusMessages) {
         Collection<? extends ResourceNode> resourceNodes = resource.getResourceNodes().values();
         Map<Node,ResourceNodeDnsResult> nodeResults = new HashMap<Node,ResourceNodeDnsResult>(resourceNodes.size()*4/3+1);
         for(ResourceNode resourceNode : resourceNodes) {
@@ -198,7 +198,7 @@ public class ResourceDnsMonitor {
                         if(node.isEnabled()) {
                             nodeResults.put(
                                 node,
-                                new ResourceNodeDnsResult(resourceNode, null, NodeDnsStatus.UNKNOWN, unknownMessage)
+                                new ResourceNodeDnsResult(resourceNode, null, NodeDnsStatus.STARTING, unknownMessage)
                             );
                         } else {
                             nodeResults.put(
@@ -213,7 +213,7 @@ public class ResourceDnsMonitor {
                             currentTime,
                             currentTime,
                             null,
-                            MasterDnsStatus.UNKNOWN,
+                            MasterDnsStatus.STARTING,
                             unknownMessage,
                             nodeResults
                         )
@@ -225,9 +225,9 @@ public class ResourceDnsMonitor {
                             public void run() {
                                 final Thread currentThread = Thread.currentThread();
                                 final Set<Name> masterRecords = resource.getMasterRecords();
-                                final int masterRecordsTtl = resource.getMasterRecordTtl();
+                                final int masterRecordsTtl = resource.getMasterRecordsTtl();
                                 final boolean allowMultiMaster = resource.getAllowMultiMaster();
-                                final Name[] enabledNameservers = resource.getEnabledNameservers().toArray(new Name[resource.getEnabledNameservers().size()]);
+                                final Nameserver[] enabledNameservers = resource.getEnabledNameservers().toArray(new Nameserver[resource.getEnabledNameservers().size()]);
 
                                 final ResourceNode<?,?>[] resourceNodes = resource.getResourceNodes().values().toArray(new ResourceNode<?,?>[resource.getResourceNodes().size()]);
 
@@ -251,11 +251,11 @@ public class ResourceDnsMonitor {
 
                                         // Query all nameservers for all involved dns entries in parallel, getting all A records
                                         // Add any errors or warnings to the lists and return null if unable to get A records.
-                                        final Map<Name,Map<Name,Future<DnsLookupResult>>> allHostnameFutures = new HashMap<Name,Map<Name,Future<DnsLookupResult>>>(allHostnames.length*4/3+1);
+                                        final Map<Name,Map<Nameserver,Future<DnsLookupResult>>> allHostnameFutures = new HashMap<Name,Map<Nameserver,Future<DnsLookupResult>>>(allHostnames.length*4/3+1);
                                         for(final Name hostname : allHostnames) {
-                                            Map<Name,Future<DnsLookupResult>> hostnameFutures = new HashMap<Name,Future<DnsLookupResult>>(enabledNameservers.length*4/3+1);
+                                            Map<Nameserver,Future<DnsLookupResult>> hostnameFutures = new HashMap<Nameserver,Future<DnsLookupResult>>(enabledNameservers.length*4/3+1);
                                             allHostnameFutures.put(hostname, hostnameFutures);
-                                            for(final Name nameserver : enabledNameservers) {
+                                            for(final Nameserver nameserver : enabledNameservers) {
                                                 hostnameFutures.put(
                                                     nameserver,
                                                     executorService.submit(
@@ -296,7 +296,7 @@ public class ResourceDnsMonitor {
                                                                             }
                                                                             return new DnsLookupResult(
                                                                                 hostname,
-                                                                                DnsLookupStatus.SUCCESSFUL,
+                                                                                warnings==null ? DnsLookupStatus.SUCCESSFUL : DnsLookupStatus.WARNING,
                                                                                 addresses,
                                                                                 warnings,
                                                                                 null
@@ -336,7 +336,7 @@ public class ResourceDnsMonitor {
                                                                         default :
                                                                             return new DnsLookupResult(
                                                                                 hostname,
-                                                                                DnsLookupStatus.UNRECOVERABLE,
+                                                                                DnsLookupStatus.ERROR,
                                                                                 null,
                                                                                 null,
                                                                                 Collections.singleton(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedResultCode", result))
@@ -345,7 +345,7 @@ public class ResourceDnsMonitor {
                                                                 } catch(Exception exc) {
                                                                     return new DnsLookupResult(
                                                                         hostname,
-                                                                        DnsLookupStatus.UNRECOVERABLE,
+                                                                        DnsLookupStatus.ERROR,
                                                                         null,
                                                                         null,
                                                                         Collections.singleton(exc.toString())
@@ -359,18 +359,18 @@ public class ResourceDnsMonitor {
                                         }
 
                                         // Get all the masterRecord results
-                                        Map<Name,Map<Name,DnsLookupResult>> masterRecordLookups = new HashMap<Name,Map<Name,DnsLookupResult>>(masterRecords.size()*4/3+1);
+                                        Map<Name,Map<Nameserver,DnsLookupResult>> masterRecordLookups = new HashMap<Name,Map<Nameserver,DnsLookupResult>>(masterRecords.size()*4/3+1);
                                         MasterDnsStatus masterStatus = MasterDnsStatus.CONSISTENT;
                                         List<String> masterStatusMessages = new ArrayList<String>();
-                                        Name firstMasterNameserver = null;
+                                        Nameserver firstMasterNameserver = null;
                                         Name firstMasterRecord = null;
                                         Set<String> firstMasterAddresses = null;
                                         for(Name masterRecord : masterRecords) {
-                                            Map<Name,DnsLookupResult> masterLookups = new HashMap<Name,DnsLookupResult>(enabledNameservers.length*4/3+1);
+                                            Map<Nameserver,DnsLookupResult> masterLookups = new HashMap<Nameserver,DnsLookupResult>(enabledNameservers.length*4/3+1);
                                             masterRecordLookups.put(masterRecord, masterLookups);
-                                            Map<Name,Future<DnsLookupResult>> masterFutures = allHostnameFutures.get(masterRecord);
+                                            Map<Nameserver,Future<DnsLookupResult>> masterFutures = allHostnameFutures.get(masterRecord);
                                             boolean foundSuccessful = false;
-                                            for(Name enabledNameserver : enabledNameservers) {
+                                            for(Nameserver enabledNameserver : enabledNameservers) {
                                                 try {
                                                     DnsLookupResult result = masterFutures.get(enabledNameserver).get();
                                                     masterLookups.put(enabledNameserver, result);
@@ -437,18 +437,18 @@ public class ResourceDnsMonitor {
                                             Node node = resourceNode.getNode();
                                             if(node.isEnabled()) {
                                                 Set<Name> nodeRecords = resourceNode.getNodeRecords();
-                                                Map<Name,Map<Name,DnsLookupResult>> nodeRecordLookups = new HashMap<Name,Map<Name,DnsLookupResult>>(nodeRecords.size()*4/3+1);
+                                                Map<Name,Map<Nameserver,DnsLookupResult>> nodeRecordLookups = new HashMap<Name,Map<Nameserver,DnsLookupResult>>(nodeRecords.size()*4/3+1);
                                                 NodeDnsStatus nodeStatus = NodeDnsStatus.SLAVE;
                                                 List<String> nodeStatusMessages = new ArrayList<String>();
-                                                Name firstNodeNameserver = null;
+                                                Nameserver firstNodeNameserver = null;
                                                 Name firstNodeRecord = null;
                                                 Set<String> firstNodeAddresses = null;
                                                 for(Name nodeRecord : resourceNode.getNodeRecords()) {
-                                                    Map<Name,DnsLookupResult> nodeLookups = new HashMap<Name,DnsLookupResult>(enabledNameservers.length*4/3+1);
+                                                    Map<Nameserver,DnsLookupResult> nodeLookups = new HashMap<Nameserver,DnsLookupResult>(enabledNameservers.length*4/3+1);
                                                     nodeRecordLookups.put(nodeRecord, nodeLookups);
-                                                    Map<Name,Future<DnsLookupResult>> nodeFutures = allHostnameFutures.get(nodeRecord);
+                                                    Map<Nameserver,Future<DnsLookupResult>> nodeFutures = allHostnameFutures.get(nodeRecord);
                                                     boolean foundSuccessful = false;
-                                                    for(Name enabledNameserver : enabledNameservers) {
+                                                    for(Nameserver enabledNameserver : enabledNameservers) {
                                                         try {
                                                             DnsLookupResult result = nodeFutures.get(enabledNameserver).get();
                                                             nodeLookups.put(enabledNameserver, result);
@@ -469,11 +469,11 @@ public class ResourceDnsMonitor {
                                                                     // Each node must have a different A record
                                                                     String address = addresses.iterator().next();
                                                                     for(ResourceNodeDnsResult previousNodeResult :  nodeResults.values()) {
-                                                                        Map<Name,Map<Name,DnsLookupResult>> previousNodeRecordLookups = previousNodeResult.getNodeRecordLookups();
+                                                                        Map<Name,Map<Nameserver,DnsLookupResult>> previousNodeRecordLookups = previousNodeResult.getNodeRecordLookups();
                                                                         if(previousNodeRecordLookups!=null) {
                                                                             boolean foundMatch = false;
                                                                             MATCH_LOOP:
-                                                                            for(Map<Name,DnsLookupResult> previousLookups : previousNodeRecordLookups.values()) {
+                                                                            for(Map<Nameserver,DnsLookupResult> previousLookups : previousNodeRecordLookups.values()) {
                                                                                 for(DnsLookupResult previousResult : previousLookups.values()) {
                                                                                     if(previousResult.getAddresses().contains(address)) {
                                                                                         foundMatch = true;
@@ -585,7 +585,7 @@ public class ResourceDnsMonitor {
 
                                         // Inconsistent if any master A record is outside the expected nodeDomains
                                         for(Name masterRecord : masterRecords) {
-                                            for(Map<Name,DnsLookupResult> masterLookups : masterRecordLookups.values()) {
+                                            for(Map<Nameserver,DnsLookupResult> masterLookups : masterRecordLookups.values()) {
                                                 for(DnsLookupResult masterResult : masterLookups.values()) {
                                                     for(String masterAddress : masterResult.getAddresses()) {
                                                         if(!allNodeAddresses.contains(masterAddress)) {

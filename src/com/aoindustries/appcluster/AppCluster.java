@@ -25,10 +25,13 @@ package com.aoindustries.appcluster;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -59,13 +62,15 @@ public class AppCluster {
      */
     private final Object startedLock = new Object();
     private boolean started = false; // Protected by startedLock
-    private boolean enabled; // Protected by startedLock
+    private Timestamp startedTime = null; // Protected by startedLock
+    private boolean enabled = false; // Protected by startedLock
     private String display; // Protected by startedLock
     private ExecutorService executorService; // Protected by startLock
     private AppClusterLogger clusterLogger; // Protected by startedLock
-    private Map<String,Node> nodes; // Protected by startedLock
+    private Set<Node> nodes = Collections.emptySet(); // Protected by startedLock
+    private Name thisHostname; // Protected by startedLock
     private Node thisNode; // Protected by startedLock
-    private Map<String,Resource> resources; // Protected by startedLock
+    private Set<Resource> resources = Collections.emptySet(); // Protected by startedLock
 
     private final List<ResourceDnsListener> dnsListeners = new ArrayList<ResourceDnsListener>();
     private ExecutorService dnsListenersExecutorService; // Protected by dnsListeners
@@ -250,6 +255,15 @@ public class AppCluster {
     }
 
     /**
+     * Gets the time this cluster was started or <code>null</code> if not running.
+     */
+    public Timestamp getStartedTime() {
+        synchronized(startedLock) {
+            return startedTime;
+        }
+    }
+
+    /**
      * Starts this cluster manager.
      *
      * @see #stop()
@@ -261,6 +275,7 @@ public class AppCluster {
                 if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.start.info", configuration.getDisplay()));
                 configuration.addConfigurationListener(configUpdated);
                 started = true;
+                startedTime = new Timestamp(System.currentTimeMillis());
                 startUp();
             }
         }
@@ -281,6 +296,7 @@ public class AppCluster {
                 }
                 shutdown();
                 started = false;
+                startedTime = null;
                 configuration.removeConfigurationListener(configUpdated);
                 configuration.stop();
             }
@@ -289,32 +305,27 @@ public class AppCluster {
 
     /**
      * If the cluster is disabled, every node and resource will also be disabled.
+     * A stopped cluster is considered disabled.
      */
-    public boolean isEnabled() throws IllegalStateException {
+    public boolean isEnabled() {
         synchronized(startedLock) {
-            if(!started) throw new IllegalStateException();
             return enabled;
         }
     }
 
     /**
-     * Gets the display name for this cluster.
+     * Gets the display name for this cluster or <code>null</code> if not started.
      */
-    public String getDisplay() throws IllegalStateException {
+    public String getDisplay() {
         synchronized(startedLock) {
-            if(display==null) throw new IllegalStateException();
             return display;
         }
     }
 
     @Override
     public String toString() {
-        try {
-            return getDisplay();
-        } catch(IllegalStateException exc) {
-            logger.log(Level.WARNING, null, exc);
-            return super.toString();
-        }
+        String str = getDisplay();
+        return str==null ? super.toString() : str;
     }
 
     /**
@@ -329,43 +340,59 @@ public class AppCluster {
     }
 
     /**
-     * Only available when started.
+     * Gets the cluster logger or <code>null</code> if not started.
      */
-    public AppClusterLogger getClusterLogger() throws IllegalStateException {
+    public AppClusterLogger getClusterLogger() {
         synchronized(startedLock) {
-            if(clusterLogger==null) throw new IllegalStateException();
             return clusterLogger;
         }
     }
 
     /**
-     * Only available when started.
+     * Gets the set of all nodes or empty set if not started.
      */
-    public Map<String,Node> getNodes() throws IllegalStateException {
+    public Set<Node> getNodes() {
         synchronized(startedLock) {
-            if(nodes==null) throw new IllegalStateException();
             return nodes;
+        }
+    }
+
+    /**
+     * Gets a node given its ID or <code>null</code> if not found.
+     */
+    public Node getNode(String id) {
+        synchronized(startedLock) {
+            for(Node node : nodes) if(node.getId().equals(id)) return node;
+            return null;
+        }
+    }
+
+    /**
+     * Gets the hostname used to determine which node this server represents
+     * or <code>null</code> if not started.
+     */
+    public Name getThisHostname() {
+        synchronized(startedLock) {
+            return thisHostname;
         }
     }
 
     /**
      * Gets the node this machine represents or <code>null</code> if this
      * machine is not one of the nodes.
-     * Only available when started.
+     * Returns <code>null</code> when not started.
      */
-    public Node getThisNode() throws IllegalStateException {
+    public Node getThisNode() {
         synchronized(startedLock) {
-            if(!started) throw new IllegalStateException();
             return thisNode;
         }
     }
 
     /**
-     * Only available when started.
+     * Gets the set of all resources or empty set if not started.
      */
-    public Map<String,Resource> getResources() throws IllegalStateException {
+    public Set<Resource> getResources() {
         synchronized(startedLock) {
-            if(!started) throw new IllegalStateException();
             return resources;
         }
     }
@@ -375,7 +402,7 @@ public class AppCluster {
             assert started;
             try {
                 // Get system-local values
-                Name thisHostname = Name.fromString(InetAddress.getLocalHost().getHostName());
+                thisHostname = Name.fromString(InetAddress.getLocalHost().getCanonicalHostName());
 
                 // Get the configuration values.
                 enabled = configuration.isEnabled();
@@ -387,16 +414,15 @@ public class AppCluster {
                 checkConfiguration(nodeConfigurations, resourceConfigurations);
 
                 // Create the nodes
-                Map<String,Node> newNodes = new LinkedHashMap<String,Node>(nodeConfigurations.size()*4/3+1);
+                Set<Node> newNodes = new LinkedHashSet<Node>(nodeConfigurations.size()*4/3+1);
                 for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
-                    Node node = new Node(this, nodeConfiguration);
-                    newNodes.put(node.getId(), node);
+                    newNodes.add(new Node(this, nodeConfiguration));
                 }
-                nodes = Collections.unmodifiableMap(newNodes);
+                nodes = Collections.unmodifiableSet(newNodes);
 
                 // Find this node
                 thisNode = null;
-                for(Node node : nodes.values()) {
+                for(Node node : nodes) {
                     if(node.getHostname().equals(thisHostname)) {
                         thisNode = node;
                         break;
@@ -432,7 +458,7 @@ public class AppCluster {
                 clusterLogger.start();
 
                 // Start per-resource monitoring threads
-                Map<String,Resource> newResources = new LinkedHashMap<String,Resource>(resourceConfigurations.size()*4/3+1);
+                Set<Resource> newResources = new LinkedHashSet<Resource>(resourceConfigurations.size()*4/3+1);
                 for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
                     if(resourceConfiguration instanceof AppClusterConfiguration.RsyncResourceConfiguration) {
                         Set<? extends AppClusterConfiguration.ResourceNodeConfiguration> nodeConfigs = resourceConfiguration.getResourceNodeConfigurations();
@@ -440,18 +466,18 @@ public class AppCluster {
                         for(AppClusterConfiguration.ResourceNodeConfiguration nodeConfig : nodeConfigs) {
                             AppClusterConfiguration.RsyncResourceNodeConfiguration resyncConfig = (AppClusterConfiguration.RsyncResourceNodeConfiguration)nodeConfig;
                             String nodeId = resyncConfig.getNodeId();
-                            Node node = getNodes().get(nodeId);
+                            Node node = getNode(nodeId);
                             if(node==null) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResource.init.nodeNotFound", resourceConfiguration.getId(), nodeId));
                             newResourceNodes.put(node, new RsyncResourceNode(node, resyncConfig));
                         }
                         RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration, Collections.unmodifiableMap(newResourceNodes));
-                        newResources.put(resourceConfiguration.getId(), resource);
+                        newResources.add(resource);
                         resource.getDnsMonitor().start();
                     } else {
                         throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.startUp.unexpectedType", resourceConfiguration.getId(), resourceConfiguration.getClass().getName()));
                     }
                 }
-                resources = Collections.unmodifiableMap(newResources);
+                resources = Collections.unmodifiableSet(newResources);
             } catch(TextParseException exc) {
                 throw new AppClusterConfiguration.AppClusterConfigurationException(exc);
             } catch(UnknownHostException exc) {
@@ -464,10 +490,8 @@ public class AppCluster {
         synchronized(startedLock) {
             if(started) {
                 // Stop per-resource monitoring threads
-                if(resources!=null) {
-                    for(Resource resource : resources.values()) resource.getDnsMonitor().stop();
-                    resources = null;
-                }
+                for(Resource resource : resources) resource.getDnsMonitor().stop();
+                resources = Collections.emptySet();
 
                 // Stop the logger
                 if(clusterLogger!=null) {
@@ -488,8 +512,9 @@ public class AppCluster {
                 }
 
                 // Clear the nodes
-                nodes = null;
+                nodes = Collections.emptySet();
                 thisNode = null;
+                thisHostname = null;
 
                 // Clear the configuration values.
                 enabled = false;
@@ -498,50 +523,29 @@ public class AppCluster {
         }
     }
 
+    static <T extends Enum<T>> T max(T enum1, T enum2) {
+        if(enum1.compareTo(enum2)>0) return enum1;
+        return enum2;
+    }
+
     /**
-     * Gets the overall status of the cluster.
+     * Gets all of the possible statuses for this cluster.
+     * This is primarily for JavaBeans property from JSP EL.
      */
-    public AppClusterStatus getStatus() {
+    public EnumSet<ResourceStatus> getStatuses() {
+        return EnumSet.allOf(ResourceStatus.class);
+    }
+
+    /**
+     * Gets the overall status of the cluster based on started, enabled, and all resources.
+     */
+    public ResourceStatus getStatus() {
         synchronized(startedLock) {
-            if(!started) return AppClusterStatus.STOPPED;
-            if(!enabled) return AppClusterStatus.DISABLED;
-            boolean hasUnknown = false;
-            boolean hasWarning = false;
-            boolean hasError = false;
-            boolean hasInconsistent = false;
-            for(Resource resource : getResources().values()) {
-                ResourceStatus resourceStatus = resource.getStatus();
-                switch(resourceStatus) {
-                    case STOPPED :
-                        // No affect
-                        break;
-                    case DISABLED :
-                        // No affect
-                        break;
-                    case UNKNOWN :
-                        hasUnknown = true;
-                        break;
-                    case WARNING :
-                        hasWarning = true;
-                        break;
-                    case ERROR :
-                        hasError = true;
-                        break;
-                    case INCONSISTENT :
-                        hasInconsistent = true;
-                        break;
-                    case HEALTHY :
-                        // No affect
-                        break;
-                    default :
-                        throw new AssertionError("Unexpected resource status: " + resourceStatus);
-                }
-            }
-            if(hasInconsistent) return AppClusterStatus.INCONSISTENT;
-            if(hasError) return AppClusterStatus.ERROR;
-            if(hasWarning) return AppClusterStatus.WARNING;
-            if(hasUnknown) return AppClusterStatus.UNKNOWN;
-            return AppClusterStatus.HEALTHY;
+            ResourceStatus status = ResourceStatus.UNKNOWN;
+            if(!started) status = max(status, ResourceStatus.STOPPED);
+            if(!enabled) status = max(status, ResourceStatus.DISABLED);
+            for(Resource resource : getResources()) status = max(status, resource.getStatus());
+            return status;
         }
     }
 }

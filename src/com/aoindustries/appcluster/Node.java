@@ -24,6 +24,7 @@ package com.aoindustries.appcluster;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import org.xbill.DNS.Name;
 
@@ -41,7 +42,7 @@ public class Node {
     private final boolean enabled;
     private final String display;
     private final Name hostname;
-    private final Set<Name> nameservers;
+    private final Set<Nameserver> nameservers;
 
     Node(AppCluster cluster, AppClusterConfiguration.NodeConfiguration nodeConfiguration) {
         this.cluster = cluster;
@@ -49,7 +50,10 @@ public class Node {
         this.enabled = cluster.isEnabled() && nodeConfiguration.isEnabled();
         this.display = nodeConfiguration.getDisplay();
         this.hostname = nodeConfiguration.getHostname();
-        this.nameservers = Collections.unmodifiableSet(new LinkedHashSet<Name>(nodeConfiguration.getNameservers()));
+        Set<Name> configNameservers = nodeConfiguration.getNameservers();
+        Set<Nameserver> newNameservers = new LinkedHashSet<Nameserver>(configNameservers.size()*4/3+1);
+        for(Name nameserver : configNameservers) newNameservers.add(new Nameserver(cluster, nameserver));
+        this.nameservers = Collections.unmodifiableSet(newNameservers);
     }
 
     @Override
@@ -99,7 +103,28 @@ public class Node {
     /**
      * Gets the set of nameservers that are local to the machine running this node.
      */
-    public Set<Name> getNameservers() {
+    public Set<Nameserver> getNameservers() {
         return nameservers;
+    }
+
+    /**
+     * Gets the overall status of the this node based on enabled and all resourceNodes.
+     */
+    public ResourceStatus getStatus() {
+        ResourceStatus status = ResourceStatus.UNKNOWN;
+        if(!enabled) status = AppCluster.max(status, ResourceStatus.DISABLED);
+        for(Resource resource : cluster.getResources()) {
+            ResourceNodeDnsResult nodeDnsResult = resource.getDnsMonitor().getLastResult().getNodeResults().get(this);
+            if(nodeDnsResult!=null) {
+                status = AppCluster.max(status, nodeDnsResult.getNodeStatus().getResourceStatus());
+                Map<Name,Map<Nameserver,DnsLookupResult>> nodeLookups = nodeDnsResult.getNodeRecordLookups();
+                if(nodeLookups!=null) {
+                    for(Map<Nameserver,DnsLookupResult> lookups : nodeLookups.values()) {
+                        for(DnsLookupResult lookup : lookups.values()) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
+                    }
+                }
+            }
+        }
+        return status;
     }
 }

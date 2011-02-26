@@ -30,16 +30,31 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public enum ResourceStatus {
-    STOPPED,
-    DISABLED,
-    UNKNOWN,
-    WARNING,
-    ERROR,
-    INCONSISTENT,
-    HEALTHY;
+    // These are arranged from healthies to least healthy, each higher will override the previous.
+    UNKNOWN("background-color:#606060;"),
+    DISABLED("background-color:#808080;"),
+    STOPPED("background-color:#c0c0c0;"),
+    STARTING("background-color:#ff8000;"),
+    HEALTHY(""),
+    WARNING("background-color:#ff0080;"),
+    ERROR("background-color:#ff8080;"),
+    INCONSISTENT("background-color:#ff0000;");
+
+    private final String cssStyle;
+
+    private ResourceStatus(String cssStyle) {
+        this.cssStyle = cssStyle;
+    }
 
     @Override
     public String toString() {
         return ApplicationResources.accessor.getMessage("ResourceStatus." + name());
+    }
+
+    /**
+     * Gets the CSS style to use for this status or "" for no specific style requirement.
+     */
+    public String getCssStyle() {
+        return cssStyle;
     }
 }

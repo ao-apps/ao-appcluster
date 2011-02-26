@@ -62,13 +62,13 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
         StringBuilder errorMessages = new StringBuilder();
         // Log any master DNS record change
         {
-            Map<Name,Map<Name,DnsLookupResult>> newMasterLookupResults = newResult.getMasterRecordLookups();
-            Map<Name,Map<Name,DnsLookupResult>> oldMasterLookupResults = oldResult.getMasterRecordLookups();
+            Map<Name,Map<Nameserver,DnsLookupResult>> newMasterLookupResults = newResult.getMasterRecordLookups();
+            Map<Name,Map<Nameserver,DnsLookupResult>> oldMasterLookupResults = oldResult.getMasterRecordLookups();
             if(newMasterLookupResults!=null) {
                 for(Name masterRecord : resource.getMasterRecords()) {
-                    Map<Name,DnsLookupResult> newMasterLookups = newMasterLookupResults.get(masterRecord);
-                    Map<Name,DnsLookupResult> oldMasterLookups = oldMasterLookupResults==null ? null : oldMasterLookupResults.get(masterRecord);
-                    for(Name enabledNameserver : resource.getEnabledNameservers()) {
+                    Map<Nameserver,DnsLookupResult> newMasterLookups = newMasterLookupResults.get(masterRecord);
+                    Map<Nameserver,DnsLookupResult> oldMasterLookups = oldMasterLookupResults==null ? null : oldMasterLookupResults.get(masterRecord);
+                    for(Nameserver enabledNameserver : resource.getEnabledNameservers()) {
                         DnsLookupResult newDnsLookupResult = newMasterLookups.get(enabledNameserver);
                         DnsLookupResult oldDnsLookupResult = oldMasterLookups==null ? null : oldMasterLookups.get(enabledNameserver);
                         if(logger.isLoggable(Level.INFO)) {
@@ -150,13 +150,13 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
             ResourceNodeDnsResult oldNodeResult = oldResult.getNodeResults().get(node);
             // Log any node DNS record change
             {
-                Map<Name,Map<Name,DnsLookupResult>> newNodeLookupResults = newNodeResult.getNodeRecordLookups();
-                Map<Name,Map<Name,DnsLookupResult>> oldNodeLookupResults = oldNodeResult.getNodeRecordLookups();
+                Map<Name,Map<Nameserver,DnsLookupResult>> newNodeLookupResults = newNodeResult.getNodeRecordLookups();
+                Map<Name,Map<Nameserver,DnsLookupResult>> oldNodeLookupResults = oldNodeResult.getNodeRecordLookups();
                 if(newNodeLookupResults!=null) {
                     for(Name nodeRecord : resourceNode.getNodeRecords()) {
-                        Map<Name,DnsLookupResult> newNodeLookups = newNodeLookupResults.get(nodeRecord);
-                        Map<Name,DnsLookupResult> oldNodeLookups = oldNodeLookupResults==null ? null : oldNodeLookupResults.get(nodeRecord);
-                        for(Name enabledNameserver : resource.getEnabledNameservers()) {
+                        Map<Nameserver,DnsLookupResult> newNodeLookups = newNodeLookupResults.get(nodeRecord);
+                        Map<Nameserver,DnsLookupResult> oldNodeLookups = oldNodeLookupResults==null ? null : oldNodeLookupResults.get(nodeRecord);
+                        for(Nameserver enabledNameserver : resource.getEnabledNameservers()) {
                             DnsLookupResult newDnsLookupResult = newNodeLookups.get(enabledNameserver);
                             DnsLookupResult oldDnsLookupResult = oldNodeLookups==null ? null : oldNodeLookups.get(enabledNameserver);
                             if(logger.isLoggable(Level.INFO)) {

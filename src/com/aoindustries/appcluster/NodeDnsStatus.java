@@ -29,15 +29,29 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public enum NodeDnsStatus {
-    STOPPED,
-    DISABLED,
-    UNKNOWN,
-    INCONSISTENT,
-    SLAVE,
-    MASTER;
+    UNKNOWN(ResourceStatus.UNKNOWN),
+    DISABLED(ResourceStatus.DISABLED),
+    STOPPED(ResourceStatus.STOPPED),
+    STARTING(ResourceStatus.STARTING),
+    SLAVE(ResourceStatus.HEALTHY),
+    MASTER(ResourceStatus.HEALTHY),
+    INCONSISTENT(ResourceStatus.INCONSISTENT);
+
+    private final ResourceStatus resourceStatus;
+
+    private NodeDnsStatus(ResourceStatus resourceStatus) {
+        this.resourceStatus = resourceStatus;
+    }
 
     @Override
     public String toString() {
         return ApplicationResources.accessor.getMessage("NodeDnsStatus." + name());
+    }
+
+    /**
+     * Gets the resource status that this node DNS status will cause.
+     */
+    public ResourceStatus getResourceStatus() {
+        return resourceStatus;
     }
 }
