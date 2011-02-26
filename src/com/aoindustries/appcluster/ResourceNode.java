@@ -34,8 +34,6 @@ import org.xbill.DNS.Name;
  */
 abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> {
 
-    //private static final Logger logger = Logger.getLogger(ResourceNode.class.getName());
-
     private final Node node;
     private final Set<Name> nodeRecords;
     private R resource;

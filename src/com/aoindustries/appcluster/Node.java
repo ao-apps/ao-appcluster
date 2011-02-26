@@ -35,8 +35,6 @@ import org.xbill.DNS.Name;
  */
 public class Node {
 
-    // private static final Logger logger = Logger.getLogger(Node.class.getName());
-
     private final AppCluster cluster;
     private final String id;
     private final boolean enabled;

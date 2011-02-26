@@ -31,8 +31,6 @@ import java.io.File;
  */
 public class PropertiesClusterLogger implements AppClusterLogger {
 
-    // private static final Logger logger = Logger.getLogger(PropertiesClusterLogger.class.getName());
-
     private final File propertiesFile;
 
     public PropertiesClusterLogger(File propertiesFile) {

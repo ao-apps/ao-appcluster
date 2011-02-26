@@ -249,8 +249,7 @@ public class ResourceDnsMonitor {
                                     try {
                                         long startTime = System.currentTimeMillis();
 
-                                        // Query all nameservers for all involved dns entries in parallel, getting all A records
-                                        // Add any errors or warnings to the lists and return null if unable to get A records.
+                                        // Query all enabled nameservers for all involved dns entries in parallel, getting all A records
                                         final Map<Name,Map<Nameserver,Future<DnsLookupResult>>> allHostnameFutures = new HashMap<Name,Map<Nameserver,Future<DnsLookupResult>>>(allHostnames.length*4/3+1);
                                         for(final Name hostname : allHostnames) {
                                             Map<Nameserver,Future<DnsLookupResult>> hostnameFutures = new HashMap<Nameserver,Future<DnsLookupResult>>(enabledNameservers.length*4/3+1);
@@ -276,36 +275,33 @@ public class ResourceDnsMonitor {
                                                                                     hostname,
                                                                                     DnsLookupStatus.HOST_NOT_FOUND,
                                                                                     null,
-                                                                                    null,
                                                                                     null
                                                                                 );
                                                                             }
                                                                             String[] addresses = new String[records.length];
-                                                                            Collection<String> warnings = null;
+                                                                            Collection<String> statusMessages = null;
                                                                             for(int c=0;c<records.length;c++) {
                                                                                 ARecord aRecord = (ARecord)records[c];
                                                                                 // Verify masterDomain TTL settings match expected values, issue as a warning
                                                                                 if(masterRecords.contains(hostname)) {
                                                                                     long ttl = aRecord.getTTL();
                                                                                     if(ttl!=masterRecordsTtl) {
-                                                                                        if(warnings==null) warnings = new ArrayList<String>();
-                                                                                        warnings.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedTtl", masterRecordsTtl, ttl));
+                                                                                        if(statusMessages==null) statusMessages = new ArrayList<String>();
+                                                                                        statusMessages.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedTtl", masterRecordsTtl, ttl));
                                                                                     }
                                                                                 }
                                                                                 addresses[c] = aRecord.getAddress().getHostAddress();
                                                                             }
                                                                             return new DnsLookupResult(
                                                                                 hostname,
-                                                                                warnings==null ? DnsLookupStatus.SUCCESSFUL : DnsLookupStatus.WARNING,
+                                                                                statusMessages==null ? DnsLookupStatus.SUCCESSFUL : DnsLookupStatus.WARNING,
                                                                                 addresses,
-                                                                                warnings,
-                                                                                null
+                                                                                statusMessages
                                                                             );
                                                                         case Lookup.UNRECOVERABLE :
                                                                             return new DnsLookupResult(
                                                                                 hostname,
                                                                                 DnsLookupStatus.UNRECOVERABLE,
-                                                                                null,
                                                                                 null,
                                                                                 null
                                                                             );
@@ -314,14 +310,12 @@ public class ResourceDnsMonitor {
                                                                                 hostname,
                                                                                 DnsLookupStatus.TRY_AGAIN,
                                                                                 null,
-                                                                                null,
                                                                                 null
                                                                             );
                                                                         case Lookup.HOST_NOT_FOUND :
                                                                             return new DnsLookupResult(
                                                                                 hostname,
                                                                                 DnsLookupStatus.HOST_NOT_FOUND,
-                                                                                null,
                                                                                 null,
                                                                                 null
                                                                             );
@@ -330,14 +324,12 @@ public class ResourceDnsMonitor {
                                                                                 hostname,
                                                                                 DnsLookupStatus.TYPE_NOT_FOUND,
                                                                                 null,
-                                                                                null,
                                                                                 null
                                                                             );
                                                                         default :
                                                                             return new DnsLookupResult(
                                                                                 hostname,
                                                                                 DnsLookupStatus.ERROR,
-                                                                                null,
                                                                                 null,
                                                                                 Collections.singleton(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedResultCode", result))
                                                                             );
@@ -346,7 +338,6 @@ public class ResourceDnsMonitor {
                                                                     return new DnsLookupResult(
                                                                         hostname,
                                                                         DnsLookupStatus.ERROR,
-                                                                        null,
                                                                         null,
                                                                         Collections.singleton(exc.toString())
                                                                     );
@@ -417,7 +408,6 @@ public class ResourceDnsMonitor {
                                                         new DnsLookupResult(
                                                             masterRecord,
                                                             DnsLookupStatus.UNRECOVERABLE,
-                                                            null,
                                                             null,
                                                             Collections.singleton(exc.toString())
                                                         )
@@ -544,7 +534,6 @@ public class ResourceDnsMonitor {
                                                                 new DnsLookupResult(
                                                                     nodeRecord,
                                                                     DnsLookupStatus.UNRECOVERABLE,
-                                                                    null,
                                                                     null,
                                                                     Collections.singleton(exc.toString())
                                                                 )

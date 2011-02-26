@@ -31,8 +31,6 @@ import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurati
  */
 public class RsyncResourceNode extends ResourceNode<RsyncResource,RsyncResourceNode> {
 
-    //private static final Logger logger = Logger.getLogger(ResourceNode.class.getName());
-
     private final String username;
     private final String path;
     private final String backupDir;

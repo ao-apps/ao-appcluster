@@ -22,6 +22,8 @@
  */
 package com.aoindustries.appcluster;
 
+import java.util.logging.Level;
+
 /**
  * The overall status of a resource is based on its master records and its nodes.
  *
@@ -31,19 +33,21 @@ package com.aoindustries.appcluster;
  */
 public enum ResourceStatus {
     // These are arranged from healthies to least healthy, each higher will override the previous.
-    UNKNOWN("background-color:#606060;"),
-    DISABLED("background-color:#808080;"),
-    STOPPED("background-color:#c0c0c0;"),
-    STARTING("background-color:#ff8000;"),
-    HEALTHY(""),
-    WARNING("background-color:#ff0080;"),
-    ERROR("background-color:#ff8080;"),
-    INCONSISTENT("background-color:#ff0000;");
+    UNKNOWN("background-color:#606060;", Level.FINE),
+    DISABLED("background-color:#808080;", Level.FINE),
+    STOPPED("background-color:#c0c0c0;", Level.FINE),
+    STARTING("background-color:#ff8000;", Level.INFO),
+    HEALTHY("", Level.INFO),
+    WARNING("background-color:#ff0080;", Level.WARNING),
+    ERROR("background-color:#ff8080;", Level.SEVERE),
+    INCONSISTENT("background-color:#ff0000;", Level.SEVERE);
 
     private final String cssStyle;
+    private final Level logLevel;
 
-    private ResourceStatus(String cssStyle) {
+    private ResourceStatus(String cssStyle, Level logLevel) {
         this.cssStyle = cssStyle;
+        this.logLevel = logLevel;
     }
 
     @Override
@@ -56,5 +60,12 @@ public enum ResourceStatus {
      */
     public String getCssStyle() {
         return cssStyle;
+    }
+
+    /**
+     * Gets the log level recommended for messages associated with this status.
+     */
+    public Level getLogLevel() {
+        return logLevel;
     }
 }

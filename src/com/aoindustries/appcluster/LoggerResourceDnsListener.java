@@ -39,28 +39,16 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
 
     private static final Logger logger = Logger.getLogger(LoggerResourceDnsListener.class.getName());
 
-    private static final String eol = System.getProperty("line.separator");
-
-    /**
-     * Appends to a StringBuilder, creating it if necessary, adding a newline to separate the new message.
-     */
-    private static void appendWithNewline(StringBuilder message, String line) {
-        if(message.length()>0) message.append(eol);
-        message.append(line);
-    }
-
     @Override
     public void onResourceDnsResult(ResourceDnsResult oldResult, ResourceDnsResult newResult) {
         Resource<?,?> resource = oldResult.getResource();
 
         // Log any changes, except continual changes to time
         if(logger.isLoggable(Level.FINE)) {
-            logger.fine(ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.timeMillis", resource.getCluster(), resource, newResult.getEndTime() - newResult.getStartTime()));
+            logger.log(Level.FINE, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.timeMillis", resource.getCluster(), resource, newResult.getEndTime() - newResult.getStartTime()));
         }
-        StringBuilder infoMessages = new StringBuilder();
-        StringBuilder warningMessages = new StringBuilder();
-        StringBuilder errorMessages = new StringBuilder();
         // Log any master DNS record change
+        Level level;
         {
             Map<Name,Map<Nameserver,DnsLookupResult>> newMasterLookupResults = newResult.getMasterRecordLookups();
             Map<Name,Map<Nameserver,DnsLookupResult>> oldMasterLookupResults = oldResult.getMasterRecordLookups();
@@ -70,14 +58,15 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
                     Map<Nameserver,DnsLookupResult> oldMasterLookups = oldMasterLookupResults==null ? null : oldMasterLookupResults.get(masterRecord);
                     for(Nameserver enabledNameserver : resource.getEnabledNameservers()) {
                         DnsLookupResult newDnsLookupResult = newMasterLookups.get(enabledNameserver);
-                        DnsLookupResult oldDnsLookupResult = oldMasterLookups==null ? null : oldMasterLookups.get(enabledNameserver);
-                        if(logger.isLoggable(Level.INFO)) {
+                        level = newDnsLookupResult.getStatus().getResourceStatus().getLogLevel();
+                        if(logger.isLoggable(level)) {
+                            DnsLookupResult oldDnsLookupResult = oldMasterLookups==null ? null : oldMasterLookups.get(enabledNameserver);
                             SortedSet<String> newAddresses = newDnsLookupResult.getAddresses();
                             SortedSet<String> oldAddresses = oldDnsLookupResult==null ? null : oldDnsLookupResult.getAddresses();
                             if(oldAddresses==null) oldAddresses = Collections.emptySortedSet();
                             if(!newAddresses.equals(oldAddresses)) {
-                                appendWithNewline(
-                                    infoMessages,
+                                logger.log(
+                                    level,
                                     ApplicationResources.accessor.getMessage(
                                         "LoggingResourceDnsMonitor.onResourceDnsResult.masterRecordLookupResultChanged",
                                         resource.getCluster(),
@@ -89,42 +78,20 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
                                     )
                                 );
                             }
-                        }
-                        if(logger.isLoggable(Level.WARNING)) {
-                            SortedSet<String> newWarnings = newDnsLookupResult.getWarnings();
-                            SortedSet<String> oldWarnings = oldDnsLookupResult==null ? null : oldDnsLookupResult.getWarnings();
-                            if(oldWarnings==null) oldWarnings = Collections.emptySortedSet();
-                            if(!newWarnings.equals(oldWarnings)) {
-                                for(String warning : newWarnings) {
-                                    appendWithNewline(
-                                        warningMessages,
+                            SortedSet<String> newStatusMessages = newDnsLookupResult.getStatusMessages();
+                            SortedSet<String> oldStatusMessages = oldDnsLookupResult==null ? null : oldDnsLookupResult.getStatusMessages();
+                            if(oldStatusMessages==null) oldStatusMessages = Collections.emptySortedSet();
+                            if(!newStatusMessages.equals(oldStatusMessages)) {
+                                for(String statusMessage : newStatusMessages) {
+                                    logger.log(
+                                        level,
                                         ApplicationResources.accessor.getMessage(
-                                            "LoggingResourceDnsMonitor.onResourceDnsResult.masterRecord.warning",
+                                            "LoggingResourceDnsMonitor.onResourceDnsResult.masterRecord.statusMessage",
                                             resource.getCluster(),
                                             resource,
                                             masterRecord,
                                             enabledNameserver,
-                                            warning
-                                        )
-                                    );
-                                }
-                            }
-                        }
-                        if(logger.isLoggable(Level.SEVERE)) {
-                            SortedSet<String> newErrors = newDnsLookupResult.getErrors();
-                            SortedSet<String> oldErrors = oldDnsLookupResult==null ? null : oldDnsLookupResult.getErrors();
-                            if(oldErrors==null) oldErrors = Collections.emptySortedSet();
-                            if(!newErrors.equals(oldErrors)) {
-                                for(String error : newErrors) {
-                                    appendWithNewline(
-                                        errorMessages,
-                                        ApplicationResources.accessor.getMessage(
-                                            "LoggingResourceDnsMonitor.onResourceDnsResult.masterRecord.error",
-                                            resource.getCluster(),
-                                            resource,
-                                            masterRecord,
-                                            enabledNameserver,
-                                            error
+                                            statusMessage
                                         )
                                     );
                                 }
@@ -134,13 +101,14 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
                 }
             }
         }
-        if(logger.isLoggable(Level.INFO)) {
+        level = newResult.getMasterStatus().getResourceStatus().getLogLevel();
+        if(logger.isLoggable(level)) {
             if(newResult.getMasterStatus()!=oldResult.getMasterStatus()) {
-                appendWithNewline(infoMessages, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.masterStatusChanged", resource.getCluster(), resource, oldResult.getMasterStatus(), newResult.getMasterStatus()));
+                logger.log(level, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.masterStatusChanged", resource.getCluster(), resource, oldResult.getMasterStatus(), newResult.getMasterStatus()));
             }
             if(!newResult.getMasterStatusMessages().equals(oldResult.getMasterStatusMessages())) {
                 for(String masterStatusMessage : newResult.getMasterStatusMessages()) {
-                    appendWithNewline(infoMessages, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.masterStatusMessage", resource.getCluster(), resource, masterStatusMessage));
+                    logger.log(level, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.masterStatusMessage", resource.getCluster(), resource, masterStatusMessage));
                 }
             }
         }
@@ -158,14 +126,15 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
                         Map<Nameserver,DnsLookupResult> oldNodeLookups = oldNodeLookupResults==null ? null : oldNodeLookupResults.get(nodeRecord);
                         for(Nameserver enabledNameserver : resource.getEnabledNameservers()) {
                             DnsLookupResult newDnsLookupResult = newNodeLookups.get(enabledNameserver);
-                            DnsLookupResult oldDnsLookupResult = oldNodeLookups==null ? null : oldNodeLookups.get(enabledNameserver);
-                            if(logger.isLoggable(Level.INFO)) {
+                            level = newDnsLookupResult.getStatus().getResourceStatus().getLogLevel();
+                            if(logger.isLoggable(level)) {
+                                DnsLookupResult oldDnsLookupResult = oldNodeLookups==null ? null : oldNodeLookups.get(enabledNameserver);
                                 SortedSet<String> newAddresses = newDnsLookupResult.getAddresses();
                                 SortedSet<String> oldAddresses = oldDnsLookupResult==null ? null : oldDnsLookupResult.getAddresses();
                                 if(oldAddresses==null) oldAddresses = Collections.emptySortedSet();
                                 if(!newAddresses.equals(oldAddresses)) {
-                                    appendWithNewline(
-                                        infoMessages,
+                                    logger.log(
+                                        level,
                                         ApplicationResources.accessor.getMessage(
                                             "LoggingResourceDnsMonitor.onResourceDnsResult.nodeRecordLookupResultChanged",
                                             resource.getCluster(),
@@ -178,44 +147,21 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
                                         )
                                     );
                                 }
-                            }
-                            if(logger.isLoggable(Level.WARNING)) {
-                                SortedSet<String> newWarnings = newDnsLookupResult.getWarnings();
-                                SortedSet<String> oldWarnings = oldDnsLookupResult==null ? null : oldDnsLookupResult.getWarnings();
-                                if(oldWarnings==null) oldWarnings = Collections.emptySortedSet();
-                                if(!newWarnings.equals(oldWarnings)) {
-                                    for(String warning : newWarnings) {
-                                        appendWithNewline(
-                                            warningMessages,
+                                SortedSet<String> newStatusMessages = newDnsLookupResult.getStatusMessages();
+                                SortedSet<String> oldStatusMessages = oldDnsLookupResult==null ? null : oldDnsLookupResult.getStatusMessages();
+                                if(oldStatusMessages==null) oldStatusMessages = Collections.emptySortedSet();
+                                if(!newStatusMessages.equals(oldStatusMessages)) {
+                                    for(String statusMessage : newStatusMessages) {
+                                        logger.log(
+                                            level,
                                             ApplicationResources.accessor.getMessage(
-                                                "LoggingResourceDnsMonitor.onResourceDnsResult.nodeRecord.warning",
+                                                "LoggingResourceDnsMonitor.onResourceDnsResult.nodeRecord.statusMessage",
                                                 resource.getCluster(),
                                                 resource,
                                                 node,
                                                 nodeRecord,
                                                 enabledNameserver,
-                                                warning
-                                            )
-                                        );
-                                    }
-                                }
-                            }
-                            if(logger.isLoggable(Level.SEVERE)) {
-                                SortedSet<String> newErrors = newDnsLookupResult.getErrors();
-                                SortedSet<String> oldErrors = oldDnsLookupResult==null ? null : oldDnsLookupResult.getErrors();
-                                if(oldErrors==null) oldErrors = Collections.emptySortedSet();
-                                if(!newErrors.equals(oldErrors)) {
-                                    for(String error : newErrors) {
-                                        appendWithNewline(
-                                            errorMessages,
-                                            ApplicationResources.accessor.getMessage(
-                                                "LoggingResourceDnsMonitor.onResourceDnsResult.nodeRecord.error",
-                                                resource.getCluster(),
-                                                resource,
-                                                node,
-                                                nodeRecord,
-                                                enabledNameserver,
-                                                error
+                                                statusMessage
                                             )
                                         );
                                     }
@@ -225,23 +171,21 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
                     }
                 }
             }
-            if(logger.isLoggable(Level.INFO)) {
-                NodeDnsStatus newNodeStatus = newNodeResult.getNodeStatus();
+            NodeDnsStatus newNodeStatus = newNodeResult.getNodeStatus();
+            level = newNodeStatus.getResourceStatus().getLogLevel();
+            if(logger.isLoggable(level)) {
                 NodeDnsStatus oldNodeStatus = oldNodeResult.getNodeStatus();
                 if(newNodeStatus!=oldNodeStatus) {
-                    appendWithNewline(infoMessages, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.nodeStatusChanged", resource.getCluster(), resource, node, oldNodeStatus, newNodeStatus));
+                    logger.log(level, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.nodeStatusChanged", resource.getCluster(), resource, node, oldNodeStatus, newNodeStatus));
                 }
                 SortedSet<String> newNodeStatusMessages = newNodeResult.getNodeStatusMessages();
                 SortedSet<String> oldNodeStatusMessages = oldNodeResult.getNodeStatusMessages();
                 if(!newNodeStatusMessages.equals(oldNodeStatusMessages)) {
                     for(String nodeStatusMessage : newNodeStatusMessages) {
-                        appendWithNewline(infoMessages, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.nodeStatusMessage", resource.getCluster(), resource, node, nodeStatusMessage));
+                        logger.log(level, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.nodeStatusMessage", resource.getCluster(), resource, node, nodeStatusMessage));
                     }
                 }
             }
         }
-        if(infoMessages.length()>0) logger.info(infoMessages.toString());
-        if(warningMessages.length()>0) logger.warning(warningMessages.toString());
-        if(errorMessages.length()>0) logger.severe(errorMessages.toString());
     }
 }

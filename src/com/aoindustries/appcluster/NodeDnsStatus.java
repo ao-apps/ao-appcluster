@@ -29,21 +29,16 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public enum NodeDnsStatus {
-    UNKNOWN(ResourceStatus.UNKNOWN),
-    DISABLED(ResourceStatus.DISABLED),
-    STOPPED(ResourceStatus.STOPPED),
-    STARTING(ResourceStatus.STARTING),
-    SLAVE(ResourceStatus.HEALTHY),
-    MASTER(ResourceStatus.HEALTHY, "font-weight:bold;"),
-    INCONSISTENT(ResourceStatus.INCONSISTENT);
+    UNKNOWN(ResourceStatus.UNKNOWN, ResourceStatus.UNKNOWN.getCssStyle()),
+    DISABLED(ResourceStatus.DISABLED, ResourceStatus.DISABLED.getCssStyle()),
+    STOPPED(ResourceStatus.STOPPED, ResourceStatus.STOPPED.getCssStyle()),
+    STARTING(ResourceStatus.STARTING, ResourceStatus.STARTING.getCssStyle()),
+    SLAVE(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle()),
+    MASTER(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle() + "font-weight:bold;"),
+    INCONSISTENT(ResourceStatus.INCONSISTENT, ResourceStatus.INCONSISTENT.getCssStyle());
 
     private final ResourceStatus resourceStatus;
     private final String cssStyle;
-
-    private NodeDnsStatus(ResourceStatus resourceStatus) {
-        this.resourceStatus = resourceStatus;
-        this.cssStyle = resourceStatus.getCssStyle();
-    }
 
     private NodeDnsStatus(ResourceStatus resourceStatus, String cssStyle) {
         this.resourceStatus = resourceStatus;

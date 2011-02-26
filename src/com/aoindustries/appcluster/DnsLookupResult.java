@@ -36,8 +36,7 @@ public class DnsLookupResult {
     private final Name name;
     private final DnsLookupStatus status;
     private final SortedSet<String> addresses;
-    private final SortedSet<String> warnings;
-    private final SortedSet<String> errors;
+    private final SortedSet<String> statusMessages;
 
     /**
      * Sorts the addresses as they are added.
@@ -46,15 +45,13 @@ public class DnsLookupResult {
         Name name,
         DnsLookupStatus status,
         String[] addresses,
-        Collection<String> warnings,
-        Collection<String> errors
+        Collection<String> statusMessages
     ) {
         this.name = name;
         this.status = status;
         this.addresses = ResourceDnsResult.getUnmodifiableSortedSet(addresses, null); // Sorts lexically for speed since not human readable
         assert status==DnsLookupStatus.SUCCESSFUL || status==DnsLookupStatus.WARNING ? !this.addresses.isEmpty() : this.addresses.isEmpty();
-        this.warnings = ResourceDnsResult.getUnmodifiableSortedSet(warnings, ResourceDnsResult.defaultLocaleCollator);
-        this.errors = ResourceDnsResult.getUnmodifiableSortedSet(errors, ResourceDnsResult.defaultLocaleCollator);
+        this.statusMessages = ResourceDnsResult.getUnmodifiableSortedSet(statusMessages, ResourceDnsResult.defaultLocaleCollator);
     }
 
     @Override
@@ -65,8 +62,7 @@ public class DnsLookupResult {
             name.equals(other.name)
             && status==other.status
             && addresses.equals(other.addresses)
-            && warnings.equals(other.warnings)
-            && errors.equals(other.errors)
+            && statusMessages.equals(other.statusMessages)
         ;
     }
 
@@ -91,16 +87,9 @@ public class DnsLookupResult {
     }
 
     /**
-     * Gets the warnings for this lookup.
+     * Gets the status messages for this lookup.
      */
-    public SortedSet<String> getWarnings() {
-        return warnings;
-    }
-
-    /**
-     * Gets the errors for this lookup.
-     */
-    public SortedSet<String> getErrors() {
-        return errors;
+    public SortedSet<String> getStatusMessages() {
+        return statusMessages;
     }
 }
