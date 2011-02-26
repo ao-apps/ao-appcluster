@@ -85,7 +85,7 @@ public class Nameserver {
                 }
             }
 
-            for(ResourceNodeDnsResult nodeDnsResult : resourceDnsResult.getNodeResults().values()) {
+            for(ResourceNodeDnsResult nodeDnsResult : resourceDnsResult.getNodeResultMap().values()) {
                 Map<Name,Map<Nameserver,DnsLookupResult>> nodeDnsLookups = nodeDnsResult.getNodeRecordLookups();
                 if(nodeDnsLookups!=null) {
                     for(Map<Nameserver,DnsLookupResult> lookups : nodeDnsLookups.values()) {

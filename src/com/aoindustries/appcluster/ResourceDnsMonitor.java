@@ -63,12 +63,12 @@ public class ResourceDnsMonitor {
     /**
      * Checks the DNS settings once every 30 seconds.
      */
-    private static final long DNS_CHECK_INTERVAL = 30000;
+    static final int DNS_CHECK_INTERVAL = 30000;
 
     /**
      * DNS queries time-out at 30 seconds.
      */
-    private static final int DNS_CHECK_TIMEOUT = 30000;
+    static final int DNS_CHECK_TIMEOUT = 30000;
 
     /**
      * Only one resolver will be created for each unique nameserver (case-insensitive on unique)
@@ -295,8 +295,8 @@ public class ResourceDnsMonitor {
                                                                             return new DnsLookupResult(
                                                                                 hostname,
                                                                                 statusMessages==null ? DnsLookupStatus.SUCCESSFUL : DnsLookupStatus.WARNING,
-                                                                                addresses,
-                                                                                statusMessages
+                                                                                statusMessages,
+                                                                                addresses
                                                                             );
                                                                         case Lookup.UNRECOVERABLE :
                                                                             return new DnsLookupResult(
@@ -330,16 +330,16 @@ public class ResourceDnsMonitor {
                                                                             return new DnsLookupResult(
                                                                                 hostname,
                                                                                 DnsLookupStatus.ERROR,
-                                                                                null,
-                                                                                Collections.singleton(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedResultCode", result))
+                                                                                Collections.singleton(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedResultCode", result)),
+                                                                                null
                                                                             );
                                                                     }
                                                                 } catch(Exception exc) {
                                                                     return new DnsLookupResult(
                                                                         hostname,
                                                                         DnsLookupStatus.ERROR,
-                                                                        null,
-                                                                        Collections.singleton(exc.toString())
+                                                                        Collections.singleton(exc.toString()),
+                                                                        null
                                                                     );
                                                                 }
                                                             }
@@ -408,8 +408,8 @@ public class ResourceDnsMonitor {
                                                         new DnsLookupResult(
                                                             masterRecord,
                                                             DnsLookupStatus.UNRECOVERABLE,
-                                                            null,
-                                                            Collections.singleton(exc.toString())
+                                                            Collections.singleton(exc.toString()),
+                                                            null
                                                         )
                                                     );
                                                 }
@@ -534,8 +534,8 @@ public class ResourceDnsMonitor {
                                                                 new DnsLookupResult(
                                                                     nodeRecord,
                                                                     DnsLookupStatus.UNRECOVERABLE,
-                                                                    null,
-                                                                    Collections.singleton(exc.toString())
+                                                                    Collections.singleton(exc.toString()),
+                                                                    null
                                                                 )
                                                             );
                                                         }

@@ -112,7 +112,7 @@ public class Node {
         ResourceStatus status = ResourceStatus.UNKNOWN;
         if(!enabled) status = AppCluster.max(status, ResourceStatus.DISABLED);
         for(Resource resource : cluster.getResources()) {
-            ResourceNodeDnsResult nodeDnsResult = resource.getDnsMonitor().getLastResult().getNodeResults().get(this);
+            ResourceNodeDnsResult nodeDnsResult = resource.getDnsMonitor().getLastResult().getNodeResultMap().get(this);
             if(nodeDnsResult!=null) {
                 status = AppCluster.max(status, nodeDnsResult.getNodeStatus().getResourceStatus());
                 Map<Name,Map<Nameserver,DnsLookupResult>> nodeLookups = nodeDnsResult.getNodeRecordLookups();

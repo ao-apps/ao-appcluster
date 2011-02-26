@@ -22,6 +22,7 @@
  */
 package com.aoindustries.appcluster;
 
+import java.sql.Timestamp;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,6 +40,9 @@ import org.xbill.DNS.Name;
  * @author  AO Industries, Inc.
  */
 public class ResourceDnsResult {
+
+    private static int WARNING_SECONDS = (ResourceDnsMonitor.DNS_CHECK_INTERVAL + ResourceDnsMonitor.DNS_CHECK_TIMEOUT) / 1000;
+    private static int ERROR_SECONDS = WARNING_SECONDS + ResourceDnsMonitor.DNS_CHECK_INTERVAL/1000;
 
     static final Comparator<Object> defaultLocaleCollator = Collator.getInstance();
 
@@ -119,12 +123,36 @@ public class ResourceDnsResult {
         return resource;
     }
 
-    public long getStartTime() {
-        return startTime;
+    public Long getSecondsSince() {
+        if(!resource.getCluster().isRunning()) return null;
+        if(!resource.isEnabled()) return null;
+        return (System.currentTimeMillis() - startTime) / 1000;
     }
 
-    public long getEndTime() {
-        return endTime;
+    /**
+     * Matches the rules for resource status.
+     *
+     * @see #getResourceStatus()
+     */
+    public ResourceStatus getSecondsSinceStatus() {
+        if(!resource.getCluster().isRunning()) return ResourceStatus.STOPPED;
+        if(!resource.isEnabled()) return ResourceStatus.DISABLED;
+        // Time since last result
+        Long secondsSince = getSecondsSince();
+        if(secondsSince==null) return ResourceStatus.UNKNOWN;
+        // Error if result more than ERROR_SECONDS seconds ago
+        if(secondsSince>ERROR_SECONDS) return ResourceStatus.ERROR;
+        // Warning if result more than WARNING_SECONDS seconds ago
+        if(secondsSince>WARNING_SECONDS) return ResourceStatus.WARNING;
+        return ResourceStatus.HEALTHY;
+    }
+
+    public Timestamp getStartTime() {
+        return new Timestamp(startTime);
+    }
+
+    public Timestamp getEndTime() {
+        return new Timestamp(endTime);
     }
 
     /**
@@ -155,8 +183,16 @@ public class ResourceDnsResult {
      * Gets the result of each node.
      * This has an entry for every node in this resource.
      */
-    public Map<Node,ResourceNodeDnsResult> getNodeResults() {
+    public Map<Node,ResourceNodeDnsResult> getNodeResultMap() {
         return nodeResults;
+    }
+
+    /**
+     * Gets the result of each node.
+     * This has an entry for every node in this resource.
+     */
+    public Collection<ResourceNodeDnsResult> getNodeResults() {
+        return nodeResults.values();
     }
 
     /**
@@ -165,12 +201,8 @@ public class ResourceDnsResult {
     public ResourceStatus getResourceStatus() {
         ResourceStatus status = ResourceStatus.UNKNOWN;
 
-        // Time since last result
-        long timeSince = System.currentTimeMillis()-getEndTime();
-        // Error if result more than five minutes ago
-        if(timeSince>300000) status = AppCluster.max(status, ResourceStatus.ERROR);
-        // Warning if result more than one minute ago
-        else if(timeSince>60000) status = AppCluster.max(status, ResourceStatus.WARNING);
+        // Check time since
+        status = AppCluster.max(status, getSecondsSinceStatus());
 
         // Master records
         status = AppCluster.max(status, getMasterStatus().getResourceStatus());
@@ -181,7 +213,7 @@ public class ResourceDnsResult {
         }
 
         // Node records
-        for(ResourceNodeDnsResult nodeDnsResult : getNodeResults().values()) {
+        for(ResourceNodeDnsResult nodeDnsResult : getNodeResultMap().values()) {
             status = AppCluster.max(status, nodeDnsResult.getNodeStatus().getResourceStatus());
             Map<Name,Map<Nameserver,DnsLookupResult>> nodeLookups = nodeDnsResult.getNodeRecordLookups();
             if(nodeLookups!=null) {

@@ -36,10 +36,10 @@ public enum ResourceStatus {
     UNKNOWN("background-color:#606060;", Level.FINE),
     DISABLED("background-color:#808080;", Level.FINE),
     STOPPED("background-color:#c0c0c0;", Level.FINE),
-    STARTING("background-color:#ff8000;", Level.INFO),
+    STARTING("background-color:#e0e0e0;", Level.INFO),
     HEALTHY("", Level.INFO),
-    WARNING("background-color:#ff0080;", Level.WARNING),
-    ERROR("background-color:#ff8080;", Level.SEVERE),
+    WARNING("background-color:#ff8080;", Level.WARNING),
+    ERROR("background-color:#ff4040;", Level.SEVERE),
     INCONSISTENT("background-color:#ff0000;", Level.SEVERE);
 
     private final String cssStyle;

@@ -31,8 +31,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -393,6 +395,18 @@ public class AppCluster {
     public Set<Resource> getResources() {
         synchronized(startedLock) {
             return resources;
+        }
+    }
+
+    /**
+     * Gets a map view of the resources keyed on String resourceId.
+     * This is for compatibility with JSP EL - it is not a fast implementation.
+     */
+    public Map<String,Resource> getResourceMap() {
+        synchronized(startedLock) {
+            LinkedHashMap<String,Resource> map = new LinkedHashMap<String,Resource>(resources.size()*4/3+1);
+            for(Resource resource : resources) map.put(resource.getId(), resource);
+            return Collections.unmodifiableMap(map);
         }
     }
 

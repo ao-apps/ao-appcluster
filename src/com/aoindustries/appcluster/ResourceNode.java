@@ -94,7 +94,7 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
      */
     public NodeDnsStatus getNodeStatus() {
         NodeDnsStatus status = NodeDnsStatus.UNKNOWN;
-        status = AppCluster.max(status, resource.getDnsMonitor().getLastResult().getNodeResults().get(getNode()).getNodeStatus());
+        status = AppCluster.max(status, resource.getDnsMonitor().getLastResult().getNodeResultMap().get(getNode()).getNodeStatus());
         return status;
     }
 }

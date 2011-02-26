@@ -45,7 +45,7 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
 
         // Log any changes, except continual changes to time
         if(logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.timeMillis", resource.getCluster(), resource, newResult.getEndTime() - newResult.getStartTime()));
+            logger.log(Level.FINE, ApplicationResources.accessor.getMessage("LoggingResourceDnsMonitor.onResourceDnsResult.timeMillis", resource.getCluster(), resource, newResult.getEndTime().getTime() - newResult.getStartTime().getTime()));
         }
         // Log any master DNS record change
         Level level;
@@ -114,8 +114,8 @@ public class LoggerResourceDnsListener implements ResourceDnsListener {
         }
         for(ResourceNode<?,?> resourceNode : resource.getResourceNodes()) {
             Node node = resourceNode.getNode();
-            ResourceNodeDnsResult newNodeResult = newResult.getNodeResults().get(node);
-            ResourceNodeDnsResult oldNodeResult = oldResult.getNodeResults().get(node);
+            ResourceNodeDnsResult newNodeResult = newResult.getNodeResultMap().get(node);
+            ResourceNodeDnsResult oldNodeResult = oldResult.getNodeResultMap().get(node);
             // Log any node DNS record change
             {
                 Map<Name,Map<Nameserver,DnsLookupResult>> newNodeLookupResults = newNodeResult.getNodeRecordLookups();
