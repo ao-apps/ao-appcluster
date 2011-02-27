@@ -23,7 +23,6 @@
 package com.aoindustries.appcluster;
 
 import java.util.Set;
-import org.xbill.DNS.Name;
 
 /**
  * The configuration for one AppCluster manager.
@@ -31,30 +30,6 @@ import org.xbill.DNS.Name;
  * @author  AO Industries, Inc.
  */
 public interface AppClusterConfiguration {
-
-    public static interface ConfigurationListener {
-        void onConfigurationChanged();
-    }
-
-    public static class AppClusterConfigurationException extends AppClusterException {
-
-        private static final long serialVersionUID = -6681668618314172644L;
-
-        public AppClusterConfigurationException() {
-        }
-
-        public AppClusterConfigurationException(String message) {
-            super(message);
-        }
-
-        public AppClusterConfigurationException(Throwable cause) {
-            super(cause);
-        }
-
-        public AppClusterConfigurationException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
 
     /**
      * Called as the AppCluster starts, before any configuration values are accessed or listeners are added.
@@ -69,12 +44,12 @@ public interface AppClusterConfiguration {
     /**
      * Will be called when the configuration has changed in any way.
      */
-    void addConfigurationListener(ConfigurationListener listener);
+    void addConfigurationListener(AppClusterConfigurationListener listener);
 
     /**
      * Removes listener of configuration changes.
      */
-    void removeConfigurationListener(ConfigurationListener listener);
+    void removeConfigurationListener(AppClusterConfigurationListener listener);
 
     /**
      * @see  AppCluster#isEnabled()
@@ -91,173 +66,13 @@ public interface AppClusterConfiguration {
      */
     AppClusterLogger getClusterLogger() throws AppClusterConfigurationException;
 
-    public static interface NodeConfiguration {
-
-        @Override
-        String toString();
-
-        @Override
-        boolean equals(Object o);
-
-        @Override
-        int hashCode();
-
-        /**
-         * @see Node#getId()
-         */
-        String getId();
-
-        /**
-         * @see Node#isEnabled()
-         */
-        boolean isEnabled();
-
-        /**
-         * @see Node#getDisplay()
-         */
-        String getDisplay();
-
-        /**
-         * @see Node#getHostname()
-         */
-        Name getHostname();
-
-        /**
-         * @see Node#getNameservers()
-         */
-        Set<Name> getNameservers();
-    }
-
     /**
      * Gets the set of nodes for the cluster.
      */
-    Set<NodeConfiguration> getNodeConfigurations() throws AppClusterConfigurationException;
-
-    public static interface ResourceNodeConfiguration {
-
-        @Override
-        String toString();
-
-        @Override
-        boolean equals(Object o);
-
-        @Override
-        int hashCode();
-
-        /**
-         * Gets the unique ID of the resource this configuration represents.
-         */
-        String getResourceId();
-
-        /**
-         * Gets the unique ID of the node this configuration represents.
-         */
-        String getNodeId();
-
-        /**
-         * @see ResourceNode#getNodeRecords()
-         */
-        Set<Name> getNodeRecords();
-    }
-
-    public static interface ManualResourceNodeConfiguration extends ResourceNodeConfiguration {
-        // No special per-node configuration options
-    }
-
-    public static interface RsyncResourceNodeConfiguration extends ResourceNodeConfiguration {
-
-        /**
-         * @see RsyncResourceNode#getUsername()
-         */
-        String getUsername();
-
-        /**
-         * @see RsyncResourceNode#getPath()
-         */
-        String getPath();
-
-        /**
-         * @see RsyncResourceNode#getBackupDir()
-         */
-        String getBackupDir();
-
-        /**
-         * @see RsyncResourceNode#getBackupDays()
-         */
-        int getBackupDays();
-    }
-
-    public static interface ResourceConfiguration {
-
-        @Override
-        String toString();
-
-        @Override
-        boolean equals(Object o);
-
-        @Override
-        int hashCode();
-
-        /**
-         * @see Resource#getId()
-         */
-        String getId();
-
-        /**
-         * @see Resource#isEnabled()
-         */
-        boolean isEnabled();
-
-        /**
-         * @see Resource#getDisplay()
-         */
-        String getDisplay();
-
-        /**
-         * @see Resource#getMasterRecords()
-         */
-        Set<Name> getMasterRecords();
-
-        /**
-         * @see Resource#getMasterRecordTtl() ()
-         */
-        int getMasterRecordsTtl();
-
-        /**
-         * Gets the source of per-node resource configurations.
-         */
-        Set<? extends ResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
-    }
-
-    public static interface ManualResourceConfiguration extends ResourceConfiguration {
-
-        /**
-         * @see ManualResource#getAllowMultiMaster()
-         */
-        boolean getAllowMultiMaster();
-
-        @Override
-        Set<ManualResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
-    }
-
-    public static interface RsyncResourceConfiguration extends ResourceConfiguration {
-
-        /**
-         * @see RsyncResource#getAllowMultiMaster()
-         */
-        boolean getAllowMultiMaster();
-
-        /**
-         * Gets if files will be deleted during the rsync.
-         */
-        boolean isDelete();
-
-        @Override
-        Set<RsyncResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
-    }
+    Set<? extends NodeConfiguration> getNodeConfigurations() throws AppClusterConfigurationException;
 
     /**
      * Gets the set of resources for the cluster.
      */
-    Set<ResourceConfiguration> getResourceConfigurations() throws AppClusterConfigurationException;
+    Set<? extends ResourceConfiguration<?,?>> getResourceConfigurations() throws AppClusterConfigurationException;
 }

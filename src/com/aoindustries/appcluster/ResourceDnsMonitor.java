@@ -88,7 +88,7 @@ public class ResourceDnsMonitor {
     /**
      * Gets a mapping for all nodes with the same status.
      */
-    private static Map<Node,ResourceNodeDnsResult> getNodeResults(Resource<?,?> resource, Map<Name,Map<Nameserver,DnsLookupResult>> nodeRecordLookups, NodeDnsStatus nodeStatus, Collection<String> nodeStatusMessages) {
+    private static Map<? extends Node,? extends ResourceNodeDnsResult> getNodeResults(Resource<?,?> resource, Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeRecordLookups, NodeDnsStatus nodeStatus, Collection<String> nodeStatusMessages) {
         Set<? extends ResourceNode<?,?>> resourceNodes = resource.getResourceNodes();
         Map<Node,ResourceNodeDnsResult> nodeResults = new HashMap<Node,ResourceNodeDnsResult>(resourceNodes.size()*4/3+1);
         for(ResourceNode<?,?> resourceNode : resourceNodes) {
@@ -224,7 +224,7 @@ public class ResourceDnsMonitor {
                             @Override
                             public void run() {
                                 final Thread currentThread = Thread.currentThread();
-                                final Set<Name> masterRecords = resource.getMasterRecords();
+                                final Set<? extends Name> masterRecords = resource.getMasterRecords();
                                 final int masterRecordsTtl = resource.getMasterRecordsTtl();
                                 final boolean allowMultiMaster = resource.getAllowMultiMaster();
                                 final Nameserver[] enabledNameservers = resource.getEnabledNameservers().toArray(new Nameserver[resource.getEnabledNameservers().size()]);
@@ -427,7 +427,7 @@ public class ResourceDnsMonitor {
                                         for(ResourceNode<?,?> resourceNode :  resourceNodes) {
                                             Node node = resourceNode.getNode();
                                             if(node.isEnabled()) {
-                                                Set<Name> nodeRecords = resourceNode.getNodeRecords();
+                                                Set<? extends Name> nodeRecords = resourceNode.getNodeRecords();
                                                 Map<Name,Map<Nameserver,DnsLookupResult>> nodeRecordLookups = new HashMap<Name,Map<Nameserver,DnsLookupResult>>(nodeRecords.size()*4/3+1);
                                                 NodeDnsStatus nodeStatus = NodeDnsStatus.SLAVE;
                                                 List<String> nodeStatusMessages = new ArrayList<String>();
@@ -460,11 +460,11 @@ public class ResourceDnsMonitor {
                                                                     // Each node must have a different A record
                                                                     String address = addresses.iterator().next();
                                                                     for(ResourceNodeDnsResult previousNodeResult :  nodeResults.values()) {
-                                                                        Map<Name,Map<Nameserver,DnsLookupResult>> previousNodeRecordLookups = previousNodeResult.getNodeRecordLookups();
+                                                                        Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> previousNodeRecordLookups = previousNodeResult.getNodeRecordLookups();
                                                                         if(previousNodeRecordLookups!=null) {
                                                                             boolean foundMatch = false;
                                                                             MATCH_LOOP:
-                                                                            for(Map<Nameserver,DnsLookupResult> previousLookups : previousNodeRecordLookups.values()) {
+                                                                            for(Map<? extends Nameserver,? extends DnsLookupResult> previousLookups : previousNodeRecordLookups.values()) {
                                                                                 for(DnsLookupResult previousResult : previousLookups.values()) {
                                                                                     if(previousResult.getAddresses().contains(address)) {
                                                                                         foundMatch = true;

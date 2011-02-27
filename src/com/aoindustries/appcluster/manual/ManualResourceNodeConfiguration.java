@@ -20,20 +20,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster;
+package com.aoindustries.appcluster.manual;
 
-import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurationException;
+import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.Node;
+import com.aoindustries.appcluster.ResourceNodeConfiguration;
 
 /**
- * The per-node settings for a manual resource.
- *
- * @see  ManualResource
+ * The configuration for a manual resource.
  *
  * @author  AO Industries, Inc.
  */
-public class ManualResourceNode extends ResourceNode<ManualResource,ManualResourceNode> {
+public interface ManualResourceNodeConfiguration extends ResourceNodeConfiguration<ManualResource,ManualResourceNode> {
 
-    ManualResourceNode(Node node, AppClusterConfiguration.ManualResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
-        super(node, resourceNodeConfiguration);
-    }
+    @Override
+    ManualResourceNode newResourceNode(Node node) throws AppClusterConfigurationException;
 }

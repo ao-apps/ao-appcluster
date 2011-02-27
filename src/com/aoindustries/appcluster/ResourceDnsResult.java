@@ -69,10 +69,10 @@ public class ResourceDnsResult {
      *
      * @exception  IllegalArgumentException  if any dnsRecord->nameserver result is missing.
      */
-    static Map<Name,Map<Nameserver,DnsLookupResult>> getUnmodifiableDnsLookupResults(Map<Name,Map<Nameserver,DnsLookupResult>> dnsRecordLookups, Set<Name> dnsRecords, Set<Nameserver> nameservers) throws IllegalArgumentException {
-        Map<Name,Map<Nameserver,DnsLookupResult>> newDnsRecordLookups = new LinkedHashMap<Name,Map<Nameserver,DnsLookupResult>>(dnsRecords.size()*4/3+1);
+    static Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> getUnmodifiableDnsLookupResults(Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> dnsRecordLookups, Set<? extends Name> dnsRecords, Set<? extends Nameserver> nameservers) throws IllegalArgumentException {
+        Map<Name,Map<? extends Nameserver,? extends DnsLookupResult>> newDnsRecordLookups = new LinkedHashMap<Name,Map<? extends Nameserver,? extends DnsLookupResult>>(dnsRecords.size()*4/3+1);
         for(Name dnsRecord : dnsRecords) {
-            Map<Nameserver,DnsLookupResult> dnsLookupResults = dnsRecordLookups.get(dnsRecord);
+            Map<? extends Nameserver,? extends DnsLookupResult> dnsLookupResults = dnsRecordLookups.get(dnsRecord);
             if(dnsLookupResults==null) throw new IllegalArgumentException("Missing DNS record " + dnsRecord);
             Map<Nameserver,DnsLookupResult> newDnsLookupResults = new LinkedHashMap<Nameserver,DnsLookupResult>(nameservers.size()*4/3+1);
             for(Nameserver nameserver : nameservers) {
@@ -88,19 +88,19 @@ public class ResourceDnsResult {
     private final Resource<?,?> resource;
     private final long startTime;
     private final long endTime;
-    private final Map<Name,Map<Nameserver,DnsLookupResult>> masterRecordLookups;
+    private final Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> masterRecordLookups;
     private final MasterDnsStatus masterStatus;
     private final SortedSet<String> masterStatusMessages;
-    private final Map<Node,ResourceNodeDnsResult> nodeResults;
+    private final Map<? extends Node,? extends ResourceNodeDnsResult> nodeResults;
 
     ResourceDnsResult(
         Resource<?,?> resource,
         long startTime,
         long endTime,
-        Map<Name,Map<Nameserver,DnsLookupResult>> masterRecordLookups,
+        Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> masterRecordLookups,
         MasterDnsStatus masterStatus,
         Collection<String> masterStatusMessages,
-        Map<Node,ResourceNodeDnsResult> nodeResults
+        Map<? extends Node,? extends ResourceNodeDnsResult> nodeResults
     ) {
         this.resource = resource;
         this.startTime = startTime;
@@ -160,7 +160,7 @@ public class ResourceDnsResult {
      * If no lookups have been performed, such as during STOPPED or UNKNOWN state, returns <code>null</code>.
      * Otherwise, it contains an entry for every masterRecord querying every enabled nameserver.
      */
-    public Map<Name,Map<Nameserver,DnsLookupResult>> getMasterRecordLookups() {
+    public Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> getMasterRecordLookups() {
         return masterRecordLookups;
     }
 
@@ -183,7 +183,7 @@ public class ResourceDnsResult {
      * Gets the result of each node.
      * This has an entry for every node in this resource.
      */
-    public Map<Node,ResourceNodeDnsResult> getNodeResultMap() {
+    public Map<? extends Node,? extends ResourceNodeDnsResult> getNodeResultMap() {
         return nodeResults;
     }
 
@@ -191,7 +191,7 @@ public class ResourceDnsResult {
      * Gets the result of each node.
      * This has an entry for every node in this resource.
      */
-    public Collection<ResourceNodeDnsResult> getNodeResults() {
+    public Collection<? extends ResourceNodeDnsResult> getNodeResults() {
         return nodeResults.values();
     }
 
@@ -208,7 +208,7 @@ public class ResourceDnsResult {
         // Master records
         status = AppCluster.max(status, getMasterStatus().getResourceStatus());
         if(masterRecordLookups!=null) {
-            for(Map<Nameserver,DnsLookupResult> lookups : masterRecordLookups.values()) {
+            for(Map<? extends Nameserver,? extends DnsLookupResult> lookups : masterRecordLookups.values()) {
                 for(DnsLookupResult lookup : lookups.values()) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
             }
         }
@@ -216,9 +216,9 @@ public class ResourceDnsResult {
         // Node records
         for(ResourceNodeDnsResult nodeDnsResult : getNodeResultMap().values()) {
             status = AppCluster.max(status, nodeDnsResult.getNodeStatus().getResourceStatus());
-            Map<Name,Map<Nameserver,DnsLookupResult>> nodeLookups = nodeDnsResult.getNodeRecordLookups();
+            Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeLookups = nodeDnsResult.getNodeRecordLookups();
             if(nodeLookups!=null) {
-                for(Map<Nameserver,DnsLookupResult> lookups : nodeLookups.values()) {
+                for(Map<? extends Nameserver,? extends DnsLookupResult> lookups : nodeLookups.values()) {
                     for(DnsLookupResult lookup : lookups.values()) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
                 }
             }

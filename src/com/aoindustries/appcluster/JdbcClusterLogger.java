@@ -40,15 +40,15 @@ public class JdbcClusterLogger implements AppClusterLogger {
 
     private final Database database;
 
-    public JdbcClusterLogger(String name) throws AppClusterConfiguration.AppClusterConfigurationException {
+    public JdbcClusterLogger(String name) throws AppClusterConfigurationException {
         try {
             Context ic = new InitialContext();
             Context envCtx = (Context)ic.lookup("java:comp/env");
             DataSource dataSource = (DataSource)envCtx.lookup(name);
-            if(dataSource==null) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("JdbcClusterLogger.init.datasourceNotFound", name));
+            if(dataSource==null) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("JdbcClusterLogger.init.datasourceNotFound", name));
             database = new Database(dataSource, logger);
         } catch(NamingException exc) {
-            throw new AppClusterConfiguration.AppClusterConfigurationException(exc);
+            throw new AppClusterConfigurationException(exc);
         }
     }
 

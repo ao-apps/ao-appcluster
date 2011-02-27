@@ -42,30 +42,34 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private final String id;
     private final boolean enabled;
     private final String display;
-    private final Set<Name> masterRecords;
+    private final Set<? extends Name> masterRecords;
     private final int masterRecordsTtl;
-    private final Set<RN> resourceNodes;
-    private final Set<Nameserver> enabledNameservers;
+    private final String type;
+    private final Set<? extends RN> resourceNodes;
+    private final Set<? extends Nameserver> enabledNameservers;
 
     private final ResourceDnsMonitor dnsMonitor;
 
-    Resource(AppCluster cluster, AppClusterConfiguration.ResourceConfiguration resourceConfiguration, Collection<RN> resourceNodes) {
+    protected Resource(AppCluster cluster, ResourceConfiguration<R,RN> resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) {
         this.cluster = cluster;
         this.id = resourceConfiguration.getId();
         this.enabled = cluster.isEnabled() && resourceConfiguration.isEnabled();
         this.display = resourceConfiguration.getDisplay();
         this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
         this.masterRecordsTtl = resourceConfiguration.getMasterRecordsTtl();
+        this.type = resourceConfiguration.getType();
         @SuppressWarnings("unchecked")
         R rThis = (R)this;
         Set<RN> newResourceNodes = new LinkedHashSet<RN>(resourceNodes.size()*4/3+1);
-        for(RN resourceNode : resourceNodes) {
-            resourceNode.init(rThis);
-            newResourceNodes.add(resourceNode);
+        for(ResourceNode<?,?> resourceNode : resourceNodes) {
+            @SuppressWarnings("unchecked")
+            RN rn = (RN)resourceNode;
+            rn.init(rThis);
+            newResourceNodes.add(rn);
         }
         this.resourceNodes = Collections.unmodifiableSet(newResourceNodes);
         final Set<Nameserver> newEnabledNameservers = new LinkedHashSet<Nameserver>();
-        for(RN resourceNode : resourceNodes) {
+        for(ResourceNode<?,?> resourceNode : resourceNodes) {
             Node node = resourceNode.getNode();
             if(node.isEnabled()) newEnabledNameservers.addAll(node.getNameservers());
         }
@@ -123,7 +127,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
      * The master node is determined by matching these records against
      * the resource node configuration's node records.
      */
-    public Set<Name> getMasterRecords() {
+    public Set<? extends Name> getMasterRecords() {
         return masterRecords;
     }
 
@@ -137,7 +141,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     /**
      * Gets the set of all nameservers used by all enabled nodes.
      */
-    public Set<Nameserver> getEnabledNameservers() {
+    public Set<? extends Nameserver> getEnabledNameservers() {
         return enabledNameservers;
     }
 
@@ -148,7 +152,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         return dnsMonitor;
     }
 
-    public Set<RN> getResourceNodes() {
+    public Set<? extends RN> getResourceNodes() {
         return resourceNodes;
     }
 
@@ -170,5 +174,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     /**
      * Gets the replication type of this resource.
      */
-    abstract public String getType();
+    public String getType() {
+        return type;
+    }
 }

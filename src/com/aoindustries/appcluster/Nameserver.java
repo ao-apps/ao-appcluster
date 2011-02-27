@@ -77,18 +77,18 @@ public class Nameserver {
         ResourceStatus status = ResourceStatus.UNKNOWN;
         for(Resource resource : cluster.getResources()) {
             ResourceDnsResult resourceDnsResult = resource.getDnsMonitor().getLastResult();
-            Map<Name,Map<Nameserver,DnsLookupResult>> masterDnsLookups = resourceDnsResult.getMasterRecordLookups();
+            Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> masterDnsLookups = resourceDnsResult.getMasterRecordLookups();
             if(masterDnsLookups!=null) {
-                for(Map<Nameserver,DnsLookupResult> lookups : masterDnsLookups.values()) {
+                for(Map<? extends Nameserver,? extends DnsLookupResult> lookups : masterDnsLookups.values()) {
                     DnsLookupResult lookup = lookups.get(this);
                     if(lookup!=null) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
                 }
             }
 
             for(ResourceNodeDnsResult nodeDnsResult : resourceDnsResult.getNodeResultMap().values()) {
-                Map<Name,Map<Nameserver,DnsLookupResult>> nodeDnsLookups = nodeDnsResult.getNodeRecordLookups();
+                Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeDnsLookups = nodeDnsResult.getNodeRecordLookups();
                 if(nodeDnsLookups!=null) {
-                    for(Map<Nameserver,DnsLookupResult> lookups : nodeDnsLookups.values()) {
+                    for(Map<? extends Nameserver,? extends DnsLookupResult> lookups : nodeDnsLookups.values()) {
                         DnsLookupResult lookup = lookups.get(this);
                         if(lookup!=null) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
                     }

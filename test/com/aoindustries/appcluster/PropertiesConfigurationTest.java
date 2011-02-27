@@ -22,7 +22,6 @@
  */
 package com.aoindustries.appcluster;
 
-import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,9 +38,9 @@ public class PropertiesConfigurationTest {
     @Test
     public void testRealWorldConfig() throws IOException, AppClusterConfigurationException, InterruptedException {
         URL url = PropertiesConfigurationTest.class.getResource("appcluster.properties");
-        PropertiesConfiguration config;
+        AppClusterPropertiesConfiguration config;
         if(url.getProtocol().equals("file")) {
-            config = new PropertiesConfiguration(new File(url.getPath()));
+            config = new AppClusterPropertiesConfiguration(new File(url.getPath()));
         } else {
             Properties props = new Properties();
             InputStream in = url.openStream();
@@ -50,7 +49,7 @@ public class PropertiesConfigurationTest {
             } finally {
                 in.close();
             }
-            config = new PropertiesConfiguration(props);
+            config = new AppClusterPropertiesConfiguration(props);
         }
         AppCluster cluster = new AppCluster(config);
         cluster.addResourceDnsListener(new LoggerResourceDnsListener());

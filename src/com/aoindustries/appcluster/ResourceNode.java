@@ -35,13 +35,14 @@ import org.xbill.DNS.Name;
 abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> {
 
     private final Node node;
-    private final Set<Name> nodeRecords;
+    private final Set<? extends Name> nodeRecords;
     private R resource;
 
-    ResourceNode(Node node, AppClusterConfiguration.ResourceNodeConfiguration resourceNodeConfiguration) {
+    protected ResourceNode(Node node, ResourceNodeConfiguration<R,RN> resourceNodeConfiguration) {
         this.node = node;
         this.nodeRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceNodeConfiguration.getNodeRecords()));
     }
+
     void init(R resource) {
         this.resource = resource;
     }
@@ -85,7 +86,7 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
      * match the resource's masterRecords for this node to be considered
      * a master.
      */
-    public Set<Name> getNodeRecords() {
+    public Set<? extends Name> getNodeRecords() {
         return nodeRecords;
     }
 

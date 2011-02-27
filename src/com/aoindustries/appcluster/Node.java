@@ -40,15 +40,15 @@ public class Node {
     private final boolean enabled;
     private final String display;
     private final Name hostname;
-    private final Set<Nameserver> nameservers;
+    private final Set<? extends Nameserver> nameservers;
 
-    Node(AppCluster cluster, AppClusterConfiguration.NodeConfiguration nodeConfiguration) {
+    Node(AppCluster cluster, NodeConfiguration nodeConfiguration) {
         this.cluster = cluster;
         this.id = nodeConfiguration.getId();
         this.enabled = cluster.isEnabled() && nodeConfiguration.isEnabled();
         this.display = nodeConfiguration.getDisplay();
         this.hostname = nodeConfiguration.getHostname();
-        Set<Name> configNameservers = nodeConfiguration.getNameservers();
+        Set<? extends Name> configNameservers = nodeConfiguration.getNameservers();
         Set<Nameserver> newNameservers = new LinkedHashSet<Nameserver>(configNameservers.size()*4/3+1);
         for(Name nameserver : configNameservers) newNameservers.add(new Nameserver(cluster, nameserver));
         this.nameservers = Collections.unmodifiableSet(newNameservers);
@@ -101,7 +101,7 @@ public class Node {
     /**
      * Gets the set of nameservers that are local to the machine running this node.
      */
-    public Set<Nameserver> getNameservers() {
+    public Set<? extends Nameserver> getNameservers() {
         return nameservers;
     }
 
@@ -115,9 +115,9 @@ public class Node {
             ResourceNodeDnsResult nodeDnsResult = resource.getDnsMonitor().getLastResult().getNodeResultMap().get(this);
             if(nodeDnsResult!=null) {
                 status = AppCluster.max(status, nodeDnsResult.getNodeStatus().getResourceStatus());
-                Map<Name,Map<Nameserver,DnsLookupResult>> nodeLookups = nodeDnsResult.getNodeRecordLookups();
+                Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeLookups = nodeDnsResult.getNodeRecordLookups();
                 if(nodeLookups!=null) {
-                    for(Map<Nameserver,DnsLookupResult> lookups : nodeLookups.values()) {
+                    for(Map<? extends Nameserver,? extends DnsLookupResult> lookups : nodeLookups.values()) {
                         for(Nameserver nameserver : nameservers) status = AppCluster.max(status, lookups.get(nameserver).getStatus().getResourceStatus());
                     }
                 }

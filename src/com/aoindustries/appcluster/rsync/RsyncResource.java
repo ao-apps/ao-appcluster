@@ -20,9 +20,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster;
+package com.aoindustries.appcluster.rsync;
 
-import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurationException;
+import com.aoindustries.appcluster.AppCluster;
+import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
 
 /**
@@ -32,12 +35,10 @@ import java.util.Collection;
  */
 public class RsyncResource extends Resource<RsyncResource,RsyncResourceNode> {
 
-    static final String TYPE = "rsync";
-
     private final boolean allowMultiMaster;
     private final boolean delete;
 
-    RsyncResource(AppCluster cluster, AppClusterConfiguration.RsyncResourceConfiguration resourceConfiguration, Collection<RsyncResourceNode> resourceNodes) throws AppClusterConfigurationException {
+    protected RsyncResource(AppCluster cluster, RsyncResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
         this.delete = resourceConfiguration.isDelete();
@@ -50,10 +51,5 @@ public class RsyncResource extends Resource<RsyncResource,RsyncResourceNode> {
 
     public boolean isDelete() {
         return delete;
-    }
-
-    @Override
-    public String getType() {
-        return TYPE;
     }
 }

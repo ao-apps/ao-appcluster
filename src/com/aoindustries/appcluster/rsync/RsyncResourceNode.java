@@ -20,9 +20,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster;
+package com.aoindustries.appcluster.rsync;
 
-import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurationException;
+import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.Node;
+import com.aoindustries.appcluster.ResourceNode;
 
 /**
  * The node settings for rsync synchronization.
@@ -36,15 +38,15 @@ public class RsyncResourceNode extends ResourceNode<RsyncResource,RsyncResourceN
     private final String backupDir;
     private final int backupDays;
 
-    RsyncResourceNode(Node node, AppClusterConfiguration.RsyncResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
+    protected RsyncResourceNode(Node node, RsyncResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
         super(node, resourceNodeConfiguration);
         this.username = resourceNodeConfiguration.getUsername();
         this.path = resourceNodeConfiguration.getPath();
         //  Each resource-node path must not end in slash (/) since it changes the meaning in rsync
-        if(this.path.endsWith("/")) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResourceNode.init.path.endsSlash", this.path));
+        if(this.path.endsWith("/")) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResourceNode.init.path.endsSlash", this.path));
         //  Each resource-node backup directory must not end in slash (/) since it changes the meaning in rsync
         this.backupDir = resourceNodeConfiguration.getBackupDir();
-        if(this.backupDir.endsWith("/")) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResourceNode.init.backupDir.endsSlash", this.backupDir));
+        if(this.backupDir.endsWith("/")) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResourceNode.init.backupDir.endsSlash", this.backupDir));
         this.backupDays = resourceNodeConfiguration.getBackupDays();
     }
 

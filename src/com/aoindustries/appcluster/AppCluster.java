@@ -68,10 +68,10 @@ public class AppCluster {
     private String display; // Protected by startedLock
     private ExecutorService executorService; // Protected by startLock
     private AppClusterLogger clusterLogger; // Protected by startedLock
-    private Set<Node> nodes = Collections.emptySet(); // Protected by startedLock
+    private Set<? extends Node> nodes = Collections.emptySet(); // Protected by startedLock
     private Name thisHostname; // Protected by startedLock
     private Node thisNode; // Protected by startedLock
-    private Set<Resource> resources = Collections.emptySet(); // Protected by startedLock
+    private Set<? extends Resource> resources = Collections.emptySet(); // Protected by startedLock
 
     private final List<ResourceDnsListener> dnsListeners = new ArrayList<ResourceDnsListener>();
     private ExecutorService dnsListenersExecutorService; // Protected by dnsListeners
@@ -94,7 +94,7 @@ public class AppCluster {
      * @see #start()
      */
     public AppCluster(File file) {
-        this.configuration = new PropertiesConfiguration(file);
+        this.configuration = new AppClusterPropertiesConfiguration(file);
     }
 
     /**
@@ -105,14 +105,14 @@ public class AppCluster {
      * @see #start()
      */
     public AppCluster(Properties properties) {
-        this.configuration = new PropertiesConfiguration(properties);
+        this.configuration = new AppClusterPropertiesConfiguration(properties);
     }
 
     /**
      * Performs a consistency check on a configuration.
      */
     /*
-    public static void checkConfiguration(AppClusterConfiguration configuration) throws AppClusterConfiguration.AppClusterConfigurationException {
+    public static void checkConfiguration(AppClusterConfiguration configuration) throws AppClusterConfigurationException {
         checkConfiguration(
             configuration.getNodeConfigurations(),
             configuration.getResourceConfigurations()
@@ -122,50 +122,50 @@ public class AppCluster {
     /**
      * Performs a consistency check on a configuration.
      */
-    public static void checkConfiguration(Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations, Set<AppClusterConfiguration.ResourceConfiguration> resourceConfigurations) throws AppClusterConfiguration.AppClusterConfigurationException {
+    public static void checkConfiguration(Set<? extends NodeConfiguration> nodeConfigurations, Set<? extends ResourceConfiguration<?,?>> resourceConfigurations) throws AppClusterConfigurationException {
         // Each node must have a distinct display
         Set<String> strings = new HashSet<String>(nodeConfigurations.size()*4/3+1);
-        for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
+        for(NodeConfiguration nodeConfiguration : nodeConfigurations) {
             String display = nodeConfiguration.getDisplay();
-            if(!strings.add(display)) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateNodeDisplay", display));
+            if(!strings.add(display)) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateNodeDisplay", display));
         }
 
         // Each node must have a distinct hostname
         Set<Name> names = new HashSet<Name>(nodeConfigurations.size()*4/3+1);
-        for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
+        for(NodeConfiguration nodeConfiguration : nodeConfigurations) {
             Name hostname = nodeConfiguration.getHostname();
-            if(!names.add(hostname)) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateNodeHostname", hostname));
+            if(!names.add(hostname)) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateNodeHostname", hostname));
         }
 
         // Each node must have a distinct display
         strings.clear();
-        for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
+        for(ResourceConfiguration<?,?> resourceConfiguration : resourceConfigurations) {
             String display = resourceConfiguration.getDisplay();
-            if(!strings.add(display)) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateResourceDisplay", display));
+            if(!strings.add(display)) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateResourceDisplay", display));
         }
 
         // Each resource-node must have no overlap between nodeRecords and masterRecords of the resource
-        for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
-            Set<Name> masterRecords = resourceConfiguration.getMasterRecords();
-            for(AppClusterConfiguration.ResourceNodeConfiguration rnc : resourceConfiguration.getResourceNodeConfigurations()) {
-                for(Name nodeRecord : rnc.getNodeRecords()) {
+        for(ResourceConfiguration<?,?> resourceConfiguration : resourceConfigurations) {
+            Set<? extends Name> masterRecords = resourceConfiguration.getMasterRecords();
+            for(ResourceNodeConfiguration<?,?> resourceNodeConfigs : resourceConfiguration.getResourceNodeConfigurations()) {
+                for(Name nodeRecord : resourceNodeConfigs.getNodeRecords()) {
                     if(masterRecords.contains(nodeRecord)) {
-                        throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.nodeMatchesMaster", nodeRecord));
+                        throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.nodeMatchesMaster", nodeRecord));
                     }
                 }
             }
         }
 
         // Each resource-node must have no overlap between nodeRecords and nodeRecords of any other resource-node of the resource
-        for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
-            Set<? extends AppClusterConfiguration.ResourceNodeConfiguration> resourceNodeConfigurations = resourceConfiguration.getResourceNodeConfigurations();
-            for(AppClusterConfiguration.ResourceNodeConfiguration rnc1 : resourceNodeConfigurations) {
-                Set<Name> nodeRecords1 = rnc1.getNodeRecords();
-                for(AppClusterConfiguration.ResourceNodeConfiguration rnc2 : resourceNodeConfigurations) {
-                    if(!rnc1.equals(rnc2)) {
-                        for(Name nodeRecord : rnc2.getNodeRecords()) {
+        for(ResourceConfiguration<?,?> resourceConfiguration : resourceConfigurations) {
+            Set<? extends ResourceNodeConfiguration<?,?>> resourceNodeConfigurations = resourceConfiguration.getResourceNodeConfigurations();
+            for(ResourceNodeConfiguration<?,?> resourceNodeConfig1 : resourceNodeConfigurations) {
+                Set<? extends Name> nodeRecords1 = resourceNodeConfig1.getNodeRecords();
+                for(ResourceNodeConfiguration<?,?> resourceNodeConfig2 : resourceNodeConfigurations) {
+                    if(!resourceNodeConfig1.equals(resourceNodeConfig2)) {
+                        for(Name nodeRecord : resourceNodeConfig2.getNodeRecords()) {
                             if(nodeRecords1.contains(nodeRecord)) {
-                                throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.nodeMatchesOtherNode", nodeRecord));
+                                throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.nodeMatchesOtherNode", nodeRecord));
                             }
                         }
                     }
@@ -222,20 +222,20 @@ public class AppCluster {
     /**
      * When the configuration changes, do shutdown and startUp.
      */
-    private final AppClusterConfiguration.ConfigurationListener configUpdated = new AppClusterConfiguration.ConfigurationListener() {
+    private final AppClusterConfigurationListener configUpdated = new AppClusterConfigurationListener() {
         @Override
         public void onConfigurationChanged() {
             synchronized(startedLock) {
                 if(started) {
                     try {
                         if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.onConfigurationChanged.info", configuration.getDisplay()));
-                    } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
+                    } catch(AppClusterConfigurationException exc) {
                         logger.log(Level.SEVERE, null, exc);
                     }
                     shutdown();
                     try {
                         startUp();
-                    } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
+                    } catch(AppClusterConfigurationException exc) {
                         logger.log(Level.SEVERE, null, exc);
                     }
                 }
@@ -269,7 +269,7 @@ public class AppCluster {
      *
      * @see #stop()
      */
-    public void start() throws AppClusterConfiguration.AppClusterConfigurationException {
+    public void start() throws AppClusterConfigurationException {
         synchronized(startedLock) {
             if(!started) {
                 configuration.start();
@@ -292,7 +292,7 @@ public class AppCluster {
             if(started) {
                 try {
                     if(logger.isLoggable(Level.INFO)) logger.info(ApplicationResources.accessor.getMessage("AppCluster.stop.info", configuration.getDisplay()));
-                } catch(AppClusterConfiguration.AppClusterConfigurationException exc) {
+                } catch(AppClusterConfigurationException exc) {
                     logger.log(Level.SEVERE, null, exc);
                 }
                 shutdown();
@@ -352,7 +352,7 @@ public class AppCluster {
     /**
      * Gets the set of all nodes or empty set if not started.
      */
-    public Set<Node> getNodes() {
+    public Set<? extends Node> getNodes() {
         synchronized(startedLock) {
             return nodes;
         }
@@ -392,7 +392,7 @@ public class AppCluster {
     /**
      * Gets the set of all resources or empty set if not started.
      */
-    public Set<Resource> getResources() {
+    public Set<? extends Resource> getResources() {
         synchronized(startedLock) {
             return resources;
         }
@@ -402,7 +402,7 @@ public class AppCluster {
      * Gets a map view of the resources keyed on String resourceId.
      * This is for compatibility with JSP EL - it is not a fast implementation.
      */
-    public Map<String,Resource> getResourceMap() {
+    public Map<String,? extends Resource> getResourceMap() {
         synchronized(startedLock) {
             LinkedHashMap<String,Resource> map = new LinkedHashMap<String,Resource>(resources.size()*4/3+1);
             for(Resource resource : resources) map.put(resource.getId(), resource);
@@ -410,7 +410,7 @@ public class AppCluster {
         }
     }
 
-    private void startUp() throws AppClusterConfiguration.AppClusterConfigurationException {
+    private void startUp() throws AppClusterConfigurationException {
         synchronized(startedLock) {
             assert started;
             try {
@@ -420,15 +420,15 @@ public class AppCluster {
                 // Get the configuration values.
                 enabled = configuration.isEnabled();
                 display = configuration.getDisplay();
-                Set<AppClusterConfiguration.NodeConfiguration> nodeConfigurations = configuration.getNodeConfigurations();
-                Set<AppClusterConfiguration.ResourceConfiguration> resourceConfigurations = configuration.getResourceConfigurations();
+                Set<? extends NodeConfiguration> nodeConfigurations = configuration.getNodeConfigurations();
+                Set<? extends ResourceConfiguration<?,?>> resourceConfigurations = configuration.getResourceConfigurations();
 
                 // Check the configuration for consistency
                 checkConfiguration(nodeConfigurations, resourceConfigurations);
 
                 // Create the nodes
                 Set<Node> newNodes = new LinkedHashSet<Node>(nodeConfigurations.size()*4/3+1);
-                for(AppClusterConfiguration.NodeConfiguration nodeConfiguration : nodeConfigurations) {
+                for(NodeConfiguration nodeConfiguration : nodeConfigurations) {
                     newNodes.add(new Node(this, nodeConfiguration));
                 }
                 nodes = Collections.unmodifiableSet(newNodes);
@@ -471,30 +471,25 @@ public class AppCluster {
                 clusterLogger.start();
 
                 // Start per-resource monitoring threads
-                Set<Resource> newResources = new LinkedHashSet<Resource>(resourceConfigurations.size()*4/3+1);
-                for(AppClusterConfiguration.ResourceConfiguration resourceConfiguration : resourceConfigurations) {
-                    if(resourceConfiguration instanceof AppClusterConfiguration.RsyncResourceConfiguration) {
-                        Set<? extends AppClusterConfiguration.ResourceNodeConfiguration> nodeConfigs = resourceConfiguration.getResourceNodeConfigurations();
-                        Collection<RsyncResourceNode> newResourceNodes = new ArrayList<RsyncResourceNode>(nodeConfigs.size());
-                        for(AppClusterConfiguration.ResourceNodeConfiguration nodeConfig : nodeConfigs) {
-                            AppClusterConfiguration.RsyncResourceNodeConfiguration resyncConfig = (AppClusterConfiguration.RsyncResourceNodeConfiguration)nodeConfig;
-                            String nodeId = resyncConfig.getNodeId();
-                            Node node = getNode(nodeId);
-                            if(node==null) throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("RsyncResource.init.nodeNotFound", resourceConfiguration.getId(), nodeId));
-                            newResourceNodes.add(new RsyncResourceNode(node, resyncConfig));
-                        }
-                        RsyncResource resource = new RsyncResource(this, (AppClusterConfiguration.RsyncResourceConfiguration)resourceConfiguration, newResourceNodes);
-                        newResources.add(resource);
-                        resource.getDnsMonitor().start();
-                    } else {
-                        throw new AppClusterConfiguration.AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.startUp.unexpectedType", resourceConfiguration.getId(), resourceConfiguration.getClass().getName()));
+                Set<Resource<?,?>> newResources = new LinkedHashSet<Resource<?,?>>(resourceConfigurations.size()*4/3+1);
+                for(ResourceConfiguration<?,?> resourceConfiguration : resourceConfigurations) {
+                    Set<? extends ResourceNodeConfiguration<?,?>> resourceNodeConfigs = resourceConfiguration.getResourceNodeConfigurations();
+                    Collection<ResourceNode<?,?>> newResourceNodes = new ArrayList<ResourceNode<?,?>>(resourceNodeConfigs.size());
+                    for(ResourceNodeConfiguration<?,?> resourceNodeConfig : resourceNodeConfigs) {
+                        String nodeId = resourceNodeConfig.getNodeId();
+                        Node node = getNode(nodeId);
+                        if(node==null) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.startUp.nodeNotFound", resourceConfiguration.getId(), nodeId));
+                        newResourceNodes.add(resourceNodeConfig.newResourceNode(node));
                     }
+                    Resource<?,?> resource = resourceConfiguration.newResource(this, newResourceNodes);
+                    newResources.add(resource);
+                    resource.getDnsMonitor().start();
                 }
                 resources = Collections.unmodifiableSet(newResources);
             } catch(TextParseException exc) {
-                throw new AppClusterConfiguration.AppClusterConfigurationException(exc);
+                throw new AppClusterConfigurationException(exc);
             } catch(UnknownHostException exc) {
-                throw new AppClusterConfiguration.AppClusterConfigurationException(exc);
+                throw new AppClusterConfigurationException(exc);
             }
         }
     }

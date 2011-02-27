@@ -35,13 +35,13 @@ import org.xbill.DNS.Name;
 public class ResourceNodeDnsResult {
 
     private final ResourceNode<?,?> resourceNode;
-    private final Map<Name,Map<Nameserver,DnsLookupResult>> nodeRecordLookups;
+    private final Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeRecordLookups;
     private final NodeDnsStatus nodeStatus;
     private final SortedSet<String> nodeStatusMessages;
 
     ResourceNodeDnsResult(
         ResourceNode<?,?> resourceNode,
-        Map<Name,Map<Nameserver,DnsLookupResult>> nodeRecordLookups,
+        Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeRecordLookups,
         NodeDnsStatus nodeStatus,
         Collection<String> nodeStatusMessages
     ) {
@@ -60,7 +60,7 @@ public class ResourceNodeDnsResult {
      * If no lookups have been performed, such as during STOPPED or UNKNOWN state, returns <code>null</code>.
      * Otherwise, it contains an entry for every nodeRecord querying every enabled nameserver.
      */
-    public Map<Name,Map<Nameserver,DnsLookupResult>> getNodeRecordLookups() {
+    public Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> getNodeRecordLookups() {
         return nodeRecordLookups;
     }
 

@@ -20,9 +20,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster;
+package com.aoindustries.appcluster.manual;
 
-import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurationException;
+import com.aoindustries.appcluster.AppCluster;
+import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
 
 /**
@@ -34,11 +37,9 @@ import java.util.Collection;
  */
 public class ManualResource extends Resource<ManualResource,ManualResourceNode> {
 
-    static final String TYPE = "manual";
-
     private final boolean allowMultiMaster;
 
-    ManualResource(AppCluster cluster, AppClusterConfiguration.ManualResourceConfiguration resourceConfiguration, Collection<ManualResourceNode> resourceNodes) throws AppClusterConfigurationException {
+    protected ManualResource(AppCluster cluster, ManualResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
     }
@@ -46,10 +47,5 @@ public class ManualResource extends Resource<ManualResource,ManualResourceNode> 
     @Override
     public boolean getAllowMultiMaster() {
         return allowMultiMaster;
-    }
-
-    @Override
-    public String getType() {
-        return TYPE;
     }
 }
