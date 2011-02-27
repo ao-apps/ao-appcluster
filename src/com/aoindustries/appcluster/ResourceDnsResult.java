@@ -203,7 +203,7 @@ public class ResourceDnsResult {
 
         // Check time since
         ResourceStatus secondsSinceStatus = getSecondsSinceStatus();
-        if(secondsSinceStatus.compareTo(ResourceStatus.HEALTHY)<0) status = AppCluster.max(status, secondsSinceStatus);
+        if(secondsSinceStatus!=ResourceStatus.HEALTHY) status = AppCluster.max(status, secondsSinceStatus);
 
         // Master records
         status = AppCluster.max(status, getMasterStatus().getResourceStatus());

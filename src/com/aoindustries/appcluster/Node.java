@@ -118,7 +118,7 @@ public class Node {
                 Map<Name,Map<Nameserver,DnsLookupResult>> nodeLookups = nodeDnsResult.getNodeRecordLookups();
                 if(nodeLookups!=null) {
                     for(Map<Nameserver,DnsLookupResult> lookups : nodeLookups.values()) {
-                        for(DnsLookupResult lookup : lookups.values()) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
+                        for(Nameserver nameserver : nameservers) status = AppCluster.max(status, lookups.get(nameserver).getStatus().getResourceStatus());
                     }
                 }
             }
