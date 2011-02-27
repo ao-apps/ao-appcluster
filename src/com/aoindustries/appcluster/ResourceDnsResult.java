@@ -41,8 +41,8 @@ import org.xbill.DNS.Name;
  */
 public class ResourceDnsResult {
 
-    private static int WARNING_SECONDS = (ResourceDnsMonitor.DNS_CHECK_INTERVAL + ResourceDnsMonitor.DNS_CHECK_TIMEOUT) / 1000;
-    private static int ERROR_SECONDS = WARNING_SECONDS + ResourceDnsMonitor.DNS_CHECK_INTERVAL/1000;
+    public static int WARNING_SECONDS = 10 + (ResourceDnsMonitor.DNS_CHECK_INTERVAL + ResourceDnsMonitor.DNS_ATTEMPTS * ResourceDnsMonitor.DNS_CHECK_TIMEOUT) / 1000;
+    public static int ERROR_SECONDS = WARNING_SECONDS + ResourceDnsMonitor.DNS_CHECK_INTERVAL/1000;
 
     static final Comparator<Object> defaultLocaleCollator = Collator.getInstance();
 
@@ -141,9 +141,9 @@ public class ResourceDnsResult {
         Long secondsSince = getSecondsSince();
         if(secondsSince==null) return ResourceStatus.UNKNOWN;
         // Error if result more than ERROR_SECONDS seconds ago
-        if(secondsSince>ERROR_SECONDS) return ResourceStatus.ERROR;
+        if(secondsSince<-ERROR_SECONDS || secondsSince>ERROR_SECONDS) return ResourceStatus.ERROR;
         // Warning if result more than WARNING_SECONDS seconds ago
-        if(secondsSince>WARNING_SECONDS) return ResourceStatus.WARNING;
+        if(secondsSince<-WARNING_SECONDS || secondsSince>WARNING_SECONDS) return ResourceStatus.WARNING;
         return ResourceStatus.HEALTHY;
     }
 

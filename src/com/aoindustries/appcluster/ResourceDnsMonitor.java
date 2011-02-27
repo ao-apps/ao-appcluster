@@ -63,12 +63,17 @@ public class ResourceDnsMonitor {
     /**
      * Checks the DNS settings once every 30 seconds.
      */
-    static final int DNS_CHECK_INTERVAL = 30000;
+    public static final int DNS_CHECK_INTERVAL = 30000;
+
+    /**
+     * The number of DNS tries.
+     */
+    public static final int DNS_ATTEMPTS = 2;
 
     /**
      * DNS queries time-out at 30 seconds.
      */
-    static final int DNS_CHECK_TIMEOUT = 30000;
+    public static final int DNS_CHECK_TIMEOUT = 30000;
 
     /**
      * Only one resolver will be created for each unique nameserver (case-insensitive on unique)
@@ -262,78 +267,82 @@ public class ResourceDnsMonitor {
                                                             @Override
                                                             public DnsLookupResult call() {
                                                                 try {
-                                                                    Lookup lookup = new Lookup(hostname, Type.A);
-                                                                    lookup.setCache(null);
-                                                                    lookup.setResolver(getSimpleResolver(nameserver));
-                                                                    lookup.setSearchPath(emptySearchPath);
-                                                                    Record[] records = lookup.run();
-                                                                    int result = lookup.getResult();
-                                                                    switch(result) {
-                                                                        case Lookup.SUCCESSFUL :
-                                                                            if(records==null || records.length==0) {
+                                                                    for(int attempt=0;attempt<2;attempt++) {
+                                                                        Lookup lookup = new Lookup(hostname, Type.A);
+                                                                        lookup.setCache(null);
+                                                                        lookup.setResolver(getSimpleResolver(nameserver));
+                                                                        lookup.setSearchPath(emptySearchPath);
+                                                                        Record[] records = lookup.run();
+                                                                        int result = lookup.getResult();
+                                                                        switch(result) {
+                                                                            case Lookup.SUCCESSFUL :
+                                                                                if(records==null || records.length==0) {
+                                                                                    return new DnsLookupResult(
+                                                                                        hostname,
+                                                                                        DnsLookupStatus.HOST_NOT_FOUND,
+                                                                                        null,
+                                                                                        null
+                                                                                    );
+                                                                                }
+                                                                                String[] addresses = new String[records.length];
+                                                                                Collection<String> statusMessages = null;
+                                                                                for(int c=0;c<records.length;c++) {
+                                                                                    ARecord aRecord = (ARecord)records[c];
+                                                                                    // Verify masterDomain TTL settings match expected values, issue as a warning
+                                                                                    if(masterRecords.contains(hostname)) {
+                                                                                        long ttl = aRecord.getTTL();
+                                                                                        if(ttl!=masterRecordsTtl) {
+                                                                                            if(statusMessages==null) statusMessages = new ArrayList<String>();
+                                                                                            statusMessages.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedTtl", masterRecordsTtl, ttl));
+                                                                                        }
+                                                                                    }
+                                                                                    addresses[c] = aRecord.getAddress().getHostAddress();
+                                                                                }
+                                                                                return new DnsLookupResult(
+                                                                                    hostname,
+                                                                                    statusMessages==null ? DnsLookupStatus.SUCCESSFUL : DnsLookupStatus.WARNING,
+                                                                                    statusMessages,
+                                                                                    addresses
+                                                                                );
+                                                                            case Lookup.UNRECOVERABLE :
+                                                                                return new DnsLookupResult(
+                                                                                    hostname,
+                                                                                    DnsLookupStatus.UNRECOVERABLE,
+                                                                                    null,
+                                                                                    null
+                                                                                );
+                                                                            case Lookup.TRY_AGAIN :
+                                                                                // Fall-through to try again loop
+                                                                                break;
+                                                                            case Lookup.HOST_NOT_FOUND :
                                                                                 return new DnsLookupResult(
                                                                                     hostname,
                                                                                     DnsLookupStatus.HOST_NOT_FOUND,
                                                                                     null,
                                                                                     null
                                                                                 );
-                                                                            }
-                                                                            String[] addresses = new String[records.length];
-                                                                            Collection<String> statusMessages = null;
-                                                                            for(int c=0;c<records.length;c++) {
-                                                                                ARecord aRecord = (ARecord)records[c];
-                                                                                // Verify masterDomain TTL settings match expected values, issue as a warning
-                                                                                if(masterRecords.contains(hostname)) {
-                                                                                    long ttl = aRecord.getTTL();
-                                                                                    if(ttl!=masterRecordsTtl) {
-                                                                                        if(statusMessages==null) statusMessages = new ArrayList<String>();
-                                                                                        statusMessages.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedTtl", masterRecordsTtl, ttl));
-                                                                                    }
-                                                                                }
-                                                                                addresses[c] = aRecord.getAddress().getHostAddress();
-                                                                            }
-                                                                            return new DnsLookupResult(
-                                                                                hostname,
-                                                                                statusMessages==null ? DnsLookupStatus.SUCCESSFUL : DnsLookupStatus.WARNING,
-                                                                                statusMessages,
-                                                                                addresses
-                                                                            );
-                                                                        case Lookup.UNRECOVERABLE :
-                                                                            return new DnsLookupResult(
-                                                                                hostname,
-                                                                                DnsLookupStatus.UNRECOVERABLE,
-                                                                                null,
-                                                                                null
-                                                                            );
-                                                                        case Lookup.TRY_AGAIN :
-                                                                            return new DnsLookupResult(
-                                                                                hostname,
-                                                                                DnsLookupStatus.TRY_AGAIN,
-                                                                                null,
-                                                                                null
-                                                                            );
-                                                                        case Lookup.HOST_NOT_FOUND :
-                                                                            return new DnsLookupResult(
-                                                                                hostname,
-                                                                                DnsLookupStatus.HOST_NOT_FOUND,
-                                                                                null,
-                                                                                null
-                                                                            );
-                                                                        case Lookup.TYPE_NOT_FOUND :
-                                                                            return new DnsLookupResult(
-                                                                                hostname,
-                                                                                DnsLookupStatus.TYPE_NOT_FOUND,
-                                                                                null,
-                                                                                null
-                                                                            );
-                                                                        default :
-                                                                            return new DnsLookupResult(
-                                                                                hostname,
-                                                                                DnsLookupStatus.ERROR,
-                                                                                Collections.singleton(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedResultCode", result)),
-                                                                                null
-                                                                            );
+                                                                            case Lookup.TYPE_NOT_FOUND :
+                                                                                return new DnsLookupResult(
+                                                                                    hostname,
+                                                                                    DnsLookupStatus.TYPE_NOT_FOUND,
+                                                                                    null,
+                                                                                    null
+                                                                                );
+                                                                            default :
+                                                                                return new DnsLookupResult(
+                                                                                    hostname,
+                                                                                    DnsLookupStatus.ERROR,
+                                                                                    Collections.singleton(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedResultCode", result)),
+                                                                                    null
+                                                                                );
+                                                                        }
                                                                     }
+                                                                    return new DnsLookupResult(
+                                                                        hostname,
+                                                                        DnsLookupStatus.TRY_AGAIN,
+                                                                        null,
+                                                                        null
+                                                                    );
                                                                 } catch(Exception exc) {
                                                                     return new DnsLookupResult(
                                                                         hostname,
