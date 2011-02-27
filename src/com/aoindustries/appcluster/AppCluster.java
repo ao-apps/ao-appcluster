@@ -70,6 +70,7 @@ public class AppCluster {
     private AppClusterLogger clusterLogger; // Protected by startedLock
     private Set<? extends Node> nodes = Collections.emptySet(); // Protected by startedLock
     private Name thisHostname; // Protected by startedLock
+    private String thisUsername; // Protected by startedLock
     private Node thisNode; // Protected by startedLock
     private Set<? extends Resource> resources = Collections.emptySet(); // Protected by startedLock
 
@@ -379,8 +380,21 @@ public class AppCluster {
     }
 
     /**
+     * Gets the username used to determine which node this server represents
+     * or <code>null</code> if not started.
+     */
+    public String getThisUsername() {
+        synchronized(startedLock) {
+            return thisUsername;
+        }
+    }
+
+    /**
      * Gets the node this machine represents or <code>null</code> if this
-     * machine is not one of the nodes.
+     * machine is not one of the nodes.  For this JVM to be considered the node,
+     * the system hostname must match this node's hostname, and the system
+     * property "user.name" must match this node's username.
+     *
      * Returns <code>null</code> when not started.
      */
     public Node getThisNode() {
@@ -416,6 +430,7 @@ public class AppCluster {
             try {
                 // Get system-local values
                 thisHostname = Name.fromString(InetAddress.getLocalHost().getCanonicalHostName());
+                thisUsername = System.getProperty("user.name");
 
                 // Get the configuration values.
                 enabled = configuration.isEnabled();
@@ -436,7 +451,10 @@ public class AppCluster {
                 // Find this node
                 thisNode = null;
                 for(Node node : nodes) {
-                    if(node.getHostname().equals(thisHostname)) {
+                    if(
+                        node.getHostname().equals(thisHostname)
+                        && node.getUsername().equals(thisUsername)
+                    ) {
                         thisNode = node;
                         break;
                     }
@@ -523,6 +541,7 @@ public class AppCluster {
                 nodes = Collections.emptySet();
                 thisNode = null;
                 thisHostname = null;
+                thisUsername = null;
 
                 // Clear the configuration values.
                 enabled = false;

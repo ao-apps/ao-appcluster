@@ -62,6 +62,11 @@ public interface NodeConfiguration {
     Name getHostname();
 
     /**
+     * @see Node#getUsername()
+     */
+    String getUsername();
+
+    /**
      * @see Node#getNameservers()
      */
     Set<? extends Name> getNameservers();

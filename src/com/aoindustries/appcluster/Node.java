@@ -40,6 +40,7 @@ public class Node {
     private final boolean enabled;
     private final String display;
     private final Name hostname;
+    private final String username;
     private final Set<? extends Nameserver> nameservers;
 
     Node(AppCluster cluster, NodeConfiguration nodeConfiguration) {
@@ -48,6 +49,7 @@ public class Node {
         this.enabled = cluster.isEnabled() && nodeConfiguration.isEnabled();
         this.display = nodeConfiguration.getDisplay();
         this.hostname = nodeConfiguration.getHostname();
+        this.username = nodeConfiguration.getUsername();
         Set<? extends Name> configNameservers = nodeConfiguration.getNameservers();
         Set<Nameserver> newNameservers = new LinkedHashSet<Nameserver>(configNameservers.size()*4/3+1);
         for(Name nameserver : configNameservers) newNameservers.add(new Nameserver(cluster, nameserver));
@@ -96,6 +98,15 @@ public class Node {
      */
     public Name getHostname() {
         return hostname;
+    }
+
+    /**
+     * Gets the username the cluster must run as on the machine that runs this node.
+     * This must match the system property "user.name" for this JVM to be considered
+     * as "thisNode".
+     */
+    public String getUsername() {
+        return username;
     }
 
     /**

@@ -37,6 +37,7 @@ public class NodePropertiesConfiguration implements NodeConfiguration {
     protected final boolean enabled;
     protected final String display;
     protected final Name hostname;
+    protected final String username;
     protected final Set<? extends Name> nameservers;
 
     protected NodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
@@ -45,6 +46,7 @@ public class NodePropertiesConfiguration implements NodeConfiguration {
         this.enabled = properties.getBoolean("appcluster.node."+id+".enabled");
         this.display = properties.getString("appcluster.node."+id+".display");
         this.hostname = properties.getName("appcluster.node."+id+".hostname");
+        this.username = properties.getString("appcluster.node."+id+".username");
         this.nameservers = properties.getUniqueNames("appcluster.node."+id+".nameservers");
     }
 
@@ -82,6 +84,11 @@ public class NodePropertiesConfiguration implements NodeConfiguration {
     @Override
     public Name getHostname() {
         return hostname;
+    }
+
+    @Override
+    public String getUsername() {
+        return username;
     }
 
     @Override
