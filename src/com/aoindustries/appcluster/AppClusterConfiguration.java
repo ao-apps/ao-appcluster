@@ -160,6 +160,10 @@ public interface AppClusterConfiguration {
         Set<Name> getNodeRecords();
     }
 
+    public static interface ManualResourceNodeConfiguration extends ResourceNodeConfiguration {
+        // No special per-node configuration options
+    }
+
     public static interface RsyncResourceNodeConfiguration extends ResourceNodeConfiguration {
 
         /**
@@ -223,6 +227,17 @@ public interface AppClusterConfiguration {
          * Gets the source of per-node resource configurations.
          */
         Set<? extends ResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
+    }
+
+    public static interface ManualResourceConfiguration extends ResourceConfiguration {
+
+        /**
+         * @see ManualResource#getAllowMultiMaster()
+         */
+        boolean getAllowMultiMaster();
+
+        @Override
+        Set<ManualResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
     }
 
     public static interface RsyncResourceConfiguration extends ResourceConfiguration {

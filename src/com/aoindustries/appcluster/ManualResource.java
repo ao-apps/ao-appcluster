@@ -26,30 +26,26 @@ import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurati
 import java.util.Collection;
 
 /**
- * Synchronizes resources using rsync.
+ * Resources are manually synchronized, such as through code being deployed automatically to every
+ * node.  This performs DNS monitoring and role determination, but without any monitoring or
+ * synchronization of data.
  *
  * @author  AO Industries, Inc.
  */
-public class RsyncResource extends Resource<RsyncResource,RsyncResourceNode> {
+public class ManualResource extends Resource<ManualResource,ManualResourceNode> {
 
-    static final String TYPE = "rsync";
+    static final String TYPE = "manual";
 
     private final boolean allowMultiMaster;
-    private final boolean delete;
 
-    RsyncResource(AppCluster cluster, AppClusterConfiguration.RsyncResourceConfiguration resourceConfiguration, Collection<RsyncResourceNode> resourceNodes) throws AppClusterConfigurationException {
+    ManualResource(AppCluster cluster, AppClusterConfiguration.ManualResourceConfiguration resourceConfiguration, Collection<ManualResourceNode> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
-        this.delete = resourceConfiguration.isDelete();
     }
 
     @Override
     public boolean getAllowMultiMaster() {
         return allowMultiMaster;
-    }
-
-    public boolean isDelete() {
-        return delete;
     }
 
     @Override

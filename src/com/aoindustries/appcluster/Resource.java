@@ -119,11 +119,6 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     }
 
     /**
-     * Gets if this resource allows multiple master servers.
-     */
-    abstract public boolean getAllowMultiMaster();
-
-    /**
      * Gets the set of master records that must all by the same.
      * The master node is determined by matching these records against
      * the resource node configuration's node records.
@@ -166,4 +161,14 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         status = AppCluster.max(status, getDnsMonitor().getLastResult().getResourceStatus());
         return status;
     }
+
+    /**
+     * Gets if this resource allows multiple master servers.
+     */
+    abstract public boolean getAllowMultiMaster();
+
+    /**
+     * Gets the replication type of this resource.
+     */
+    abstract public String getType();
 }

@@ -29,7 +29,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -235,7 +234,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
             }
         }
         if(set.isEmpty()) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getString.missingValue", propertyName));
-        return set;
+        return Collections.unmodifiableSet(set);
     }
 
     /**
@@ -254,7 +253,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
                 }
             }
             if(set.isEmpty()) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getString.missingValue", propertyName));
-            return set;
+            return Collections.unmodifiableSet(set);
         } catch(TextParseException exc) {
             throw new AppClusterConfigurationException(exc);
         }
@@ -290,7 +289,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getClusterLogger.unexpectedType", propertyName, logType));
     }
 
-    static class PropertiesNodeConfiguration implements NodeConfiguration {
+    class PropertiesNodeConfiguration implements NodeConfiguration {
 
         private final String id;
         private final boolean enabled;
@@ -298,12 +297,12 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         private final Name hostname;
         private final Set<Name> nameservers;
 
-        PropertiesNodeConfiguration(String id, boolean enabled, String display, Name hostname, Collection<Name> nameservers) {
+        PropertiesNodeConfiguration(String id) throws AppClusterConfigurationException {
             this.id = id;
-            this.enabled = enabled;
-            this.display = display;
-            this.hostname = hostname;
-            this.nameservers = Collections.unmodifiableSet(new LinkedHashSet<Name>(nameservers));
+            this.enabled = getBoolean("appcluster.node."+id+".enabled");
+            this.display = getString("appcluster.node."+id+".display");
+            this.hostname = getName("appcluster.node."+id+".hostname");
+            this.nameservers = getUniqueNames("appcluster.node."+id+".nameservers");
         }
 
         @Override
@@ -354,30 +353,22 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         Set<NodeConfiguration> nodes = new LinkedHashSet<NodeConfiguration>(ids.size()*4/3+1);
         for(String id : ids) {
             if(
-                !nodes.add(
-                    new PropertiesNodeConfiguration(
-                        id,
-                        getBoolean("appcluster.node."+id+".enabled"),
-                        getString("appcluster.node."+id+".display"),
-                        getName("appcluster.node."+id+".hostname"),
-                        getUniqueNames("appcluster.node."+id+".nameservers")
-                    )
-                )
+                !nodes.add(new PropertiesNodeConfiguration(id))
             ) throw new AssertionError();
         }
         return Collections.unmodifiableSet(nodes);
     }
 
-    abstract static class PropertiesResourceNodeConfiguration implements ResourceNodeConfiguration {
+    abstract class PropertiesResourceNodeConfiguration implements ResourceNodeConfiguration {
 
         private final String resourceId;
         private final String nodeId;
         private final Set<Name> nodeRecords;
 
-        PropertiesResourceNodeConfiguration(String resourceId, String nodeId, Collection<Name> nodeRecords) {
+        PropertiesResourceNodeConfiguration(String resourceId, String nodeId) throws AppClusterConfigurationException {
             this.resourceId = resourceId;
             this.nodeId = nodeId;
-            this.nodeRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(nodeRecords));
+            this.nodeRecords = getUniqueNames("appcluster.resource."+resourceId+".node."+nodeId+".nodeRecords");
         }
 
         @Override
@@ -416,19 +407,26 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         }
     }
 
-    static class PropertiesRsyncResourceNodeConfiguration extends PropertiesResourceNodeConfiguration implements RsyncResourceNodeConfiguration {
+    class PropertiesManualResourceNodeConfiguration extends PropertiesResourceNodeConfiguration implements ManualResourceNodeConfiguration {
+
+        PropertiesManualResourceNodeConfiguration(String resourceId, String nodeId) throws AppClusterConfigurationException {
+            super(resourceId, nodeId);
+        }
+    }
+
+    class PropertiesRsyncResourceNodeConfiguration extends PropertiesResourceNodeConfiguration implements RsyncResourceNodeConfiguration {
 
         private final String username;
         private final String path;
         private final String backupDir;
         private final int backupDays;
 
-        PropertiesRsyncResourceNodeConfiguration(String resourceId, String nodeId, Collection<Name> nodeRecords, String username, String path, String backupDir, int backupDays) {
-            super(resourceId, nodeId, nodeRecords);
-            this.username = username;
-            this.path = path;
-            this.backupDir = backupDir;
-            this.backupDays = backupDays;
+        PropertiesRsyncResourceNodeConfiguration(String resourceId, String nodeId) throws AppClusterConfigurationException {
+            super(resourceId, nodeId);
+            this.username = getString("appcluster.resource."+resourceId+".node."+nodeId+".rsync.username");
+            this.path = getString("appcluster.resource."+resourceId+".node."+nodeId+".rsync.path");
+            this.backupDir = getString("appcluster.resource."+resourceId+".node."+nodeId+".rsync.backupDir");
+            this.backupDays = getInt("appcluster.resource."+resourceId+".node."+nodeId+".rsync.backupDays");
         }
 
         @Override
@@ -460,12 +458,12 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         private final Set<Name> masterRecords;
         private final int masterRecordsTtl;
 
-        PropertiesResourceConfiguration(String id, boolean enabled, String display, Collection<Name> masterRecords, int masterRecordsTtl) {
+        PropertiesResourceConfiguration(String id) throws AppClusterConfigurationException {
             this.id = id;
-            this.enabled = enabled;
-            this.display = display;
-            this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(masterRecords));
-            this.masterRecordsTtl = masterRecordsTtl;
+            this.enabled = getBoolean("appcluster.resource."+id+".enabled");
+            this.display = getString("appcluster.resource."+id+".display");
+            this.masterRecords = getUniqueNames("appcluster.resource."+id+".masterRecords");
+            this.masterRecordsTtl = getInt("appcluster.resource."+id+".masterRecordsTtl");
         }
 
         @Override
@@ -513,15 +511,41 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         abstract public Set<? extends ResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
     }
 
+    class ManualPropertiesResourceConfiguration extends PropertiesResourceConfiguration implements ManualResourceConfiguration {
+
+        private final boolean allowMultiMaster;
+
+        ManualPropertiesResourceConfiguration(String id) throws AppClusterConfigurationException {
+            super(id);
+            this.allowMultiMaster = getBoolean("appcluster.resource."+id+".manual.allowMultiMaster");
+        }
+
+        @Override
+        public boolean getAllowMultiMaster() {
+            return allowMultiMaster;
+        }
+
+        @Override
+        public Set<ManualResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
+            String resourceId = getId();
+            Set<String> nodeIds = getUniqueStrings("appcluster.resource."+resourceId+".nodes");
+            Set<ManualResourceNodeConfiguration> resourceNodes = new LinkedHashSet<ManualResourceNodeConfiguration>(nodeIds.size()*4/3+1);
+            for(String nodeId : nodeIds) {
+                if(!resourceNodes.add(new PropertiesManualResourceNodeConfiguration(resourceId, nodeId))) throw new AssertionError();
+            }
+            return Collections.unmodifiableSet(resourceNodes);
+        }
+    }
+
     class RsyncPropertiesResourceConfiguration extends PropertiesResourceConfiguration implements RsyncResourceConfiguration {
 
         private final boolean allowMultiMaster;
         private final boolean delete;
 
-        RsyncPropertiesResourceConfiguration(String id, boolean enabled, String display, Collection<Name> masterRecords, int masterRecordsTtl, boolean allowMultiMaster, boolean delete) {
-            super(id, enabled, display, masterRecords, masterRecordsTtl);
-            this.allowMultiMaster = allowMultiMaster;
-            this.delete = delete;
+        RsyncPropertiesResourceConfiguration(String id) throws AppClusterConfigurationException {
+            super(id);
+            this.allowMultiMaster = getBoolean("appcluster.resource."+id+".rsync.allowMultiMaster");
+            this.delete = getBoolean("appcluster.resource."+id+".rsync.delete");
         }
 
         @Override
@@ -540,19 +564,7 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
             Set<String> nodeIds = getUniqueStrings("appcluster.resource."+resourceId+".nodes");
             Set<RsyncResourceNodeConfiguration> resourceNodes = new LinkedHashSet<RsyncResourceNodeConfiguration>(nodeIds.size()*4/3+1);
             for(String nodeId : nodeIds) {
-                if(
-                    !resourceNodes.add(
-                        new PropertiesRsyncResourceNodeConfiguration(
-                            resourceId,
-                            nodeId,
-                            getUniqueNames("appcluster.resource."+resourceId+".node."+nodeId+".nodeRecords"),
-                            getString("appcluster.resource."+resourceId+".node."+nodeId+".username"),
-                            getString("appcluster.resource."+resourceId+".node."+nodeId+".path"),
-                            getString("appcluster.resource."+resourceId+".node."+nodeId+".backupDir"),
-                            getInt("appcluster.resource."+resourceId+".node."+nodeId+".backupDays")
-                        )
-                    )
-                ) throw new AssertionError();
+                if(!resourceNodes.add(new PropertiesRsyncResourceNodeConfiguration(resourceId, nodeId))) throw new AssertionError();
             }
             return Collections.unmodifiableSet(resourceNodes);
         }
@@ -565,23 +577,15 @@ public class PropertiesConfiguration implements AppClusterConfiguration {
         for(String id : ids) {
             String propertyName = "appcluster.resource."+id+".type";
             String resourceType = getString(propertyName);
-            if("rsync".equals(resourceType)) {
-                if(
-                    !resources.add(
-                        new RsyncPropertiesResourceConfiguration(
-                            id,
-                            getBoolean("appcluster.resource."+id+".enabled"),
-                            getString("appcluster.resource."+id+".display"),
-                            getUniqueNames("appcluster.resource."+id+".masterRecords"),
-                            getInt("appcluster.resource."+id+".masterRecordsTtl"),
-                            getBoolean("appcluster.resource."+id+".rsync.allowMultiMaster"),
-                            getBoolean("appcluster.resource."+id+".rsync.delete")
-                        )
-                    )
-                ) throw new AssertionError();
+            ResourceConfiguration resourceConfiguration;
+            if(ManualResource.TYPE.equals(resourceType)) {
+                resourceConfiguration = new ManualPropertiesResourceConfiguration(id);
+            } else if(RsyncResource.TYPE.equals(resourceType)) {
+                resourceConfiguration = new RsyncPropertiesResourceConfiguration(id);
             } else {
                 throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("PropertiesConfiguration.getResourceConfigurations.unexpectedType", propertyName, resourceType));
             }
+            if(!resources.add(resourceConfiguration)) throw new AssertionError();
         }
         return Collections.unmodifiableSet(resources);
     }

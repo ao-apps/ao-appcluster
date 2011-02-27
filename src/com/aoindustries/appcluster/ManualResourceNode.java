@@ -23,37 +23,17 @@
 package com.aoindustries.appcluster;
 
 import com.aoindustries.appcluster.AppClusterConfiguration.AppClusterConfigurationException;
-import java.util.Collection;
 
 /**
- * Synchronizes resources using rsync.
+ * The per-node settings for a manual resource.
+ *
+ * @see  ManualResource
  *
  * @author  AO Industries, Inc.
  */
-public class RsyncResource extends Resource<RsyncResource,RsyncResourceNode> {
+public class ManualResourceNode extends ResourceNode<ManualResource,ManualResourceNode> {
 
-    static final String TYPE = "rsync";
-
-    private final boolean allowMultiMaster;
-    private final boolean delete;
-
-    RsyncResource(AppCluster cluster, AppClusterConfiguration.RsyncResourceConfiguration resourceConfiguration, Collection<RsyncResourceNode> resourceNodes) throws AppClusterConfigurationException {
-        super(cluster, resourceConfiguration, resourceNodes);
-        this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
-        this.delete = resourceConfiguration.isDelete();
-    }
-
-    @Override
-    public boolean getAllowMultiMaster() {
-        return allowMultiMaster;
-    }
-
-    public boolean isDelete() {
-        return delete;
-    }
-
-    @Override
-    public String getType() {
-        return TYPE;
+    ManualResourceNode(Node node, AppClusterConfiguration.ManualResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
+        super(node, resourceNodeConfiguration);
     }
 }
