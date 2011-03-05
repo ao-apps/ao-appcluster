@@ -35,22 +35,15 @@ import com.aoindustries.appcluster.ResourceNodePropertiesConfiguration;
 public class Csync2ResourceNodePropertiesConfiguration extends ResourceNodePropertiesConfiguration<Csync2Resource,Csync2ResourceNode> implements Csync2ResourceNodeConfiguration {
 
     private final String exe;
-    private final String config;
 
     protected Csync2ResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
         super(properties, resourceId, nodeId);
         this.exe = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".exe");
-        this.config = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".config");
     }
 
     @Override
     public String getExe() {
         return exe;
-    }
-
-    @Override
-    public String getConfig() {
-        return config;
     }
 
     @Override

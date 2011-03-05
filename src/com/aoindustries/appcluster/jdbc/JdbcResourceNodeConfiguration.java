@@ -20,27 +20,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.rsync;
+package com.aoindustries.appcluster.jdbc;
 
-import com.aoindustries.util.i18n.EditableResourceBundle;
-import java.io.File;
-import java.util.Locale;
+import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.Node;
+import com.aoindustries.appcluster.ResourceNodeConfiguration;
 
 /**
- * Provides a simplified interface for obtaining localized values from the ApplicationResources.properties files.
+ * The configuration for a JDBC resource.
  *
  * @author  AO Industries, Inc.
  */
-public final class ApplicationResources_ja extends EditableResourceBundle {
+public interface JdbcResourceNodeConfiguration extends ResourceNodeConfiguration<JdbcResource,JdbcResourceNode> {
 
-    /**
-     * Do not use directly.
-     */
-    public ApplicationResources_ja() {
-        super(
-            new File(System.getProperty("user.home")+"/common/ao/cvswork/ao-appcluster/src/com/aoindustries/appcluster/rsync/ApplicationResources_ja.properties"),
-            Locale.JAPANESE,
-            ApplicationResources.bundleSet
-        );
-    }
+    @Override
+    JdbcResourceNode newResourceNode(Node node) throws AppClusterConfigurationException;
 }

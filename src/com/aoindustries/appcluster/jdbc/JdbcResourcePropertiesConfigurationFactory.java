@@ -20,19 +20,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.manual;
+package com.aoindustries.appcluster.jdbc;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNodeConfiguration;
+import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
+import com.aoindustries.appcluster.ResourcePropertiesConfiguration;
+import com.aoindustries.appcluster.ResourcePropertiesConfigurationFactory;
 
 /**
- * The configuration for a manual resource.
+ * Loads the configuration for a JDBC resource.
  *
  * @author  AO Industries, Inc.
  */
-public interface ManualResourceNodeConfiguration extends ResourceNodeConfiguration<ManualResource,ManualResourceNode> {
+public class JdbcResourcePropertiesConfigurationFactory implements ResourcePropertiesConfigurationFactory<JdbcResource,JdbcResourceNode> {
 
     @Override
-    ManualResourceNode newResourceNode(Node node) throws AppClusterConfigurationException;
+    public ResourcePropertiesConfiguration<JdbcResource,JdbcResourceNode> newResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+        return new JdbcResourcePropertiesConfiguration(properties, id);
+    }
 }

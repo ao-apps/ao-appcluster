@@ -20,22 +20,30 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.manual;
+package com.aoindustries.appcluster.jdbc;
 
+import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
-import com.aoindustries.appcluster.ResourcePropertiesConfiguration;
-import com.aoindustries.appcluster.ResourcePropertiesConfigurationFactory;
+import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.ResourceNode;
+import java.util.Collection;
 
 /**
- * Loads the configuration for a manual resource.
+ * Resources are synchronized through JDBC.
  *
  * @author  AO Industries, Inc.
  */
-public class ManualResourcePropertiesConfigurationFactory implements ResourcePropertiesConfigurationFactory<ManualResource,ManualResourceNode> {
+public class JdbcResource extends Resource<JdbcResource,JdbcResourceNode> {
 
+    protected JdbcResource(AppCluster cluster, JdbcResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+        super(cluster, resourceConfiguration, resourceNodes);
+    }
+
+    /**
+     * Multi master synchronization is not supported for JDBC.
+     */
     @Override
-    public ResourcePropertiesConfiguration<ManualResource,ManualResourceNode> newResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
-        return new ManualResourcePropertiesConfiguration(properties, id);
+    public boolean getAllowMultiMaster() {
+        return false;
     }
 }

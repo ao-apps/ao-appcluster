@@ -20,22 +20,30 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.manual;
+package com.aoindustries.appcluster.dnsonly;
 
+import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.Node;
+import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
+import java.util.Collection;
+import java.util.Set;
 
 /**
- * The per-node settings for a manual resource.
- *
- * @see  ManualResource
+ * The configuration for a DNS-only resource.
  *
  * @author  AO Industries, Inc.
  */
-public class ManualResourceNode extends ResourceNode<ManualResource,ManualResourceNode> {
+public interface DnsOnlyResourceConfiguration extends ResourceConfiguration<DnsOnlyResource,DnsOnlyResourceNode> {
 
-    protected ManualResourceNode(Node node, ManualResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
-        super(node, resourceNodeConfiguration);
-    }
+    /**
+     * @see DnsOnlyResource#getAllowMultiMaster()
+     */
+    boolean getAllowMultiMaster();
+
+    @Override
+    Set<? extends DnsOnlyResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
+
+    @Override
+    DnsOnlyResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
 }

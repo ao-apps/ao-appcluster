@@ -20,30 +20,26 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.csync2;
+package com.aoindustries.appcluster.jdbc;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
 import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNode;
+import com.aoindustries.appcluster.ResourceNodePropertiesConfiguration;
 
 /**
- * The node settings for csync2 synchronization.
+ * The configuration for a JDBC resource.
  *
  * @author  AO Industries, Inc.
  */
-public class Csync2ResourceNode extends ResourceNode<Csync2Resource,Csync2ResourceNode> {
+public class JdbcResourceNodePropertiesConfiguration extends ResourceNodePropertiesConfiguration<JdbcResource,JdbcResourceNode> implements JdbcResourceNodeConfiguration {
 
-    private final String exe;
-
-    protected Csync2ResourceNode(Node node, Csync2ResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
-        super(node, resourceNodeConfiguration);
-        this.exe = resourceNodeConfiguration.getExe();
+    protected JdbcResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
+        super(properties, resourceId, nodeId);
     }
 
-    /**
-     * Gets the path to the csync2 executable.
-     */
-    public String getExe() {
-        return exe;
+    @Override
+    public JdbcResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
+        return new JdbcResourceNode(node, this);
     }
 }

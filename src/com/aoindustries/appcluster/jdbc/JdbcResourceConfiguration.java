@@ -20,32 +20,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.manual;
+package com.aoindustries.appcluster.jdbc;
 
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
+import java.util.Set;
 
 /**
- * Resources are manually synchronized, such as through code being deployed automatically to every
- * node.  This performs DNS monitoring and role determination, but without any monitoring or
- * synchronization of data.
+ * The configuration for a JDBC resource.
  *
  * @author  AO Industries, Inc.
  */
-public class ManualResource extends Resource<ManualResource,ManualResourceNode> {
-
-    private final boolean allowMultiMaster;
-
-    protected ManualResource(AppCluster cluster, ManualResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        super(cluster, resourceConfiguration, resourceNodes);
-        this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
-    }
+public interface JdbcResourceConfiguration extends ResourceConfiguration<JdbcResource,JdbcResourceNode> {
 
     @Override
-    public boolean getAllowMultiMaster() {
-        return allowMultiMaster;
-    }
+    Set<? extends JdbcResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
+
+    @Override
+    JdbcResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
 }

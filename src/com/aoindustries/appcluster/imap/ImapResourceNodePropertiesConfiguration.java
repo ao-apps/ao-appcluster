@@ -20,36 +20,26 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.rsync;
+package com.aoindustries.appcluster.imap;
 
-import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.Resource;
-import com.aoindustries.appcluster.ResourceNode;
-import java.util.Collection;
+import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
+import com.aoindustries.appcluster.Node;
+import com.aoindustries.appcluster.ResourceNodePropertiesConfiguration;
 
 /**
- * Synchronizes resources using rsync.
+ * The configuration for an IMAP inbox.
  *
  * @author  AO Industries, Inc.
  */
-public class RsyncResource extends Resource<RsyncResource,RsyncResourceNode> {
+public class ImapResourceNodePropertiesConfiguration extends ResourceNodePropertiesConfiguration<ImapResource,ImapResourceNode> implements ImapResourceNodeConfiguration {
 
-    private final boolean allowMultiMaster;
-    private final boolean delete;
-
-    protected RsyncResource(AppCluster cluster, RsyncResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        super(cluster, resourceConfiguration, resourceNodes);
-        this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
-        this.delete = resourceConfiguration.isDelete();
+    protected ImapResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
+        super(properties, resourceId, nodeId);
     }
 
     @Override
-    public boolean getAllowMultiMaster() {
-        return allowMultiMaster;
-    }
-
-    public boolean isDelete() {
-        return delete;
+    public ImapResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
+        return new ImapResourceNode(node, this);
     }
 }

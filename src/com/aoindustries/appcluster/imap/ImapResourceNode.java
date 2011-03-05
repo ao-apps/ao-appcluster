@@ -20,30 +20,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.manual;
+package com.aoindustries.appcluster.imap;
 
-import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.ResourceConfiguration;
+import com.aoindustries.appcluster.Node;
 import com.aoindustries.appcluster.ResourceNode;
-import java.util.Collection;
-import java.util.Set;
 
 /**
- * The configuration for a manual resource.
+ * The per-node settings for an IMAP inbox.
+ *
+ * @see  ImapResource
  *
  * @author  AO Industries, Inc.
  */
-public interface ManualResourceConfiguration extends ResourceConfiguration<ManualResource,ManualResourceNode> {
+public class ImapResourceNode extends ResourceNode<ImapResource,ImapResourceNode> {
 
-    /**
-     * @see ManualResource#getAllowMultiMaster()
-     */
-    boolean getAllowMultiMaster();
-
-    @Override
-    Set<? extends ManualResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
-
-    @Override
-    ManualResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
+    protected ImapResourceNode(Node node, ImapResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
+        super(node, resourceNodeConfiguration);
+    }
 }

@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.manual;
+package com.aoindustries.appcluster.dnsonly;
 
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
@@ -33,15 +33,15 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * The configuration for a manual resource.
+ * The configuration for a DNS-only resource.
  *
  * @author  AO Industries, Inc.
  */
-public class ManualResourcePropertiesConfiguration extends ResourcePropertiesConfiguration<ManualResource,ManualResourceNode> implements ManualResourceConfiguration {
+public class DnsOnlyResourcePropertiesConfiguration extends ResourcePropertiesConfiguration<DnsOnlyResource,DnsOnlyResourceNode> implements DnsOnlyResourceConfiguration {
 
     private final boolean allowMultiMaster;
 
-    protected ManualResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+    protected DnsOnlyResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
         super(properties, id);
         this.allowMultiMaster = properties.getBoolean("appcluster.resource."+id+"."+type+".allowMultiMaster");
     }
@@ -52,18 +52,18 @@ public class ManualResourcePropertiesConfiguration extends ResourcePropertiesCon
     }
 
     @Override
-    public Set<? extends ManualResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
+    public Set<? extends DnsOnlyResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
         String resourceId = getId();
         Set<String> nodeIds = properties.getUniqueStrings("appcluster.resource."+id+".nodes");
-        Set<ManualResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<ManualResourceNodePropertiesConfiguration>(nodeIds.size()*4/3+1);
+        Set<DnsOnlyResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<DnsOnlyResourceNodePropertiesConfiguration>(nodeIds.size()*4/3+1);
         for(String nodeId : nodeIds) {
-            if(!resourceNodes.add(new ManualResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
+            if(!resourceNodes.add(new DnsOnlyResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
         }
         return Collections.unmodifiableSet(resourceNodes);
     }
 
     @Override
-    public ManualResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        return new ManualResource(cluster, this, resourceNodes);
+    public DnsOnlyResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+        return new DnsOnlyResource(cluster, this, resourceNodes);
     }
 }

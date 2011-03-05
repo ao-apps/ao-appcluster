@@ -20,22 +20,30 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.rsync;
+package com.aoindustries.appcluster.dnsonly;
 
+import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
-import com.aoindustries.appcluster.ResourcePropertiesConfiguration;
-import com.aoindustries.appcluster.ResourcePropertiesConfigurationFactory;
+import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.ResourceNode;
+import java.util.Collection;
 
 /**
- * Loads the configuration for a rsync resource.
+ * Synchronizes resources using DNS-only.
  *
  * @author  AO Industries, Inc.
  */
-public class RsyncResourcePropertiesConfigurationFactory implements ResourcePropertiesConfigurationFactory<RsyncResource,RsyncResourceNode> {
+public class DnsOnlyResource extends Resource<DnsOnlyResource,DnsOnlyResourceNode> {
+
+    private final boolean allowMultiMaster;
+
+    protected DnsOnlyResource(AppCluster cluster, DnsOnlyResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+        super(cluster, resourceConfiguration, resourceNodes);
+        this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
+    }
 
     @Override
-    public ResourcePropertiesConfiguration<RsyncResource,RsyncResourceNode> newResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
-        return new RsyncResourcePropertiesConfiguration(properties, id);
+    public boolean getAllowMultiMaster() {
+        return allowMultiMaster;
     }
 }

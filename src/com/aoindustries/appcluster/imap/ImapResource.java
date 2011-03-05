@@ -20,39 +20,30 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.rsync;
+package com.aoindustries.appcluster.imap;
 
+import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNodeConfiguration;
+import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.ResourceNode;
+import java.util.Collection;
 
 /**
- * The configuration for a rsync resource.
+ * Resources are synchronized through IMAP.
  *
  * @author  AO Industries, Inc.
  */
-public interface RsyncResourceNodeConfiguration extends ResourceNodeConfiguration<RsyncResource,RsyncResourceNode> {
+public class ImapResource extends Resource<ImapResource,ImapResourceNode> {
+
+    protected ImapResource(AppCluster cluster, ImapResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+        super(cluster, resourceConfiguration, resourceNodes);
+    }
 
     /**
-     * @see RsyncResourceNode#getUsername()
+     * Multi master synchronization is not supported for IMAP.
      */
-    String getUsername();
-
-    /**
-     * @see RsyncResourceNode#getPath()
-     */
-    String getPath();
-
-    /**
-     * @see RsyncResourceNode#getBackupDir()
-     */
-    String getBackupDir();
-
-    /**
-     * @see RsyncResourceNode#getBackupDays()
-     */
-    int getBackupDays();
-
     @Override
-    RsyncResourceNode newResourceNode(Node node) throws AppClusterConfigurationException;
+    public boolean getAllowMultiMaster() {
+        return false;
+    }
 }

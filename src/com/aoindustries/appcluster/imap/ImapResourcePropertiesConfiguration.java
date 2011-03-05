@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.rsync;
+package com.aoindustries.appcluster.imap;
 
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
@@ -33,44 +33,29 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * The configuration for a rsync resource.
+ * The configuration for an IMAP inbox.
  *
  * @author  AO Industries, Inc.
  */
-public class RsyncResourcePropertiesConfiguration extends ResourcePropertiesConfiguration<RsyncResource,RsyncResourceNode> implements RsyncResourceConfiguration {
+public class ImapResourcePropertiesConfiguration extends ResourcePropertiesConfiguration<ImapResource,ImapResourceNode> implements ImapResourceConfiguration {
 
-    private final boolean allowMultiMaster;
-    private final boolean delete;
-
-    protected RsyncResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+    protected ImapResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
         super(properties, id);
-        this.allowMultiMaster = properties.getBoolean("appcluster.resource."+id+"."+type+".allowMultiMaster");
-        this.delete = properties.getBoolean("appcluster.resource."+id+"."+type+".delete");
     }
 
     @Override
-    public boolean getAllowMultiMaster() {
-        return allowMultiMaster;
-    }
-
-    @Override
-    public boolean isDelete() {
-        return delete;
-    }
-
-    @Override
-    public Set<? extends RsyncResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
+    public Set<? extends ImapResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
         String resourceId = getId();
         Set<String> nodeIds = properties.getUniqueStrings("appcluster.resource."+id+".nodes");
-        Set<RsyncResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<RsyncResourceNodePropertiesConfiguration>(nodeIds.size()*4/3+1);
+        Set<ImapResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<ImapResourceNodePropertiesConfiguration>(nodeIds.size()*4/3+1);
         for(String nodeId : nodeIds) {
-            if(!resourceNodes.add(new RsyncResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
+            if(!resourceNodes.add(new ImapResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
         }
         return Collections.unmodifiableSet(resourceNodes);
     }
 
     @Override
-    public RsyncResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        return new RsyncResource(cluster, this, resourceNodes);
+    public ImapResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+        return new ImapResource(cluster, this, resourceNodes);
     }
 }

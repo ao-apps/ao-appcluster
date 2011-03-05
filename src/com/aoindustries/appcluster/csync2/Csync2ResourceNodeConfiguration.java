@@ -34,14 +34,9 @@ import com.aoindustries.appcluster.ResourceNodeConfiguration;
 public interface Csync2ResourceNodeConfiguration extends ResourceNodeConfiguration<Csync2Resource,Csync2ResourceNode> {
 
     /**
-     * @see CsyncResourceNode#getExe()
+     * @see Csync2ResourceNode#getExe()
      */
     String getExe();
-
-    /**
-     * @see Csync2ResourceNode#getConfig()
-     */
-    String getConfig();
 
     @Override
     Csync2ResourceNode newResourceNode(Node node) throws AppClusterConfigurationException;

@@ -20,30 +20,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.csync2;
+package com.aoindustries.appcluster.imap;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNode;
+import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
+import com.aoindustries.appcluster.ResourcePropertiesConfiguration;
+import com.aoindustries.appcluster.ResourcePropertiesConfigurationFactory;
 
 /**
- * The node settings for csync2 synchronization.
+ * Loads the configuration for an IMAP inbox.
  *
  * @author  AO Industries, Inc.
  */
-public class Csync2ResourceNode extends ResourceNode<Csync2Resource,Csync2ResourceNode> {
+public class ImapResourcePropertiesConfigurationFactory implements ResourcePropertiesConfigurationFactory<ImapResource,ImapResourceNode> {
 
-    private final String exe;
-
-    protected Csync2ResourceNode(Node node, Csync2ResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
-        super(node, resourceNodeConfiguration);
-        this.exe = resourceNodeConfiguration.getExe();
-    }
-
-    /**
-     * Gets the path to the csync2 executable.
-     */
-    public String getExe() {
-        return exe;
+    @Override
+    public ResourcePropertiesConfiguration<ImapResource,ImapResourceNode> newResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+        return new ImapResourcePropertiesConfiguration(properties, id);
     }
 }

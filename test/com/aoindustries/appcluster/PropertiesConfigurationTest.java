@@ -55,7 +55,7 @@ public class PropertiesConfigurationTest {
         cluster.addResourceDnsListener(new LoggerResourceDnsListener());
         cluster.start();
         try {
-            assertEquals("PCA Cluster", cluster.getDisplay());
+            assertEquals("Production Cluster", cluster.getDisplay());
             Thread.sleep(60000);
         } finally {
             cluster.stop();

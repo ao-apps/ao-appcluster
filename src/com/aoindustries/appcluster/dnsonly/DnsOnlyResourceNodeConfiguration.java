@@ -20,30 +20,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.csync2;
+package com.aoindustries.appcluster.dnsonly;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNode;
+import com.aoindustries.appcluster.ResourceNodeConfiguration;
 
 /**
- * The node settings for csync2 synchronization.
+ * The configuration for a DNS-only resource.
  *
  * @author  AO Industries, Inc.
  */
-public class Csync2ResourceNode extends ResourceNode<Csync2Resource,Csync2ResourceNode> {
+public interface DnsOnlyResourceNodeConfiguration extends ResourceNodeConfiguration<DnsOnlyResource,DnsOnlyResourceNode> {
 
-    private final String exe;
-
-    protected Csync2ResourceNode(Node node, Csync2ResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
-        super(node, resourceNodeConfiguration);
-        this.exe = resourceNodeConfiguration.getExe();
-    }
-
-    /**
-     * Gets the path to the csync2 executable.
-     */
-    public String getExe() {
-        return exe;
-    }
+    @Override
+    DnsOnlyResourceNode newResourceNode(Node node) throws AppClusterConfigurationException;
 }
