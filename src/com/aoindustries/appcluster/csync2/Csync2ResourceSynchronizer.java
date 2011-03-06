@@ -70,11 +70,66 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
         ;
     }
 
+    /**
+     * First run csync2 -G GROUPS -P REMOTE_NODE -xv
+     *  Must exit 0
+     * Then run csync2 -G GROUPS -T LOCAL_NODE REMOTE_NODE
+     *  Exit 0 means warning
+     *  Exit 2 means everything is OK
+     *  Other exit means error
+     */
     @Override
     protected ResourceSynchronizationResult synchronize(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
         long startTime = System.currentTimeMillis();
-        System.err.println(this+": synchronize: TODO");
-        return new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, null, null);
+        Csync2Resource resource = localResourceNode.getResource();
+        try {
+            final String groups = join(resource.getGroups());
+            System.err.println(this+": test: Running csync2 -G groups -P remote_node -xv");
+            ProcessResult syncProcessResult = ProcessResult.exec(
+                new String[] {
+                    localResourceNode.getExe(),
+                    "-G",
+                    groups,
+                    "-P",
+                    remoteResourceNode.getNode().getHostname().toString(),
+                    "-xv"
+                }
+            );
+            if(syncProcessResult.getExitVal()!=0) return new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, syncProcessResult.getStdout(), syncProcessResult.getStderr());
+
+            System.err.println(this+": test: Running csync2 -G groups -T local_node remote_node");
+            ProcessResult testProcessResult = ProcessResult.exec(
+                new String[] {
+                    localResourceNode.getExe(),
+                    "-G",
+                    groups,
+                    "-T",
+                    localResourceNode.getNode().getHostname().toString(),
+                    remoteResourceNode.getNode().getHostname().toString()
+                }
+            );
+            int exitVal = testProcessResult.getExitVal();
+            if(exitVal==2) {
+                // Test OK, return result of synchronization
+                return new ResourceSynchronizationResult(
+                    startTime,
+                    System.currentTimeMillis(),
+                    ResourceStatus.HEALTHY,
+                    syncProcessResult.getStdout(),
+                    syncProcessResult.getStderr()
+                );
+            }
+            return new ResourceSynchronizationResult(
+                startTime,
+                System.currentTimeMillis(),
+                exitVal==0 ? ResourceStatus.WARNING
+                : ResourceStatus.ERROR,
+                testProcessResult.getStdout(),
+                testProcessResult.getStderr()
+            );
+        } catch(IOException err) {
+            return new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, null, err.toString());
+        }
     }
 
     /*

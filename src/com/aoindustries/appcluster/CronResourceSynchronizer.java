@@ -258,6 +258,10 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                     } catch(Exception err) {
                                         result = new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, null, err.toString());
                                     }
+                                    System.err.println("DEBUG: Got synchronize result:");
+                                    System.err.println("    status="+result.getResourceStatus());
+                                    System.err.println("    output="+result.getOutput());
+                                    System.err.println("    error="+result.getError());
                                     synchronized(jobLock) {
                                         if(job!=this) return;
                                         state = ResourceSynchronizerState.SLEEPING;

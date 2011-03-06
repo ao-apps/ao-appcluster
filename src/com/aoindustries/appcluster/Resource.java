@@ -202,7 +202,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
             if(syncResult!=null) status = AppCluster.max(status, syncResult.getResourceStatus());
             // Test result
             ResourceTestResult testResult = synchronizer.getLastTestResult();
-            if(syncResult!=null) status = AppCluster.max(status, testResult.getResourceStatus());
+            if(testResult!=null) status = AppCluster.max(status, testResult.getResourceStatus());
         }
         return status;
     }
