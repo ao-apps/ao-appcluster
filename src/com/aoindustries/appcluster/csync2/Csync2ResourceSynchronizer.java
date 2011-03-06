@@ -39,6 +39,15 @@ import java.io.IOException;
  */
 public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2Resource,Csync2ResourceNode> {
 
+    private static String join(Iterable<String> strings) {
+        StringBuilder sb = new StringBuilder();
+        for(String str : strings) {
+            if(sb.length()>0) sb.append(',');
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+
     protected Csync2ResourceSynchronizer(Csync2ResourceNode localResourceNode, Csync2ResourceNode remoteResourceNode, Schedule synchronizeSchedule, Schedule testSchedule) {
         super(localResourceNode, remoteResourceNode, synchronizeSchedule, testSchedule);
     }
@@ -84,15 +93,6 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
                 || remoteDnsStatus==NodeDnsStatus.SLAVE
             )
         ;
-    }
-
-    private static String join(Iterable<String> strings) {
-        StringBuilder sb = new StringBuilder();
-        for(String str : strings) {
-            if(sb.length()>0) sb.append(',');
-            sb.append(str);
-        }
-        return sb.toString();
     }
 
     /**
