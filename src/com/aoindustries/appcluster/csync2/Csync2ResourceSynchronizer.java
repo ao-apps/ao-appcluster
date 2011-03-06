@@ -25,6 +25,7 @@ package com.aoindustries.appcluster.csync2;
 import com.aoindustries.appcluster.CronResourceSynchronizer;
 import com.aoindustries.appcluster.NodeDnsStatus;
 import com.aoindustries.appcluster.ResourceNodeDnsResult;
+import com.aoindustries.appcluster.ResourceStatus;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
 import com.aoindustries.appcluster.ResourceTestResult;
 import com.aoindustries.cron.Schedule;
@@ -60,8 +61,9 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
 
     @Override
     protected ResourceSynchronizationResult synchronize(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
+        long startTime = System.currentTimeMillis();
         System.err.println(this+": synchronize: TODO");
-        return new ResourceSynchronizationResult();
+        return new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, null, null);
     }
 
     /*
@@ -82,9 +84,36 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
         ;
     }
 
+    private static String join(Iterable<String> strings) {
+        StringBuilder sb = new StringBuilder();
+        for(String str : strings) {
+            if(sb.length()>0) sb.append(',');
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * First run csync2 -G GROUPS -cr /
+     *  Must exit 0
+     * Then run csync2 -G GROUPS -T LOCAL_NODE REMOTE_NODE
+     *  Exit 0 means warning
+     *  Exit 2 means everything is OK
+     *  Other exit means error
+     */
     @Override
     protected ResourceTestResult test(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
+        long startTime = System.currentTimeMillis();
+        Csync2Resource resource = localResourceNode.getResource();
+        String[] command = new String[] {
+            localResourceNode.getExe(),
+            "-G",
+            join(resource.getGroups()),
+            "-T",
+            localResourceNode.getNode().getHostname().toString(),
+            remoteResourceNode.getNode().getHostname().toString()
+        };
         System.err.println(this+": test: TODO");
-        return new ResourceTestResult();
+        return new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, null, null);
     }
 }

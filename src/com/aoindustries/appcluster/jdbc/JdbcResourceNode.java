@@ -23,8 +23,8 @@
 package com.aoindustries.appcluster.jdbc;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.CronResourceNode;
 import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNode;
 
 /**
  * The per-node settings for a JDBC resource.
@@ -33,7 +33,7 @@ import com.aoindustries.appcluster.ResourceNode;
  *
  * @author  AO Industries, Inc.
  */
-public class JdbcResourceNode extends ResourceNode<JdbcResource,JdbcResourceNode> {
+public class JdbcResourceNode extends CronResourceNode<JdbcResource,JdbcResourceNode> {
 
     protected JdbcResourceNode(Node node, JdbcResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
         super(node, resourceNodeConfiguration);

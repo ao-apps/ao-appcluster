@@ -24,15 +24,15 @@ package com.aoindustries.appcluster.jdbc;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
+import com.aoindustries.appcluster.CronResourceNodePropertiesConfiguration;
 import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNodePropertiesConfiguration;
 
 /**
  * The configuration for a JDBC resource.
  *
  * @author  AO Industries, Inc.
  */
-public class JdbcResourceNodePropertiesConfiguration extends ResourceNodePropertiesConfiguration<JdbcResource,JdbcResourceNode> implements JdbcResourceNodeConfiguration {
+public class JdbcResourceNodePropertiesConfiguration extends CronResourceNodePropertiesConfiguration<JdbcResource,JdbcResourceNode> implements JdbcResourceNodeConfiguration {
 
     protected JdbcResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
         super(properties, resourceId, nodeId);

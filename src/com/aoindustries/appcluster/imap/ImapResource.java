@@ -24,7 +24,7 @@ package com.aoindustries.appcluster.imap;
 
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.CronResource;
 import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
@@ -34,7 +34,7 @@ import java.util.Collection;
  *
  * @author  AO Industries, Inc.
  */
-public class ImapResource extends Resource<ImapResource,ImapResourceNode> {
+public class ImapResource extends CronResource<ImapResource,ImapResourceNode> {
 
     protected ImapResource(AppCluster cluster, ImapResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);

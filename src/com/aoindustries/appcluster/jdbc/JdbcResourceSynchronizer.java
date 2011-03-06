@@ -25,6 +25,7 @@ package com.aoindustries.appcluster.jdbc;
 import com.aoindustries.appcluster.CronResourceSynchronizer;
 import com.aoindustries.appcluster.NodeDnsStatus;
 import com.aoindustries.appcluster.ResourceNodeDnsResult;
+import com.aoindustries.appcluster.ResourceStatus;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
 import com.aoindustries.appcluster.ResourceTestResult;
 import com.aoindustries.cron.Schedule;
@@ -53,8 +54,9 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
 
     @Override
     protected ResourceSynchronizationResult synchronize(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
+        long startTime = System.currentTimeMillis();
         System.err.println(this+": synchronize: TODO");
-        return new ResourceSynchronizationResult();
+        return new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, null, null);
     }
 
     /*
@@ -77,7 +79,8 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
 
     @Override
     protected ResourceTestResult test(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
+        long startTime = System.currentTimeMillis();
         System.err.println(this+": test: TODO");
-        return new ResourceTestResult();
+        return new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, null, null);
     }
 }

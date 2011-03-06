@@ -20,26 +20,35 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.imap;
+package com.aoindustries.appcluster;
 
-import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
-import com.aoindustries.appcluster.CronResourceNodePropertiesConfiguration;
-import com.aoindustries.appcluster.Node;
+import java.sql.Timestamp;
 
 /**
- * The configuration for an IMAP inbox.
+ * Parent class for information common to different types of resource results.
  *
  * @author  AO Industries, Inc.
  */
-public class ImapResourceNodePropertiesConfiguration extends CronResourceNodePropertiesConfiguration<ImapResource,ImapResourceNode> implements ImapResourceNodeConfiguration {
+abstract public class ResourceResult {
 
-    protected ImapResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
-        super(properties, resourceId, nodeId);
+    protected final long startTime;
+    protected final long endTime;
+
+    ResourceResult(long startTime, long endTime) {
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
-    @Override
-    public ImapResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
-        return new ImapResourceNode(node, this);
+    public Timestamp getStartTime() {
+        return new Timestamp(startTime);
     }
+
+    public Timestamp getEndTime() {
+        return new Timestamp(endTime);
+    }
+
+    /**
+     * Gets the ResourceStatus this result will cause.
+     */
+    abstract public ResourceStatus getResourceStatus();
 }

@@ -23,15 +23,15 @@
 package com.aoindustries.appcluster.jdbc;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.CronResourceNodeConfiguration;
 import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNodeConfiguration;
 
 /**
  * The configuration for a JDBC resource.
  *
  * @author  AO Industries, Inc.
  */
-public interface JdbcResourceNodeConfiguration extends ResourceNodeConfiguration<JdbcResource,JdbcResourceNode> {
+public interface JdbcResourceNodeConfiguration extends CronResourceNodeConfiguration<JdbcResource,JdbcResourceNode> {
 
     @Override
     JdbcResourceNode newResourceNode(Node node) throws AppClusterConfigurationException;

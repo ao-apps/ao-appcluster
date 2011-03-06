@@ -44,7 +44,7 @@ public interface Csync2ResourceConfiguration extends CronResourceConfiguration<C
     /**
      * Gets all the groups that will be synchronized by csync2 for this resource.
      */
-    String getGroups();
+    Collection<String> getGroups();
 
     @Override
     Set<? extends Csync2ResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;

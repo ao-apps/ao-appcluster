@@ -23,15 +23,15 @@
 package com.aoindustries.appcluster.csync2;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.CronResourceNode;
 import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNode;
 
 /**
  * The node settings for csync2 synchronization.
  *
  * @author  AO Industries, Inc.
  */
-public class Csync2ResourceNode extends ResourceNode<Csync2Resource,Csync2ResourceNode> {
+public class Csync2ResourceNode extends CronResourceNode<Csync2Resource,Csync2ResourceNode> {
 
     private final String exe;
 

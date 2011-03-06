@@ -20,26 +20,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.imap;
-
-import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
-import com.aoindustries.appcluster.CronResourceNodePropertiesConfiguration;
-import com.aoindustries.appcluster.Node;
+package com.aoindustries.appcluster;
 
 /**
- * The configuration for an IMAP inbox.
+ * The configuration for a cron resource.
  *
  * @author  AO Industries, Inc.
  */
-public class ImapResourceNodePropertiesConfiguration extends CronResourceNodePropertiesConfiguration<ImapResource,ImapResourceNode> implements ImapResourceNodeConfiguration {
+abstract public class CronResourceNodePropertiesConfiguration<R extends CronResource<R,RN>,RN extends CronResourceNode<R,RN>> extends ResourceNodePropertiesConfiguration<R,RN> implements CronResourceNodeConfiguration<R,RN> {
 
-    protected ImapResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
+    protected CronResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId) throws AppClusterConfigurationException {
         super(properties, resourceId, nodeId);
     }
 
     @Override
-    public ImapResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
-        return new ImapResourceNode(node, this);
-    }
+    abstract public RN newResourceNode(Node node) throws AppClusterConfigurationException;
 }

@@ -23,15 +23,15 @@
 package com.aoindustries.appcluster.imap;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.CronResourceNodeConfiguration;
 import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNodeConfiguration;
 
 /**
  * The configuration for an IMAP inbox.
  *
  * @author  AO Industries, Inc.
  */
-public interface ImapResourceNodeConfiguration extends ResourceNodeConfiguration<ImapResource,ImapResourceNode> {
+public interface ImapResourceNodeConfiguration extends CronResourceNodeConfiguration<ImapResource,ImapResourceNode> {
 
     @Override
     ImapResourceNode newResourceNode(Node node) throws AppClusterConfigurationException;

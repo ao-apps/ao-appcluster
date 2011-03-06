@@ -29,16 +29,31 @@ import com.aoindustries.cron.Schedule;
  *
  * @author  AO Industries, Inc.
  */
-public abstract class CronResourcePropertiesConfiguration<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> extends ResourcePropertiesConfiguration<R,RN> implements CronResourceConfiguration<R,RN> {
+public abstract class CronResourcePropertiesConfiguration<R extends CronResource<R,RN>,RN extends CronResourceNode<R,RN>> extends ResourcePropertiesConfiguration<R,RN> implements CronResourceConfiguration<R,RN> {
+
+    private final int synchronizeTimeout;
+    private final int testTimeout;
 
     protected CronResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
         super(properties, id);
+        this.synchronizeTimeout = properties.getInt("appcluster.resource."+id+".timeout.sync");
+        this.testTimeout = properties.getInt("appcluster.resource."+id+".timeout.test");
+    }
+
+    @Override
+    public int getSynchronizeTimeout() {
+        return synchronizeTimeout;
     }
 
     @Override
     public Schedule getSynchronizeSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException {
         assert localResourceNode.getResource()==remoteResourceNode.getResource();
         return properties.getSchedule("appcluster.resource."+id+".schedule.sync."+localResourceNode.getNode().getId()+"."+remoteResourceNode.getNode().getId());
+    }
+
+    @Override
+    public int getTestTimeout() {
+        return testTimeout;
     }
 
     @Override

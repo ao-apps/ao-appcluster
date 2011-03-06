@@ -24,25 +24,28 @@ package com.aoindustries.appcluster.csync2;
 
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.CronResource;
 import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Synchronizes resources using csync2.
  *
  * @author  AO Industries, Inc.
  */
-public class Csync2Resource extends Resource<Csync2Resource,Csync2ResourceNode> {
+public class Csync2Resource extends CronResource<Csync2Resource,Csync2ResourceNode> {
 
     private final boolean allowMultiMaster;
-    private final String groups;
+    private final Set<String> groups;
 
     protected Csync2Resource(AppCluster cluster, Csync2ResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
-        this.groups = resourceConfiguration.getGroups();
+        this.groups = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getGroups()));
     }
 
     @Override
@@ -50,7 +53,7 @@ public class Csync2Resource extends Resource<Csync2Resource,Csync2ResourceNode> 
         return allowMultiMaster;
     }
 
-    public String getGroups() {
+    public Set<String> getGroups() {
         return groups;
     }
 

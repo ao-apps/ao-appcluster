@@ -40,12 +40,12 @@ import java.util.Set;
 public class Csync2ResourcePropertiesConfiguration extends CronResourcePropertiesConfiguration<Csync2Resource,Csync2ResourceNode> implements Csync2ResourceConfiguration {
 
     private final boolean allowMultiMaster;
-    private final String groups;
+    private final Set<String> groups;
 
     protected Csync2ResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
         super(properties, id);
         this.allowMultiMaster = properties.getBoolean("appcluster.resource."+id+"."+type+".allowMultiMaster");
-        this.groups = properties.getString("appcluster.resource."+id+"."+type+".groups");
+        this.groups = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".groups");
     }
 
     @Override
@@ -54,7 +54,7 @@ public class Csync2ResourcePropertiesConfiguration extends CronResourcePropertie
     }
 
     @Override
-    public String getGroups() {
+    public Set<String> getGroups() {
         return groups;
     }
 

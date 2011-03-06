@@ -194,7 +194,16 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         ResourceStatus status = ResourceStatus.UNKNOWN;
         if(!isEnabled()) status = AppCluster.max(status, ResourceStatus.DISABLED);
         status = AppCluster.max(status, getDnsMonitor().getLastResult().getResourceStatus());
-        // TODO: Add synchronization state
+        for(ResourceSynchronizer<R,RN> synchronizer : synchronizers.values()) {
+            // Overall synchronizer state
+            status = AppCluster.max(status, synchronizer.getState().getResourceStatus());
+            // Synchronization result
+            ResourceSynchronizationResult syncResult = synchronizer.getLastSynchronizationResult();
+            if(syncResult!=null) status = AppCluster.max(status, syncResult.getResourceStatus());
+            // Test result
+            ResourceTestResult testResult = synchronizer.getLastTestResult();
+            if(syncResult!=null) status = AppCluster.max(status, testResult.getResourceStatus());
+        }
         return status;
     }
 

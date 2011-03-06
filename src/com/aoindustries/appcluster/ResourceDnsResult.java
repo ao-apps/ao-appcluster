@@ -22,7 +22,6 @@
  */
 package com.aoindustries.appcluster;
 
-import java.sql.Timestamp;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,7 +38,7 @@ import org.xbill.DNS.Name;
  *
  * @author  AO Industries, Inc.
  */
-public class ResourceDnsResult {
+public class ResourceDnsResult extends ResourceResult {
 
     public static int WARNING_SECONDS = 10 + (ResourceDnsMonitor.DNS_CHECK_INTERVAL + ResourceDnsMonitor.DNS_ATTEMPTS * ResourceDnsMonitor.DNS_CHECK_TIMEOUT) / 1000;
     public static int ERROR_SECONDS = WARNING_SECONDS + ResourceDnsMonitor.DNS_CHECK_INTERVAL/1000;
@@ -86,8 +85,6 @@ public class ResourceDnsResult {
     }
 
     private final Resource<?,?> resource;
-    private final long startTime;
-    private final long endTime;
     private final Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> masterRecordLookups;
     private final MasterDnsStatus masterStatus;
     private final SortedSet<String> masterStatusMessages;
@@ -102,9 +99,8 @@ public class ResourceDnsResult {
         Collection<String> masterStatusMessages,
         Map<? extends Node,? extends ResourceNodeDnsResult> nodeResults
     ) {
+        super(startTime, endTime);
         this.resource = resource;
-        this.startTime = startTime;
-        this.endTime = endTime;
         this.masterRecordLookups = masterRecordLookups==null ? null : getUnmodifiableDnsLookupResults(masterRecordLookups, resource.getMasterRecords(), resource.getEnabledNameservers());
         this.masterStatus = masterStatus;
         this.masterStatusMessages = getUnmodifiableSortedSet(masterStatusMessages, defaultLocaleCollator);
@@ -123,6 +119,10 @@ public class ResourceDnsResult {
         return resource;
     }
 
+    /**
+     * Gets the number of seconds since this result had started or <code>null</code>
+     * if not running.
+     */
     public Long getSecondsSince() {
         if(!resource.getCluster().isRunning()) return null;
         if(!resource.isEnabled()) return null;
@@ -145,14 +145,6 @@ public class ResourceDnsResult {
         // Warning if result more than WARNING_SECONDS seconds ago
         if(secondsSince<-WARNING_SECONDS || secondsSince>WARNING_SECONDS) return ResourceStatus.WARNING;
         return ResourceStatus.HEALTHY;
-    }
-
-    public Timestamp getStartTime() {
-        return new Timestamp(startTime);
-    }
-
-    public Timestamp getEndTime() {
-        return new Timestamp(endTime);
     }
 
     /**
@@ -198,6 +190,7 @@ public class ResourceDnsResult {
     /**
      * Gets the ResourceStatus this result will cause.
      */
+    @Override
     public ResourceStatus getResourceStatus() {
         ResourceStatus status = ResourceStatus.UNKNOWN;
 

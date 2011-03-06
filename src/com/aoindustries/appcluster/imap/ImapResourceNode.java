@@ -23,8 +23,8 @@
 package com.aoindustries.appcluster.imap;
 
 import com.aoindustries.appcluster.AppClusterConfigurationException;
+import com.aoindustries.appcluster.CronResourceNode;
 import com.aoindustries.appcluster.Node;
-import com.aoindustries.appcluster.ResourceNode;
 
 /**
  * The per-node settings for an IMAP inbox.
@@ -33,7 +33,7 @@ import com.aoindustries.appcluster.ResourceNode;
  *
  * @author  AO Industries, Inc.
  */
-public class ImapResourceNode extends ResourceNode<ImapResource,ImapResourceNode> {
+public class ImapResourceNode extends CronResourceNode<ImapResource,ImapResourceNode> {
 
     protected ImapResourceNode(Node node, ImapResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
         super(node, resourceNodeConfiguration);

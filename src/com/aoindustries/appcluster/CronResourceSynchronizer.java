@@ -30,6 +30,9 @@ import com.aoindustries.cron.Schedule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -55,7 +58,7 @@ import java.util.logging.Logger;
  *
  * @author  AO Industries, Inc.
  */
-abstract public class CronResourceSynchronizer<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> extends ResourceSynchronizer<R,RN> {
+abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN extends CronResourceNode<R,RN>> extends ResourceSynchronizer<R,RN> {
 
     private static final Logger logger = Logger.getLogger(CronResourceSynchronizer.class.getName());
 
@@ -214,12 +217,13 @@ abstract public class CronResourceSynchronizer<R extends Resource<R,RN>,RN exten
                                 if(testNow) CronResourceSynchronizer.this.testNow = false;
                             }
                             // Do not perform any synchronization or testing on an inconsistent resource
-                            ResourceDnsResult resourceDnsResult = localResourceNode.getResource().getDnsMonitor().getLastResult();
+                            R resource = localResourceNode.getResource();
+                            ResourceDnsResult resourceDnsResult = resource.getDnsMonitor().getLastResult();
                             if(resourceDnsResult.getResourceStatus()!=ResourceStatus.INCONSISTENT) {
                                 // Find the node status of both the local and remote nodes
                                 Map<? extends Node,? extends ResourceNodeDnsResult> nodeResultMap = resourceDnsResult.getNodeResultMap();
-                                ResourceNodeDnsResult localDnsResult = nodeResultMap.get(localResourceNode.getNode());
-                                ResourceNodeDnsResult remoteDnsResult = nodeResultMap.get(remoteResourceNode.getNode());
+                                final ResourceNodeDnsResult localDnsResult = nodeResultMap.get(localResourceNode.getNode());
+                                final ResourceNodeDnsResult remoteDnsResult = nodeResultMap.get(remoteResourceNode.getNode());
                                 if(
                                     (
                                         synchronizeNow
@@ -232,7 +236,28 @@ abstract public class CronResourceSynchronizer<R extends Resource<R,RN>,RN exten
                                         state = ResourceSynchronizerState.SYNCHRONIZING;
                                         stateMessage = null;
                                     }
-                                    ResourceSynchronizationResult result = synchronize(localDnsResult, remoteDnsResult);
+                                    long startTime = System.currentTimeMillis();
+                                    Future<ResourceSynchronizationResult> future = resource.getCluster().getExecutorService().submit(
+                                        new Callable<ResourceSynchronizationResult>() {
+                                            @Override
+                                            public ResourceSynchronizationResult call() throws Exception {
+                                                final Thread currentThread = Thread.currentThread();
+                                                final int oldThreadPriority = currentThread.getPriority();
+                                                try {
+                                                    currentThread.setPriority(THREAD_PRIORITY);
+                                                    return synchronize(localDnsResult, remoteDnsResult);
+                                                } finally {
+                                                    currentThread.setPriority(oldThreadPriority);
+                                                }
+                                            }
+                                        }
+                                    );
+                                    ResourceSynchronizationResult result;
+                                    try {
+                                        result = future.get(resource.getSynchronizeTimeout(), TimeUnit.SECONDS);
+                                    } catch(Exception err) {
+                                        result = new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, null, err.toString());
+                                    }
                                     synchronized(jobLock) {
                                         if(job!=this) return;
                                         state = ResourceSynchronizerState.SLEEPING;
@@ -252,7 +277,28 @@ abstract public class CronResourceSynchronizer<R extends Resource<R,RN>,RN exten
                                         stateMessage = null;
                                         testNow = false;
                                     }
-                                    ResourceTestResult result = test(localDnsResult, remoteDnsResult);
+                                    long startTime = System.currentTimeMillis();
+                                    Future<ResourceTestResult> future = resource.getCluster().getExecutorService().submit(
+                                        new Callable<ResourceTestResult>() {
+                                            @Override
+                                            public ResourceTestResult call() throws Exception {
+                                                final Thread currentThread = Thread.currentThread();
+                                                final int oldThreadPriority = currentThread.getPriority();
+                                                try {
+                                                    currentThread.setPriority(THREAD_PRIORITY);
+                                                    return test(localDnsResult, remoteDnsResult);
+                                                } finally {
+                                                    currentThread.setPriority(oldThreadPriority);
+                                                }
+                                            }
+                                        }
+                                    );
+                                    ResourceTestResult result;
+                                    try {
+                                        result = future.get(resource.getTestTimeout(), TimeUnit.SECONDS);
+                                    } catch(Exception err) {
+                                        result = new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, null, err.toString());
+                                    }
                                     synchronized(jobLock) {
                                         if(job!=this) return;
                                         state = ResourceSynchronizerState.SLEEPING;

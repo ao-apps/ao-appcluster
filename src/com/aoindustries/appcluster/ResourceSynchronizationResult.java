@@ -27,5 +27,44 @@ package com.aoindustries.appcluster;
  *
  * @author  AO Industries, Inc.
  */
-public class ResourceSynchronizationResult {
+public class ResourceSynchronizationResult extends ResourceResult {
+
+    private final ResourceStatus resourceStatus;
+    private final String output;
+    private final String error;
+
+    public ResourceSynchronizationResult(
+        long startTime,
+        long endTime,
+        ResourceStatus resourceStatus,
+        String output,
+        String error
+    ) {
+        super(startTime, endTime);
+        this.resourceStatus = resourceStatus;
+        this.output = output;
+        this.error = error;
+    }
+
+    /**
+     * Gets the resource status that this result will cause.
+     */
+    @Override
+    public ResourceStatus getResourceStatus() {
+        return resourceStatus;
+    }
+
+    /**
+     * Gets the output associated with this test or <code>null</code> for none.
+     */
+    public String getOutput() {
+        return output;
+    }
+
+    /**
+     * Gets the error associated with this test or <code>null</code> for none.
+     */
+    public String getError() {
+        return error;
+    }
 }
