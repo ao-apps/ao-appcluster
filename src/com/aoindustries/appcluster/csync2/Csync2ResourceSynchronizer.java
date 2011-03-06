@@ -29,6 +29,8 @@ import com.aoindustries.appcluster.ResourceStatus;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
 import com.aoindustries.appcluster.ResourceTestResult;
 import com.aoindustries.cron.Schedule;
+import com.aoindustries.lang.ProcessResult;
+import java.io.IOException;
 
 /**
  * Performs synchronization using csync2.
@@ -105,15 +107,43 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
     protected ResourceTestResult test(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
         long startTime = System.currentTimeMillis();
         Csync2Resource resource = localResourceNode.getResource();
-        String[] command = new String[] {
-            localResourceNode.getExe(),
-            "-G",
-            join(resource.getGroups()),
-            "-T",
-            localResourceNode.getNode().getHostname().toString(),
-            remoteResourceNode.getNode().getHostname().toString()
-        };
-        System.err.println(this+": test: TODO");
-        return new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, null, null);
+        try {
+            final String groups = join(resource.getGroups());
+            System.err.println(this+": test: Running csync2 -G groups -cr /");
+            ProcessResult processResult = ProcessResult.exec(
+                new String[] {
+                    localResourceNode.getExe(),
+                    "-G",
+                    groups,
+                    "-cr",
+                    "/"
+                }
+            );
+            if(processResult.getExitVal()!=0) return new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, processResult.getStdout(), processResult.getStderr());
+
+            System.err.println(this+": test: Running csync2 -G groups -T local_node remote_node");
+            processResult = ProcessResult.exec(
+                new String[] {
+                    localResourceNode.getExe(),
+                    "-G",
+                    groups,
+                    "-T",
+                    localResourceNode.getNode().getHostname().toString(),
+                    remoteResourceNode.getNode().getHostname().toString()
+                }
+            );
+            int exitVal = processResult.getExitVal();
+            return new ResourceTestResult(
+                startTime,
+                System.currentTimeMillis(),
+                exitVal==0 ? ResourceStatus.WARNING
+                : exitVal!=2 ? ResourceStatus.ERROR
+                : ResourceStatus.HEALTHY,
+                processResult.getStdout(),
+                processResult.getStderr()
+            );
+        } catch(IOException err) {
+            return new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, null, err.toString());
+        }
     }
 }
