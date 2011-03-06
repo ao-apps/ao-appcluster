@@ -25,6 +25,7 @@ package com.aoindustries.appcluster.dnsonly;
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
 
@@ -50,7 +51,7 @@ public class DnsOnlyResource extends Resource<DnsOnlyResource,DnsOnlyResourceNod
     }
 
     @Override
-    protected DnsOnlyResourceSynchronizer newResourceSynchronizer(DnsOnlyResourceNode localResourceNode, DnsOnlyResourceNode remoteResourceNode) {
+    protected DnsOnlyResourceSynchronizer newResourceSynchronizer(DnsOnlyResourceNode localResourceNode, DnsOnlyResourceNode remoteResourceNode, ResourceConfiguration<DnsOnlyResource,DnsOnlyResourceNode> resourceConfiguration) {
         return new DnsOnlyResourceSynchronizer(localResourceNode, remoteResourceNode);
     }
 }

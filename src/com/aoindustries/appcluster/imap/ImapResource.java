@@ -25,6 +25,7 @@ package com.aoindustries.appcluster.imap;
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.Resource;
+import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
 
@@ -35,11 +36,8 @@ import java.util.Collection;
  */
 public class ImapResource extends Resource<ImapResource,ImapResourceNode> {
 
-    private final ImapResourceConfiguration resourceConfiguration;
-
     protected ImapResource(AppCluster cluster, ImapResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
-        this.resourceConfiguration = resourceConfiguration;
     }
 
     /**
@@ -51,12 +49,13 @@ public class ImapResource extends Resource<ImapResource,ImapResourceNode> {
     }
 
     @Override
-    protected ImapResourceSynchronizer newResourceSynchronizer(ImapResourceNode localResourceNode, ImapResourceNode remoteResourceNode) throws AppClusterConfigurationException {
+    protected ImapResourceSynchronizer newResourceSynchronizer(ImapResourceNode localResourceNode, ImapResourceNode remoteResourceNode, ResourceConfiguration<ImapResource,ImapResourceNode> resourceConfiguration) throws AppClusterConfigurationException {
+        ImapResourceConfiguration imapResourceConfiguration = (ImapResourceConfiguration)resourceConfiguration;
         return new ImapResourceSynchronizer(
             localResourceNode,
             remoteResourceNode,
-            resourceConfiguration.getSynchronizeSchedule(localResourceNode, remoteResourceNode),
-            resourceConfiguration.getTestSchedule(localResourceNode, remoteResourceNode)
+            imapResourceConfiguration.getSynchronizeSchedule(localResourceNode, remoteResourceNode),
+            imapResourceConfiguration.getTestSchedule(localResourceNode, remoteResourceNode)
         );
     }
 }
