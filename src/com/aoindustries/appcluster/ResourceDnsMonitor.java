@@ -137,7 +137,6 @@ public class ResourceDnsMonitor {
         return resource;
     }
 
-    // TODO: Start/stop the synchronization thread as needed
     private void setDnsResult(ResourceDnsResult newResult) {
         assert Thread.holdsLock(threadLock);
         ResourceDnsResult oldResult = this.lastResult;
@@ -159,7 +158,7 @@ public class ResourceDnsMonitor {
     private static final Name[] emptySearchPath = new Name[0];
 
     /**
-     * If both the cluster and this node are enabled, starts the node monitor.
+     * If both the cluster and this resource are enabled, starts the resource DNS monitor.
      */
     void start() {
         synchronized(threadLock) {
@@ -644,7 +643,7 @@ public class ResourceDnsMonitor {
     }
 
     /**
-     * Stops this node monitor.
+     * Stops this resource DNS monitor.
      */
     void stop() {
         long currentTime = System.currentTimeMillis();

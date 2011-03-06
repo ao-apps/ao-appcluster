@@ -69,9 +69,9 @@ public class AppCluster {
     private ExecutorService executorService; // Protected by startLock
     private AppClusterLogger clusterLogger; // Protected by startedLock
     private Set<? extends Node> nodes = Collections.emptySet(); // Protected by startedLock
-    private Name thisHostname; // Protected by startedLock
-    private String thisUsername; // Protected by startedLock
-    private Node thisNode; // Protected by startedLock
+    private Name localHostname; // Protected by startedLock
+    private String localUsername; // Protected by startedLock
+    private Node localNode; // Protected by startedLock
     private Set<? extends Resource> resources = Collections.emptySet(); // Protected by startedLock
 
     private final List<ResourceDnsListener> dnsListeners = new ArrayList<ResourceDnsListener>();
@@ -373,9 +373,9 @@ public class AppCluster {
      * Gets the hostname used to determine which node this server represents
      * or <code>null</code> if not started.
      */
-    public Name getThisHostname() {
+    public Name getLocalHostname() {
         synchronized(startedLock) {
-            return thisHostname;
+            return localHostname;
         }
     }
 
@@ -383,23 +383,25 @@ public class AppCluster {
      * Gets the username used to determine which node this server represents
      * or <code>null</code> if not started.
      */
-    public String getThisUsername() {
+    public String getLocalUsername() {
         synchronized(startedLock) {
-            return thisUsername;
+            return localUsername;
         }
     }
 
     /**
      * Gets the node this machine represents or <code>null</code> if this
-     * machine is not one of the nodes.  For this JVM to be considered the node,
-     * the system hostname must match this node's hostname, and the system
+     * machine is not one of the nodes.  For this JVM to be considered the local
+     * node, the system hostname must match this node's hostname, and the system
      * property "user.name" must match this node's username.
+     *
+     * Determined at cluster start time, before any resources are started.
      *
      * Returns <code>null</code> when not started.
      */
-    public Node getThisNode() {
+    public Node getLocalNode() {
         synchronized(startedLock) {
-            return thisNode;
+            return localNode;
         }
     }
 
@@ -429,8 +431,8 @@ public class AppCluster {
             assert started;
             try {
                 // Get system-local values
-                thisHostname = Name.fromString(InetAddress.getLocalHost().getCanonicalHostName());
-                thisUsername = System.getProperty("user.name");
+                localHostname = Name.fromString(InetAddress.getLocalHost().getCanonicalHostName());
+                localUsername = System.getProperty("user.name");
 
                 // Get the configuration values.
                 enabled = configuration.isEnabled();
@@ -448,14 +450,14 @@ public class AppCluster {
                 }
                 nodes = Collections.unmodifiableSet(newNodes);
 
-                // Find this node
-                thisNode = null;
+                // Find the localNode
+                localNode = null;
                 for(Node node : nodes) {
                     if(
-                        node.getHostname().equals(thisHostname)
-                        && node.getUsername().equals(thisUsername)
+                        node.getHostname().equals(localHostname)
+                        && node.getUsername().equals(localUsername)
                     ) {
-                        thisNode = node;
+                        localNode = node;
                         break;
                     }
                 }
@@ -488,7 +490,7 @@ public class AppCluster {
                 clusterLogger = configuration.getClusterLogger();
                 clusterLogger.start();
 
-                // Start per-resource monitoring threads
+                // Start per-resource monitoring and synchronization threads
                 Set<Resource<?,?>> newResources = new LinkedHashSet<Resource<?,?>>(resourceConfigurations.size()*4/3+1);
                 for(ResourceConfiguration<?,?> resourceConfiguration : resourceConfigurations) {
                     Set<? extends ResourceNodeConfiguration<?,?>> resourceNodeConfigs = resourceConfiguration.getResourceNodeConfigurations();
@@ -501,7 +503,7 @@ public class AppCluster {
                     }
                     Resource<?,?> resource = resourceConfiguration.newResource(this, newResourceNodes);
                     newResources.add(resource);
-                    resource.getDnsMonitor().start();
+                    resource.start();
                 }
                 resources = Collections.unmodifiableSet(newResources);
             } catch(TextParseException exc) {
@@ -515,8 +517,8 @@ public class AppCluster {
     private void shutdown() {
         synchronized(startedLock) {
             if(started) {
-                // Stop per-resource monitoring threads
-                for(Resource resource : resources) resource.getDnsMonitor().stop();
+                // Stop per-resource monitoring and synchronization threads
+                for(Resource resource : resources) resource.stop();
                 resources = Collections.emptySet();
 
                 // Stop the logger
@@ -539,9 +541,9 @@ public class AppCluster {
 
                 // Clear the nodes
                 nodes = Collections.emptySet();
-                thisNode = null;
-                thisHostname = null;
-                thisUsername = null;
+                localNode = null;
+                localHostname = null;
+                localUsername = null;
 
                 // Clear the configuration values.
                 enabled = false;

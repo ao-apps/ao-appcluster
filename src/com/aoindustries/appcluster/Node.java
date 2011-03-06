@@ -103,7 +103,7 @@ public class Node {
     /**
      * Gets the username the cluster must run as on the machine that runs this node.
      * This must match the system property "user.name" for this JVM to be considered
-     * as "thisNode".
+     * as "localNode".
      */
     public String getUsername() {
         return username;

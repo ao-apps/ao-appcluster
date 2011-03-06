@@ -35,8 +35,11 @@ import java.util.Collection;
  */
 public class ImapResource extends Resource<ImapResource,ImapResourceNode> {
 
+    private final ImapResourceConfiguration resourceConfiguration;
+
     protected ImapResource(AppCluster cluster, ImapResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
+        this.resourceConfiguration = resourceConfiguration;
     }
 
     /**
@@ -45,5 +48,15 @@ public class ImapResource extends Resource<ImapResource,ImapResourceNode> {
     @Override
     public boolean getAllowMultiMaster() {
         return false;
+    }
+
+    @Override
+    protected ImapResourceSynchronizer newResourceSynchronizer(ImapResourceNode localResourceNode, ImapResourceNode remoteResourceNode) throws AppClusterConfigurationException {
+        return new ImapResourceSynchronizer(
+            localResourceNode,
+            remoteResourceNode,
+            resourceConfiguration.getSynchronizeSchedule(localResourceNode, remoteResourceNode),
+            resourceConfiguration.getTestSchedule(localResourceNode, remoteResourceNode)
+        );
     }
 }

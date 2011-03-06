@@ -25,8 +25,8 @@ package com.aoindustries.appcluster.imap;
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
+import com.aoindustries.appcluster.CronResourcePropertiesConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
-import com.aoindustries.appcluster.ResourcePropertiesConfiguration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -37,7 +37,7 @@ import java.util.Set;
  *
  * @author  AO Industries, Inc.
  */
-public class ImapResourcePropertiesConfiguration extends ResourcePropertiesConfiguration<ImapResource,ImapResourceNode> implements ImapResourceConfiguration {
+public class ImapResourcePropertiesConfiguration extends CronResourcePropertiesConfiguration<ImapResource,ImapResourceNode> implements ImapResourceConfiguration {
 
     protected ImapResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
         super(properties, id);

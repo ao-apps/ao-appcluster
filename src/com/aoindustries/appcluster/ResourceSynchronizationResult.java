@@ -20,25 +20,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.imap;
-
-import com.aoindustries.appcluster.AppCluster;
-import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.CronResourceConfiguration;
-import com.aoindustries.appcluster.ResourceNode;
-import java.util.Collection;
-import java.util.Set;
+package com.aoindustries.appcluster;
 
 /**
- * The configuration for an IMAP inbox.
+ * Contains the results of one resource synchronization.
  *
  * @author  AO Industries, Inc.
  */
-public interface ImapResourceConfiguration extends CronResourceConfiguration<ImapResource,ImapResourceNode> {
-
-    @Override
-    Set<? extends ImapResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
-
-    @Override
-    ImapResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
+public class ResourceSynchronizationResult {
 }

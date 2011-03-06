@@ -25,8 +25,8 @@ package com.aoindustries.appcluster.jdbc;
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
+import com.aoindustries.appcluster.CronResourcePropertiesConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
-import com.aoindustries.appcluster.ResourcePropertiesConfiguration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -37,7 +37,7 @@ import java.util.Set;
  *
  * @author  AO Industries, Inc.
  */
-public class JdbcResourcePropertiesConfiguration extends ResourcePropertiesConfiguration<JdbcResource,JdbcResourceNode> implements JdbcResourceConfiguration {
+public class JdbcResourcePropertiesConfiguration extends CronResourcePropertiesConfiguration<JdbcResource,JdbcResourceNode> implements JdbcResourceConfiguration {
 
     protected JdbcResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
         super(properties, id);

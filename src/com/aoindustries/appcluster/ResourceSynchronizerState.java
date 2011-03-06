@@ -20,35 +20,44 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.csync2;
-
-import com.aoindustries.appcluster.AppCluster;
-import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.CronResourceConfiguration;
-import com.aoindustries.appcluster.ResourceNode;
-import java.util.Collection;
-import java.util.Set;
+package com.aoindustries.appcluster;
 
 /**
- * The configuration for a csync2 resource.
+ * The possible states for resource synchronization.
  *
+ * @see  Resource
+ * 
  * @author  AO Industries, Inc.
  */
-public interface Csync2ResourceConfiguration extends CronResourceConfiguration<Csync2Resource,Csync2ResourceNode> {
+public enum ResourceSynchronizerState {
+    DISABLED(ResourceStatus.DISABLED),
+    STOPPED(ResourceStatus.STOPPED),
+    SLEEPING(ResourceStatus.HEALTHY),
+    TESTING(ResourceStatus.HEALTHY),
+    SYNCHRONIZING(ResourceStatus.HEALTHY);
 
-    /**
-     * @see Csync2Resource#getAllowMultiMaster()
-     */
-    boolean getAllowMultiMaster();
+    private final ResourceStatus resourceStatus;
 
-    /**
-     * Gets all the groups that will be synchronized by csync2 for this resource.
-     */
-    String getGroups();
-
-    @Override
-    Set<? extends Csync2ResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
+    private ResourceSynchronizerState(ResourceStatus resourceStatus) {
+        this.resourceStatus = resourceStatus;
+    }
 
     @Override
-    Csync2Resource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
+    public String toString() {
+        return ApplicationResources.accessor.getMessage("ResourceSynchronizationState." + name());
+    }
+
+    /**
+     * Gets the resource status that this synchronization status will cause.
+     */
+    public ResourceStatus getResourceStatus() {
+        return resourceStatus;
+    }
+
+    /**
+     * JavaBeans compatibility.
+     */
+    public String getName() {
+        return name();
+    }
 }

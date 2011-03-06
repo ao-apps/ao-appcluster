@@ -35,15 +35,22 @@ import java.util.Collection;
  */
 public class DnsOnlyResource extends Resource<DnsOnlyResource,DnsOnlyResourceNode> {
 
+    private final DnsOnlyResourceConfiguration resourceConfiguration;
     private final boolean allowMultiMaster;
 
     protected DnsOnlyResource(AppCluster cluster, DnsOnlyResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
+        this.resourceConfiguration = resourceConfiguration;
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
     }
 
     @Override
     public boolean getAllowMultiMaster() {
         return allowMultiMaster;
+    }
+
+    @Override
+    protected DnsOnlyResourceSynchronizer newResourceSynchronizer(DnsOnlyResourceNode localResourceNode, DnsOnlyResourceNode remoteResourceNode) {
+        return new DnsOnlyResourceSynchronizer(localResourceNode, remoteResourceNode);
     }
 }

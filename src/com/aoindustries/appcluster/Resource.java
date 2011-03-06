@@ -25,6 +25,8 @@ package com.aoindustries.appcluster;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import org.xbill.DNS.Name;
 
@@ -49,8 +51,9 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     private final Set<? extends Nameserver> enabledNameservers;
 
     private final ResourceDnsMonitor dnsMonitor;
+    private final Map<Node,ResourceSynchronizer<R,RN>> synchronizers;
 
-    protected Resource(AppCluster cluster, ResourceConfiguration<R,RN> resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) {
+    protected Resource(AppCluster cluster, ResourceConfiguration<R,RN> resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         this.cluster = cluster;
         this.id = resourceConfiguration.getId();
         this.enabled = cluster.isEnabled() && resourceConfiguration.isEnabled();
@@ -76,6 +79,34 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         this.enabledNameservers = Collections.unmodifiableSet(newEnabledNameservers);
 
         this.dnsMonitor = new ResourceDnsMonitor(this);
+
+        Node localNode = cluster.getLocalNode();
+        if(localNode==null) {
+            // The local node is not part of the cluster.
+            synchronizers = Collections.emptyMap();
+        } else {
+            // Find local node in the resource
+            RN localResourceNode = null;
+            for(RN resourceNode : this.resourceNodes) {
+                if(resourceNode.getNode().equals(localNode)) {
+                    localResourceNode = resourceNode;
+                    break;
+                }
+            }
+            if(localResourceNode==null) {
+                // The local node is not part of this resource.
+                synchronizers = Collections.emptyMap();
+            } else {
+                Map<Node,ResourceSynchronizer<R,RN>> newSynchronizers = new LinkedHashMap<Node,ResourceSynchronizer<R,RN>>((this.resourceNodes.size()-1)*4/3+1);
+                for(RN resourceNode : this.resourceNodes) {
+                    Node node = resourceNode.getNode();
+                    if(!node.equals(localNode)) {
+                        newSynchronizers.put(node, newResourceSynchronizer(localResourceNode, resourceNode));
+                    }
+                }
+                this.synchronizers = Collections.unmodifiableMap(newSynchronizers);
+            }
+        }
     }
 
     @Override
@@ -157,12 +188,13 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     }
 
     /**
-     * Gets the status of this resource based on disabled and the last monitoring results.
+     * Gets the status of this resource based on disabled, last monitoring results, and synchronization state.
      */
     public ResourceStatus getStatus() {
         ResourceStatus status = ResourceStatus.UNKNOWN;
         if(!isEnabled()) status = AppCluster.max(status, ResourceStatus.DISABLED);
         status = AppCluster.max(status, getDnsMonitor().getLastResult().getResourceStatus());
+        // TODO: Add synchronization state
         return status;
     }
 
@@ -176,5 +208,41 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
      */
     public String getType() {
         return type;
+    }
+
+    /**
+     * Starts the DNS monitor and all synchronizers.
+     */
+    void start() {
+        dnsMonitor.start();
+        for(ResourceSynchronizer<R,RN> synchronizer : synchronizers.values()) synchronizer.start();
+    }
+
+    /**
+     * Stops all synchronizers and the DNS monitor.
+     */
+    void stop() {
+        for(ResourceSynchronizer<R,RN> synchronizer : synchronizers.values()) synchronizer.stop();
+        dnsMonitor.stop();
+    }
+
+    /**
+     * Creates the resource synchronizer for this specific type of resource.
+     */
+    abstract protected ResourceSynchronizer<R,RN> newResourceSynchronizer(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException;
+
+    /**
+     * Gets the set of resource synchronizers.
+     */
+    public Collection<ResourceSynchronizer<R,RN>> getSynchronizers() {
+        return synchronizers.values();
+    }
+
+    /**
+     * Gets a map-view of the resource synchronizers keyed on remote node.
+     * If the local node is not part of the resource nodes, returns an empty map.
+     */
+    public Map<Node,ResourceSynchronizer<R,RN>> getSynchronizerMap() {
+        return synchronizers;
     }
 }

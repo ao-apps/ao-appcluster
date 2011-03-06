@@ -35,11 +35,13 @@ import java.util.Collection;
  */
 public class Csync2Resource extends Resource<Csync2Resource,Csync2ResourceNode> {
 
+    private final Csync2ResourceConfiguration resourceConfiguration;
     private final boolean allowMultiMaster;
     private final String groups;
 
     protected Csync2Resource(AppCluster cluster, Csync2ResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
+        this.resourceConfiguration = resourceConfiguration;
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
         this.groups = resourceConfiguration.getGroups();
     }
@@ -51,5 +53,15 @@ public class Csync2Resource extends Resource<Csync2Resource,Csync2ResourceNode> 
 
     public String getGroups() {
         return groups;
+    }
+
+    @Override
+    protected Csync2ResourceSynchronizer newResourceSynchronizer(Csync2ResourceNode localResourceNode, Csync2ResourceNode remoteResourceNode) throws AppClusterConfigurationException {
+        return new Csync2ResourceSynchronizer(
+            localResourceNode,
+            remoteResourceNode,
+            resourceConfiguration.getSynchronizeSchedule(localResourceNode, remoteResourceNode),
+            resourceConfiguration.getTestSchedule(localResourceNode, remoteResourceNode)
+        );
     }
 }

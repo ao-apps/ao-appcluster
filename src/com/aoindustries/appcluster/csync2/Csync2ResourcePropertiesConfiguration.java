@@ -25,8 +25,8 @@ package com.aoindustries.appcluster.csync2;
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
+import com.aoindustries.appcluster.CronResourcePropertiesConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
-import com.aoindustries.appcluster.ResourcePropertiesConfiguration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -37,7 +37,7 @@ import java.util.Set;
  *
  * @author  AO Industries, Inc.
  */
-public class Csync2ResourcePropertiesConfiguration extends ResourcePropertiesConfiguration<Csync2Resource,Csync2ResourceNode> implements Csync2ResourceConfiguration {
+public class Csync2ResourcePropertiesConfiguration extends CronResourcePropertiesConfiguration<Csync2Resource,Csync2ResourceNode> implements Csync2ResourceConfiguration {
 
     private final boolean allowMultiMaster;
     private final String groups;

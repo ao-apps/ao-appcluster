@@ -20,35 +20,27 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with ao-appcluster.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.aoindustries.appcluster.csync2;
+package com.aoindustries.appcluster;
 
-import com.aoindustries.appcluster.AppCluster;
-import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.CronResourceConfiguration;
-import com.aoindustries.appcluster.ResourceNode;
-import java.util.Collection;
-import java.util.Set;
+import com.aoindustries.cron.CronJob;
+import com.aoindustries.cron.Schedule;
 
 /**
- * The configuration for a csync2 resource.
+ * The configuration for one resource that is scheduled as a CronJob.
+ *
+ * @see  CronJob
  *
  * @author  AO Industries, Inc.
  */
-public interface Csync2ResourceConfiguration extends CronResourceConfiguration<Csync2Resource,Csync2ResourceNode> {
+public interface CronResourceConfiguration<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> extends ResourceConfiguration<R,RN> {
 
     /**
-     * @see Csync2Resource#getAllowMultiMaster()
+     * Gets the synchronization schedule between the local node and the remote node.
      */
-    boolean getAllowMultiMaster();
+    Schedule getSynchronizeSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException;
 
     /**
-     * Gets all the groups that will be synchronized by csync2 for this resource.
+     * Gets the test schedule between the local node and the remote node.
      */
-    String getGroups();
-
-    @Override
-    Set<? extends Csync2ResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
-
-    @Override
-    Csync2Resource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
+    Schedule getTestSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException;
 }

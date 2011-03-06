@@ -22,6 +22,8 @@
  */
 package com.aoindustries.appcluster;
 
+import com.aoindustries.cron.MatcherSchedule;
+import com.aoindustries.cron.Schedule;
 import com.aoindustries.util.StringUtility;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -225,6 +227,14 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
         try {
             return Name.fromString(getString(propertyName));
         } catch(TextParseException exc) {
+            throw new AppClusterConfigurationException(exc);
+        }
+    }
+
+    public Schedule getSchedule(String propertyName) throws AppClusterConfigurationException {
+        try {
+            return MatcherSchedule.parseSchedule(getString(propertyName));
+        } catch(IllegalArgumentException exc) {
             throw new AppClusterConfigurationException(exc);
         }
     }

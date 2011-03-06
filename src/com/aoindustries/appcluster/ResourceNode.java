@@ -82,7 +82,7 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
     }
 
     /**
-     * Gets the set of node DNS records that must all the the same and
+     * Gets the set of node DNS records that must all by the same and
      * match the resource's masterRecords for this node to be considered
      * a master.
      */

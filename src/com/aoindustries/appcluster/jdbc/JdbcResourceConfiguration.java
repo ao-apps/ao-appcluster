@@ -24,7 +24,7 @@ package com.aoindustries.appcluster.jdbc;
 
 import com.aoindustries.appcluster.AppCluster;
 import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.ResourceConfiguration;
+import com.aoindustries.appcluster.CronResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
 import java.util.Set;
@@ -34,7 +34,7 @@ import java.util.Set;
  *
  * @author  AO Industries, Inc.
  */
-public interface JdbcResourceConfiguration extends ResourceConfiguration<JdbcResource,JdbcResourceNode> {
+public interface JdbcResourceConfiguration extends CronResourceConfiguration<JdbcResource,JdbcResourceNode> {
 
     @Override
     Set<? extends JdbcResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
