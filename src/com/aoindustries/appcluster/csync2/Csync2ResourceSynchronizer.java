@@ -81,6 +81,24 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
     }
 
     /**
+     * Builds a command string, hiding the full path of the first parameter.
+     */
+    private static String buildCommandString(String[] command) {
+        StringBuilder sb = new StringBuilder();
+        for(int i=0; i<command.length; i++) {
+            String arg = command[i];
+            if(i==0) {
+                int pos = arg.lastIndexOf('/');
+                if(pos!=-1) arg = arg.substring(pos+1);
+            } else {
+                sb.append(' ');
+            }
+            sb.append(arg);
+        }
+        return sb.toString();
+    }
+
+    /**
      * <ol>
      *   <li>
      *     For synchronize:
@@ -126,7 +144,7 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
                 default :
                     throw new AssertionError("Unexpected mode: "+mode);
             }
-            String commandString = StringUtility.join(command, " ");
+            String commandString = buildCommandString(command);
             ResourceSynchronizationResultStep step;
             try {
                 ProcessResult processResult = ProcessResult.exec(command);
@@ -155,7 +173,7 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
         {
             long startTime = System.currentTimeMillis();
             String[] command = {exe, "-G", groups, "-T", localHostname, remoteHostname};
-            String commandString = StringUtility.join(command, " ");
+            String commandString = buildCommandString(command);
 
             ResourceSynchronizationResultStep step;
             try {
