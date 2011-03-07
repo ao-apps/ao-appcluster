@@ -91,11 +91,20 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
     }
 
     /**
-     * Gets the current status of this resource node.
+     * Gets the current DNS status of this resource node.
      */
-    public NodeDnsStatus getNodeStatus() {
+    public NodeDnsStatus getDnsStatus() {
         NodeDnsStatus status = NodeDnsStatus.UNKNOWN;
         status = AppCluster.max(status, resource.getDnsMonitor().getLastResult().getNodeResultMap().get(getNode()).getNodeStatus());
         return status;
+    }
+
+    /**
+     * Gets the synchronization status for this resource node as a remote node
+     * or <code>null</code> if this is not a remote node.
+     */
+    public ResourceStatus getSynchronizationStatus() {
+        ResourceSynchronizer<R,RN> synchronizer = resource.getSynchronizerMap().get(node);
+        return synchronizer==null ? null : synchronizer.getResultStatus();
     }
 }
