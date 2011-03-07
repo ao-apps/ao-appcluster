@@ -390,6 +390,21 @@ public class AppCluster {
     }
 
     /**
+     * Gets a map view of the nodes, keyed by their id.  This is not a fast
+     * implementation and is here for JSP EL compatibility.
+     */
+    /*
+    public Map<String,Node> getNodeMap() {
+        Map<String,Node> nodeMap;
+        synchronized(startedLock) {
+            nodeMap = new LinkedHashMap<String,Node>(nodes.size()*4/3+1);
+            for(Node node : nodes) nodeMap.put(node.getId(), node);
+        }
+        return Collections.unmodifiableMap(nodeMap);
+    }
+     */
+
+    /**
      * Gets the hostname used to determine which node this server represents
      * or <code>null</code> if not started.
      */
