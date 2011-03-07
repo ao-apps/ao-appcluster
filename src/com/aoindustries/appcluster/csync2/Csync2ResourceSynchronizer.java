@@ -26,11 +26,16 @@ import com.aoindustries.appcluster.CronResourceSynchronizer;
 import com.aoindustries.appcluster.NodeDnsStatus;
 import com.aoindustries.appcluster.ResourceNodeDnsResult;
 import com.aoindustries.appcluster.ResourceStatus;
+import com.aoindustries.appcluster.ResourceSynchronizationMode;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
-import com.aoindustries.appcluster.ResourceTestResult;
+import com.aoindustries.appcluster.ResourceSynchronizationResultStep;
 import com.aoindustries.cron.Schedule;
 import com.aoindustries.lang.ProcessResult;
-import java.io.IOException;
+import com.aoindustries.util.ErrorPrinter;
+import com.aoindustries.util.StringUtility;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Performs synchronization using csync2.
@@ -39,166 +44,157 @@ import java.io.IOException;
  */
 public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2Resource,Csync2ResourceNode> {
 
-    private static String join(Iterable<String> strings) {
-        StringBuilder sb = new StringBuilder();
-        for(String str : strings) {
-            if(sb.length()>0) sb.append(',');
-            sb.append(str);
-        }
-        return sb.toString();
-    }
-
     protected Csync2ResourceSynchronizer(Csync2ResourceNode localResourceNode, Csync2ResourceNode remoteResourceNode, Schedule synchronizeSchedule, Schedule testSchedule) {
         super(localResourceNode, remoteResourceNode, synchronizeSchedule, testSchedule);
     }
 
     /*
-     * May synchronize from any master or slave to any master or slave.
+     * May synchronize and test from any master or slave to any master or slave.
      */
     @Override
-    protected boolean canSynchronize(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
+    protected boolean canSynchronize(ResourceSynchronizationMode mode, ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
         NodeDnsStatus localDnsStatus = localDnsResult.getNodeStatus();
         NodeDnsStatus remoteDnsStatus = remoteDnsResult.getNodeStatus();
-        return
-            (
-                localDnsStatus==NodeDnsStatus.MASTER
-                || localDnsStatus==NodeDnsStatus.SLAVE
-            ) && (
-                remoteDnsStatus==NodeDnsStatus.MASTER
-                || remoteDnsStatus==NodeDnsStatus.SLAVE
-            )
-        ;
+        switch(mode) {
+            case SYNCHRONIZE :
+            case TEST_ONLY :
+                return
+                    (
+                        localDnsStatus==NodeDnsStatus.MASTER
+                        || localDnsStatus==NodeDnsStatus.SLAVE
+                    ) && (
+                        remoteDnsStatus==NodeDnsStatus.MASTER
+                        || remoteDnsStatus==NodeDnsStatus.SLAVE
+                    )
+                ;
+            default :
+                throw new AssertionError("Unexpected mode: "+mode);
+        }
     }
 
     /**
-     * First run csync2 -G GROUPS -P REMOTE_NODE -xv
-     *  Must exit 0
-     * Then run csync2 -G GROUPS -T LOCAL_NODE REMOTE_NODE
-     *  Exit 0 means warning
-     *  Exit 2 means everything is OK
-     *  Other exit means error
+     * <ol>
+     *   <li>
+     *     For synchronize:
+     *       First run csync2 -G GROUPS -P REMOTE_NODE -xv
+     *       Must exit 0
+     *     For test:
+     *       First run csync2 -G GROUPS -cr /
+     *       Must exit 0
+     *   </li>
+     *   <li>
+     *     Then run csync2 -G GROUPS -T LOCAL_NODE REMOTE_NODE
+     *     Exit 0 means warning
+     *     Exit 2 means everything is OK
+     *     Other exit means error
+     *   </li>
+     * </ol>
      */
     @Override
-    protected ResourceSynchronizationResult synchronize(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
-        long startTime = System.currentTimeMillis();
-        Csync2Resource resource = localResourceNode.getResource();
-        try {
-            final String groups = join(resource.getGroups());
-            System.err.println(this+": test: Running csync2 -G groups -P remote_node -xv");
-            ProcessResult syncProcessResult = ProcessResult.exec(
-                new String[] {
-                    localResourceNode.getExe(),
-                    "-G",
-                    groups,
-                    "-P",
-                    remoteResourceNode.getNode().getHostname().toString(),
-                    "-xv"
-                }
-            );
-            if(syncProcessResult.getExitVal()!=0) return new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, syncProcessResult.getStdout(), syncProcessResult.getStderr());
+    protected ResourceSynchronizationResult synchronize(ResourceSynchronizationMode mode, ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
+        final String localHostname = localResourceNode.getNode().getHostname().toString();
+        final String remoteHostname = remoteResourceNode.getNode().getHostname().toString();
+        final Csync2Resource resource = localResourceNode.getResource();
+        final String groups = StringUtility.join(resource.getGroups(), ",");
 
-            System.err.println(this+": test: Running csync2 -G groups -T local_node remote_node");
-            ProcessResult testProcessResult = ProcessResult.exec(
-                new String[] {
-                    localResourceNode.getExe(),
-                    "-G",
-                    groups,
-                    "-T",
-                    localResourceNode.getNode().getHostname().toString(),
-                    remoteResourceNode.getNode().getHostname().toString()
+        List<ResourceSynchronizationResultStep> steps = new ArrayList<ResourceSynchronizationResultStep>(2);
+
+        // Step one: synchronize or scan
+        {
+            long startTime = System.currentTimeMillis();
+            String[] command;
+            switch(mode) {
+                case SYNCHRONIZE :
+                {
+                    command = new String[] {
+                        localResourceNode.getExe(),
+                        "-G",
+                        groups,
+                        "-P",
+                        remoteHostname,
+                        "-xv"
+                    };
+                    break;
                 }
-            );
-            int exitVal = testProcessResult.getExitVal();
-            if(exitVal==2) {
-                // Test OK, return result of synchronization
-                return new ResourceSynchronizationResult(
+                case TEST_ONLY :
+                {
+                    command = new String[] {
+                        localResourceNode.getExe(),
+                        "-G",
+                        groups,
+                        "-cr",
+                        "/"
+                    };
+                    break;
+                }
+                default :
+                    throw new AssertionError("Unexpected mode: "+mode);
+            }
+            String commandString = StringUtility.join(command, " ");
+            ResourceSynchronizationResultStep step;
+            try {
+                ProcessResult processResult = ProcessResult.exec(command);
+                step = new ResourceSynchronizationResultStep(
                     startTime,
                     System.currentTimeMillis(),
-                    ResourceStatus.HEALTHY,
-                    syncProcessResult.getStdout(),
-                    syncProcessResult.getStderr()
+                    processResult.getExitVal()==0 ? ResourceStatus.HEALTHY : ResourceStatus.ERROR,
+                    commandString,
+                    Collections.singletonList(processResult.getStdout()),
+                    Collections.singletonList(processResult.getStderr())
+                );
+            } catch(Exception exc) {
+                step = new ResourceSynchronizationResultStep(
+                    startTime,
+                    System.currentTimeMillis(),
+                    ResourceStatus.ERROR,
+                    commandString,
+                    null,
+                    Collections.singletonList(ErrorPrinter.getStackTraces(exc))
                 );
             }
-            return new ResourceSynchronizationResult(
-                startTime,
-                System.currentTimeMillis(),
-                exitVal==0 ? ResourceStatus.WARNING
-                : ResourceStatus.ERROR,
-                testProcessResult.getStdout(),
-                testProcessResult.getStderr()
-            );
-        } catch(IOException err) {
-            return new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, null, err.toString());
+            steps.add(step);
         }
-    }
 
-    /*
-     * May test from any master or slave to any master or slave.
-     */
-    @Override
-    protected boolean canTest(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
-        NodeDnsStatus localDnsStatus = localDnsResult.getNodeStatus();
-        NodeDnsStatus remoteDnsStatus = remoteDnsResult.getNodeStatus();
-        return
-            (
-                localDnsStatus==NodeDnsStatus.MASTER
-                || localDnsStatus==NodeDnsStatus.SLAVE
-            ) && (
-                remoteDnsStatus==NodeDnsStatus.MASTER
-                || remoteDnsStatus==NodeDnsStatus.SLAVE
-            )
-        ;
-    }
+        // Step two: test
+        {
+            long startTime = System.currentTimeMillis();
+            String[] command = {
+                localResourceNode.getExe(),
+                "-G",
+                groups,
+                "-T",
+                localHostname,
+                remoteHostname
+            };
+            String commandString = StringUtility.join(command, " ");
 
-    /**
-     * First run csync2 -G GROUPS -cr /
-     *  Must exit 0
-     * Then run csync2 -G GROUPS -T LOCAL_NODE REMOTE_NODE
-     *  Exit 0 means warning
-     *  Exit 2 means everything is OK
-     *  Other exit means error
-     */
-    @Override
-    protected ResourceTestResult test(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
-        long startTime = System.currentTimeMillis();
-        Csync2Resource resource = localResourceNode.getResource();
-        try {
-            final String groups = join(resource.getGroups());
-            System.err.println(this+": test: Running csync2 -G groups -cr /");
-            ProcessResult processResult = ProcessResult.exec(
-                new String[] {
-                    localResourceNode.getExe(),
-                    "-G",
-                    groups,
-                    "-cr",
-                    "/"
-                }
-            );
-            if(processResult.getExitVal()!=0) return new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, processResult.getStdout(), processResult.getStderr());
-
-            System.err.println(this+": test: Running csync2 -G groups -T local_node remote_node");
-            processResult = ProcessResult.exec(
-                new String[] {
-                    localResourceNode.getExe(),
-                    "-G",
-                    groups,
-                    "-T",
-                    localResourceNode.getNode().getHostname().toString(),
-                    remoteResourceNode.getNode().getHostname().toString()
-                }
-            );
-            int exitVal = processResult.getExitVal();
-            return new ResourceTestResult(
-                startTime,
-                System.currentTimeMillis(),
-                exitVal==0 ? ResourceStatus.WARNING
-                : exitVal!=2 ? ResourceStatus.ERROR
-                : ResourceStatus.HEALTHY,
-                processResult.getStdout(),
-                processResult.getStderr()
-            );
-        } catch(IOException err) {
-            return new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, null, err.toString());
+            ResourceSynchronizationResultStep step;
+            try {
+                ProcessResult processResult = ProcessResult.exec(command);
+                int exitVal = processResult.getExitVal();
+                step = new ResourceSynchronizationResultStep(
+                    startTime,
+                    System.currentTimeMillis(),
+                    exitVal==2 ? ResourceStatus.HEALTHY
+                    : exitVal==0 ? ResourceStatus.WARNING
+                    : ResourceStatus.ERROR,
+                    commandString,
+                    Collections.singletonList(processResult.getStdout()),
+                    Collections.singletonList(processResult.getStderr())
+                );
+            } catch(Exception exc) {
+                step = new ResourceSynchronizationResultStep(
+                    startTime,
+                    System.currentTimeMillis(),
+                    ResourceStatus.ERROR,
+                    commandString,
+                    null,
+                    Collections.singletonList(ErrorPrinter.getStackTraces(exc))
+                );
+            }
+            steps.add(step);
         }
+
+        return new ResourceSynchronizationResult(mode, steps);
     }
 }
