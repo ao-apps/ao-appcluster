@@ -169,6 +169,8 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                     stateMessage = null;
                     synchronizeNowMode = null;
                     lastResult = null; // TODO: Restore from persistence mechanism
+                    // TODO: Run as soon as possible when last results are unknown?
+
                     job = new CronJob() {
                         @Override
                         public Schedule getCronJobSchedule() {
