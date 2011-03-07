@@ -81,7 +81,7 @@ public class ResourceSynchronizationResult implements ResourceResult {
     @Override
     public Timestamp getEndTime() {
         long endTime = Long.MIN_VALUE;
-        for(ResourceSynchronizationResultStep step : steps) endTime = Math.min(endTime, step.endTime);
+        for(ResourceSynchronizationResultStep step : steps) endTime = Math.max(endTime, step.endTime);
         return new Timestamp(endTime);
     }
 
