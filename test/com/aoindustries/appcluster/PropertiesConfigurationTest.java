@@ -52,7 +52,7 @@ public class PropertiesConfigurationTest {
             config = new AppClusterPropertiesConfiguration(props);
         }
         AppCluster cluster = new AppCluster(config);
-        cluster.addResourceDnsListener(new LoggerResourceDnsListener());
+        cluster.addResourceListener(new LoggerResourceListener());
         cluster.start();
         try {
             assertEquals("Production Cluster", cluster.getDisplay());

@@ -23,16 +23,25 @@
 package com.aoindustries.appcluster;
 
 /**
- * Is notified when the DNS status of a resource changes.
+ * Is notified when the status of a resource changes.
  *
  * TODO: Alert administrators on certain statuses
  *
  * @author  AO Industries, Inc.
  */
-public interface ResourceDnsListener {
+public interface ResourceListener {
 
     /**
      * Called whenever a new result is available.
+     *
+     * @param oldResult will never be <code>null</code>
      */
     void onResourceDnsResult(ResourceDnsResult oldResult, ResourceDnsResult newResult);
+
+    /**
+     * Called whenever a new synchronization result is available.
+     *
+     * @param oldResult will be <code>null</code> for the first synchronization pass
+     */
+    void onResourceSynchronizationResult(ResourceSynchronizationResult oldResult, ResourceSynchronizationResult newResult);
 }

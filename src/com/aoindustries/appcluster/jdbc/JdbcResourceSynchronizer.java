@@ -75,6 +75,8 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
     protected ResourceSynchronizationResult synchronize(ResourceSynchronizationMode mode, ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
         long startTime = System.currentTimeMillis();
         return new ResourceSynchronizationResult(
+            localResourceNode,
+            remoteResourceNode,
             mode,
             Collections.singletonList(
                 new ResourceSynchronizationResultStep(

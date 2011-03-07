@@ -74,8 +74,9 @@ public class AppCluster {
     private Node localNode; // Protected by startedLock
     private Set<? extends Resource> resources = Collections.emptySet(); // Protected by startedLock
 
-    private final List<ResourceDnsListener> dnsListeners = new ArrayList<ResourceDnsListener>();
-    private ExecutorService dnsListenersExecutorService; // Protected by dnsListeners
+    private final List<ResourceListener> resourceListeners = new ArrayList<ResourceListener>();
+    private ExecutorService resourceListenersOnDnsResultExecutorService; // Protected by resourceListeners
+    private ExecutorService resourceListenersOnSynchronizationResultExecutorService; // Protected by resourceListeners
 
     /**
      * Creates a cluster with the provided configuration.
@@ -176,40 +177,59 @@ public class AppCluster {
     }
 
     /**
-     * Will be called when the DNS result has changed in any way.
+     * Will be called when the resource result has changed in any way.
      */
-    public void addResourceDnsListener(ResourceDnsListener dnsListener) {
-        synchronized(dnsListeners) {
-            for(ResourceDnsListener existing : dnsListeners) {
-                if(existing==dnsListener) return;
+    public void addResourceListener(ResourceListener resourceListener) {
+        synchronized(resourceListeners) {
+            for(ResourceListener existing : resourceListeners) {
+                if(existing==resourceListener) return;
             }
-            dnsListeners.add(dnsListener);
+            resourceListeners.add(resourceListener);
         }
     }
 
     /**
-     * Removes listener of DNS result changes.
+     * Removes listener of resource result changes.
      */
-    public void removeResourceDnsListener(ResourceDnsListener dnsListener) {
-        synchronized(dnsListeners) {
-            for(int i=0; i<dnsListeners.size(); i++) {
-                if(dnsListeners.get(i)==dnsListener) {
-                    dnsListeners.remove(i);
+    public void removeResourceListener(ResourceListener resourceListener) {
+        synchronized(resourceListeners) {
+            for(int i=0; i<resourceListeners.size(); i++) {
+                if(resourceListeners.get(i)==resourceListener) {
+                    resourceListeners.remove(i);
                     return;
                 }
             }
         }
     }
 
-    void notifyDnsListeners(final ResourceDnsResult oldResult, final ResourceDnsResult newResult) {
-        synchronized(dnsListeners) {
-            for(final ResourceDnsListener dnsListener : dnsListeners) {
-                dnsListenersExecutorService.submit(
+    void notifyResourceListenersOnDnsResult(final ResourceDnsResult oldResult, final ResourceDnsResult newResult) {
+        synchronized(resourceListeners) {
+            for(final ResourceListener resourceListener : resourceListeners) {
+                resourceListenersOnDnsResultExecutorService.submit(
                     new Runnable() {
                         @Override
                         public void run() {
                             try {
-                                dnsListener.onResourceDnsResult(oldResult, newResult);
+                                resourceListener.onResourceDnsResult(oldResult, newResult);
+                            } catch(Exception exc) {
+                                logger.log(Level.SEVERE, null, exc);
+                            }
+                        }
+                    }
+                );
+            }
+        }
+    }
+
+    void notifyResourceListenersOnSynchronizationResult(final ResourceSynchronizationResult oldResult, final ResourceSynchronizationResult newResult) {
+        synchronized(resourceListeners) {
+            for(final ResourceListener resourceListener : resourceListeners) {
+                resourceListenersOnSynchronizationResultExecutorService.submit(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                resourceListener.onResourceSynchronizationResult(oldResult, newResult);
                             } catch(Exception exc) {
                                 logger.log(Level.SEVERE, null, exc);
                             }
@@ -473,12 +493,22 @@ public class AppCluster {
                         }
                     }
                 );
-                synchronized(dnsListeners) {
-                    dnsListenersExecutorService = Executors.newSingleThreadExecutor(
+                synchronized(resourceListeners) {
+                    resourceListenersOnDnsResultExecutorService = Executors.newSingleThreadExecutor(
                         new ThreadFactory() {
                             @Override
                             public Thread newThread(Runnable r) {
-                                Thread thread = new Thread(r, AppCluster.class.getName()+".dnsListenersExecutorService");
+                                Thread thread = new Thread(r, AppCluster.class.getName()+".resourceListenersOnDnsResultExecutorService");
+                                thread.setPriority(EXECUTOR_THREAD_PRIORITY);
+                                return thread;
+                            }
+                        }
+                    );
+                    resourceListenersOnSynchronizationResultExecutorService = Executors.newSingleThreadExecutor(
+                        new ThreadFactory() {
+                            @Override
+                            public Thread newThread(Runnable r) {
+                                Thread thread = new Thread(r, AppCluster.class.getName()+".resourceListenersOnSynchronizationResultExecutorService");
                                 thread.setPriority(EXECUTOR_THREAD_PRIORITY);
                                 return thread;
                             }
@@ -532,10 +562,14 @@ public class AppCluster {
                     executorService.shutdown();
                     executorService = null;
                 }
-                synchronized(dnsListeners) {
-                    if(dnsListenersExecutorService!=null) {
-                        dnsListenersExecutorService.shutdown();
-                        dnsListenersExecutorService = null;
+                synchronized(resourceListeners) {
+                    if(resourceListenersOnDnsResultExecutorService!=null) {
+                        resourceListenersOnDnsResultExecutorService.shutdown();
+                        resourceListenersOnDnsResultExecutorService = null;
+                    }
+                    if(resourceListenersOnSynchronizationResultExecutorService!=null) {
+                        resourceListenersOnSynchronizationResultExecutorService.shutdown();
+                        resourceListenersOnSynchronizationResultExecutorService = null;
                     }
                 }
 

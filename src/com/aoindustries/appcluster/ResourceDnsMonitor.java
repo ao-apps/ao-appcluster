@@ -144,7 +144,7 @@ public class ResourceDnsMonitor {
         this.lastResult = newResult;
 
         // Notify listeners
-        resource.getCluster().notifyDnsListeners(oldResult, newResult);
+        resource.getCluster().notifyResourceListenersOnDnsResult(oldResult, newResult);
     }
 
     /**

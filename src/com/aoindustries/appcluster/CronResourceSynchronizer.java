@@ -126,6 +126,19 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
         }
     }
 
+    /**
+     * Sets the last result, firing listeners, too.
+     */
+    private void setLastResult(ResourceSynchronizationResult newResult) {
+        assert Thread.holdsLock(jobLock);
+        // TODO: Store to persistence mechanism
+        ResourceSynchronizationResult oldResult = this.lastResult;
+        this.lastResult = newResult;
+
+        // Notify listeners
+        localResourceNode.getResource().getCluster().notifyResourceListenersOnSynchronizationResult(oldResult, newResult);
+    }
+
     @Override
     protected void start() {
         synchronized(jobLock) {
@@ -221,6 +234,8 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                         result = future.get(resource.getSynchronizeTimeout(), TimeUnit.SECONDS);
                                     } catch(Exception err) {
                                         result = new ResourceSynchronizationResult(
+                                            localResourceNode,
+                                            remoteResourceNode,
                                             ResourceSynchronizationMode.SYNCHRONIZE,
                                             Collections.singletonList(
                                                 new ResourceSynchronizationResultStep(
@@ -238,7 +253,7 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                         if(job!=this) return;
                                         state = ResourceSynchronizerState.SLEEPING;
                                         stateMessage = null;
-                                        lastResult = result; // TODO: Store to persistence mechanism
+                                        setLastResult(result);
                                     }
                                 } else if(
                                     (
@@ -273,6 +288,8 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                         result = future.get(resource.getTestTimeout(), TimeUnit.SECONDS);
                                     } catch(Exception err) {
                                         result = new ResourceSynchronizationResult(
+                                            localResourceNode,
+                                            remoteResourceNode,
                                             ResourceSynchronizationMode.TEST_ONLY,
                                             Collections.singletonList(
                                                 new ResourceSynchronizationResultStep(
@@ -290,7 +307,7 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                         if(job!=this) return;
                                         state = ResourceSynchronizerState.SLEEPING;
                                         stateMessage = null;
-                                        lastResult = result; // TODO: Store to persistence mechanism
+                                        setLastResult(result);
                                     }
                                 }
                             }

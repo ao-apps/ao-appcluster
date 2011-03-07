@@ -176,6 +176,6 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
             steps.add(step);
         }
 
-        return new ResourceSynchronizationResult(mode, steps);
+        return new ResourceSynchronizationResult(localResourceNode, remoteResourceNode, mode, steps);
     }
 }

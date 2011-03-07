@@ -86,8 +86,8 @@ public class ResourceDnsResult implements ResourceResult {
     }
 
     private final Resource<?,?> resource;
-    private final long startTime;
-    private final long endTime;
+    final long startTime;
+    final long endTime;
     private final Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> masterRecordLookups;
     private final MasterDnsStatus masterStatus;
     private final SortedSet<String> masterStatusMessages;

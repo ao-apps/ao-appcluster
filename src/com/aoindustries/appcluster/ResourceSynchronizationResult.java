@@ -35,6 +35,8 @@ import java.util.List;
  */
 public class ResourceSynchronizationResult implements ResourceResult {
 
+    private final ResourceNode<?,?> localResourceNode;
+    private final ResourceNode<?,?> remoteResourceNode;
     private final ResourceSynchronizationMode mode;
     private final List<ResourceSynchronizationResultStep> steps;
 
@@ -42,13 +44,25 @@ public class ResourceSynchronizationResult implements ResourceResult {
      * @param steps At least one step is required.
      */
     public ResourceSynchronizationResult(
+        ResourceNode<?,?> localResourceNode,
+        ResourceNode<?,?> remoteResourceNode,
         ResourceSynchronizationMode mode,
         Collection<ResourceSynchronizationResultStep> steps
     ) {
+        this.localResourceNode = localResourceNode;
+        this.remoteResourceNode = remoteResourceNode;
         this.mode = mode;
         if(steps==null) throw new IllegalArgumentException("steps==null");
         if(steps.isEmpty()) throw new IllegalArgumentException("steps.isEmpty()");
         this.steps = steps.size()==1 ? Collections.singletonList(steps.iterator().next()) : Collections.unmodifiableList(new ArrayList<ResourceSynchronizationResultStep>(steps));
+    }
+
+    public ResourceNode<?,?> getLocalResourceNode() {
+        return localResourceNode;
+    }
+
+    public ResourceNode<?,?> getRemoteResourceNode() {
+        return remoteResourceNode;
     }
 
     /**
