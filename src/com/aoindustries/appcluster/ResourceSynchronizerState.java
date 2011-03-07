@@ -34,7 +34,7 @@ public enum ResourceSynchronizerState {
     STOPPED(ResourceStatus.STOPPED, ResourceStatus.STOPPED.getCssStyle()),
     SLEEPING(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle()),
     TESTING(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle() + "background-color:#00ff00;"),
-    SYNCHRONIZING(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle() + "background-color:#4040ff;");
+    SYNCHRONIZING(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle() + "background-color:#8080ff;");
 
     private final ResourceStatus resourceStatus;
     private final String cssStyle;
