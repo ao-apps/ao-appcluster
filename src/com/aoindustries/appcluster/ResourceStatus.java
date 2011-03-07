@@ -56,6 +56,13 @@ public enum ResourceStatus {
     }
 
     /**
+     * JavaBeans compatibility.
+     */
+    public String getName() {
+        return name();
+    }
+
+    /**
      * Gets the CSS style to use for this status or "" for no specific style requirement.
      */
     public String getCssStyle() {

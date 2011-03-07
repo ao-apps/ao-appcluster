@@ -22,10 +22,10 @@
  */
 package com.aoindustries.appcluster.dnsonly;
 
+import com.aoindustries.appcluster.ResourceSynchronizationMode;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
 import com.aoindustries.appcluster.ResourceSynchronizer;
 import com.aoindustries.appcluster.ResourceSynchronizerState;
-import com.aoindustries.appcluster.ResourceTestResult;
 
 /**
  * Performs no synchronization.
@@ -49,22 +49,15 @@ public class DnsOnlyResourceSynchronizer extends ResourceSynchronizer<DnsOnlyRes
     }
 
     @Override
-    public void synchronizeNow() {
+    public void synchronizeNow(ResourceSynchronizationMode mode) {
         // Do nothing
     }
 
+    /**
+     * Never has any results.
+     */
     @Override
-    public ResourceSynchronizationResult getLastSynchronizationResult() {
-        return null;
-    }
-
-    @Override
-    public void testNow() {
-        // Do nothing
-    }
-
-    @Override
-    public ResourceTestResult getLastTestResult() {
+    public ResourceSynchronizationResult getLastResult() {
         return null;
     }
 

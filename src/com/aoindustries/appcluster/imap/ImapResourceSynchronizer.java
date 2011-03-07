@@ -26,9 +26,11 @@ import com.aoindustries.appcluster.CronResourceSynchronizer;
 import com.aoindustries.appcluster.NodeDnsStatus;
 import com.aoindustries.appcluster.ResourceNodeDnsResult;
 import com.aoindustries.appcluster.ResourceStatus;
+import com.aoindustries.appcluster.ResourceSynchronizationMode;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
-import com.aoindustries.appcluster.ResourceTestResult;
+import com.aoindustries.appcluster.ResourceSynchronizationResultStep;
 import com.aoindustries.cron.Schedule;
+import java.util.Collections;
 
 /**
  * Performs synchronization using IMAP.
@@ -43,44 +45,47 @@ public class ImapResourceSynchronizer extends CronResourceSynchronizer<ImapResou
 
     /*
      * May synchronize from a master to a slave.
-     */
-    @Override
-    protected boolean canSynchronize(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
-        return
-            localDnsResult.getNodeStatus()==NodeDnsStatus.MASTER
-            && remoteDnsResult.getNodeStatus()==NodeDnsStatus.SLAVE
-        ;
-    }
-
-    @Override
-    protected ResourceSynchronizationResult synchronize(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
-        long startTime = System.currentTimeMillis();
-        System.err.println(this+": synchronize: TODO");
-        return new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, null, null);
-    }
-
-    /*
      * May test from a master to a slave or a slave to a master.
      */
     @Override
-    protected boolean canTest(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
+    protected boolean canSynchronize(ResourceSynchronizationMode mode, ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
         NodeDnsStatus localDnsStatus = localDnsResult.getNodeStatus();
         NodeDnsStatus remoteDnsStatus = remoteDnsResult.getNodeStatus();
-        return
-            (
-                localDnsStatus==NodeDnsStatus.MASTER
-                && remoteDnsStatus==NodeDnsStatus.SLAVE
-            ) || (
-                localDnsStatus==NodeDnsStatus.SLAVE
-                && remoteDnsStatus==NodeDnsStatus.MASTER
-            )
-        ;
+        switch(mode) {
+            case SYNCHRONIZE :
+                return
+                    localDnsStatus==NodeDnsStatus.MASTER
+                    && remoteDnsStatus==NodeDnsStatus.SLAVE
+                ;
+            case TEST_ONLY :
+                return
+                    (
+                        localDnsStatus==NodeDnsStatus.MASTER
+                        && remoteDnsStatus==NodeDnsStatus.SLAVE
+                    ) || (
+                        localDnsStatus==NodeDnsStatus.SLAVE
+                        && remoteDnsStatus==NodeDnsStatus.MASTER
+                    )
+                ;
+            default : throw new AssertionError("Unexpected mode: "+mode);
+        }
     }
 
     @Override
-    protected ResourceTestResult test(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
+    protected ResourceSynchronizationResult synchronize(ResourceSynchronizationMode mode, ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
         long startTime = System.currentTimeMillis();
-        System.err.println(this+": test: TODO");
-        return new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, null, null);
+        return new ResourceSynchronizationResult(
+            mode,
+            Collections.singletonList(
+                new ResourceSynchronizationResultStep(
+                    startTime,
+                    System.currentTimeMillis(),
+                    ResourceStatus.HEALTHY,
+                    "TODO",
+                    null,
+                    null
+                )
+            )
+        );
     }
 }

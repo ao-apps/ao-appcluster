@@ -22,6 +22,7 @@
  */
 package com.aoindustries.appcluster;
 
+import com.aoindustries.util.ErrorPrinter;
 import com.aoindustries.util.StringUtility;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -346,7 +347,7 @@ public class ResourceDnsMonitor {
                                                                     return new DnsLookupResult(
                                                                         hostname,
                                                                         DnsLookupStatus.ERROR,
-                                                                        Collections.singleton(exc.toString()),
+                                                                        Collections.singleton(ErrorPrinter.getStackTraces(exc)),
                                                                         null
                                                                     );
                                                                 }
@@ -384,7 +385,7 @@ public class ResourceDnsMonitor {
                                                                 ApplicationResources.accessor.getMessage(
                                                                     "ResourceDnsMonitor.masterRecord.multiMasterNotAllowed",
                                                                     enabledNameserver,
-                                                                    StringUtility.buildList(addresses)
+                                                                    StringUtility.join(addresses, ", ")
                                                                 )
                                                             );
                                                         }
@@ -401,10 +402,10 @@ public class ResourceDnsMonitor {
                                                                         "ResourceDnsMonitor.multiRecordMaster.mismatch",
                                                                         firstMasterNameserver,
                                                                         firstMasterRecord,
-                                                                        StringUtility.buildList(firstMasterAddresses),
+                                                                        StringUtility.join(firstMasterAddresses, ", "),
                                                                         enabledNameserver,
                                                                         masterRecord,
-                                                                        StringUtility.buildList(addresses)
+                                                                        StringUtility.join(addresses, ", ")
                                                                     )
                                                                 );
                                                             }
@@ -416,7 +417,7 @@ public class ResourceDnsMonitor {
                                                         new DnsLookupResult(
                                                             masterRecord,
                                                             DnsLookupStatus.UNRECOVERABLE,
-                                                            Collections.singleton(exc.toString()),
+                                                            Collections.singleton(ErrorPrinter.getStackTraces(exc)),
                                                             null
                                                         )
                                                     );
@@ -461,7 +462,7 @@ public class ResourceDnsMonitor {
                                                                     nodeStatusMessages.add(
                                                                         ApplicationResources.accessor.getMessage(
                                                                             "ResourceDnsMonitor.nodeRecord.onlyOneAllowed",
-                                                                            StringUtility.buildList(addresses)
+                                                                            StringUtility.join(addresses, ", ")
                                                                         )
                                                                     );
                                                                 } else {
@@ -527,10 +528,10 @@ public class ResourceDnsMonitor {
                                                                                 "ResourceDnsMonitor.multiRecordNode.mismatch",
                                                                                 firstNodeNameserver,
                                                                                 firstNodeRecord,
-                                                                                StringUtility.buildList(firstNodeAddresses),
+                                                                                StringUtility.join(firstNodeAddresses, ", "),
                                                                                 enabledNameserver,
                                                                                 nodeRecord,
-                                                                                StringUtility.buildList(addresses)
+                                                                                StringUtility.join(addresses, ", ")
                                                                             )
                                                                         );
                                                                     }
@@ -542,7 +543,7 @@ public class ResourceDnsMonitor {
                                                                 new DnsLookupResult(
                                                                     nodeRecord,
                                                                     DnsLookupStatus.UNRECOVERABLE,
-                                                                    Collections.singleton(exc.toString()),
+                                                                    Collections.singleton(ErrorPrinter.getStackTraces(exc)),
                                                                     null
                                                                 )
                                                             );

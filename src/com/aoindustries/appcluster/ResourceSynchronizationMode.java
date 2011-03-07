@@ -23,48 +23,24 @@
 package com.aoindustries.appcluster;
 
 /**
- * Contains the results of one resource test.
+ * Contains the results of one resource synchronization.
  *
  * @author  AO Industries, Inc.
  */
-public class ResourceTestResult extends ResourceResult {
+public enum ResourceSynchronizationMode {
 
-    private final ResourceStatus resourceStatus;
-    private final String output;
-    private final String error;
+    SYNCHRONIZE,
+    TEST_ONLY;
 
-    public ResourceTestResult(
-        long startTime,
-        long endTime,
-        ResourceStatus resourceStatus,
-        String output,
-        String error
-    ) {
-        super(startTime, endTime);
-        this.resourceStatus = resourceStatus;
-        this.output = output;
-        this.error = error;
-    }
-
-    /**
-     * Gets the resource status that this result will cause.
-     */
     @Override
-    public ResourceStatus getResourceStatus() {
-        return resourceStatus;
+    public String toString() {
+        return ApplicationResources.accessor.getMessage("ResourceSynchronizationMode." + name());
     }
 
     /**
-     * Gets the output associated with this test or <code>null</code> for none.
+     * JavaBeans compatibility.
      */
-    public String getOutput() {
-        return output;
-    }
-
-    /**
-     * Gets the error associated with this test or <code>null</code> for none.
-     */
-    public String getError() {
-        return error;
+    public String getName() {
+        return name();
     }
 }

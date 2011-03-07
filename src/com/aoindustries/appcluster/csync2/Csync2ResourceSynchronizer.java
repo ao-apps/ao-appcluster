@@ -92,6 +92,7 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
      */
     @Override
     protected ResourceSynchronizationResult synchronize(ResourceSynchronizationMode mode, ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
+        final String exe = localResourceNode.getExe();
         final String localHostname = localResourceNode.getNode().getHostname().toString();
         final String remoteHostname = remoteResourceNode.getNode().getHostname().toString();
         final Csync2Resource resource = localResourceNode.getResource();
@@ -106,25 +107,12 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
             switch(mode) {
                 case SYNCHRONIZE :
                 {
-                    command = new String[] {
-                        localResourceNode.getExe(),
-                        "-G",
-                        groups,
-                        "-P",
-                        remoteHostname,
-                        "-xv"
-                    };
+                    command = new String[] {exe, "-G", groups, "-P", remoteHostname, "-xv"};
                     break;
                 }
                 case TEST_ONLY :
                 {
-                    command = new String[] {
-                        localResourceNode.getExe(),
-                        "-G",
-                        groups,
-                        "-cr",
-                        "/"
-                    };
+                    command = new String[] {exe, "-G", groups, "-cr", "/"};
                     break;
                 }
                 default :
@@ -158,14 +146,7 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
         // Step two: test
         {
             long startTime = System.currentTimeMillis();
-            String[] command = {
-                localResourceNode.getExe(),
-                "-G",
-                groups,
-                "-T",
-                localHostname,
-                remoteHostname
-            };
+            String[] command = {exe, "-G", groups, "-T", localHostname, remoteHostname};
             String commandString = StringUtility.join(command, " ");
 
             ResourceSynchronizationResultStep step;

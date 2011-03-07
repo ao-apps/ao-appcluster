@@ -25,30 +25,18 @@ package com.aoindustries.appcluster;
 import java.sql.Timestamp;
 
 /**
- * Parent class for information common to different types of resource results.
+ * Information common to different types of resource results.
  *
  * @author  AO Industries, Inc.
  */
-abstract public class ResourceResult {
+public interface ResourceResult {
 
-    protected final long startTime;
-    protected final long endTime;
+    Timestamp getStartTime();
 
-    ResourceResult(long startTime, long endTime) {
-        this.startTime = startTime;
-        this.endTime = endTime;
-    }
-
-    public Timestamp getStartTime() {
-        return new Timestamp(startTime);
-    }
-
-    public Timestamp getEndTime() {
-        return new Timestamp(endTime);
-    }
+    Timestamp getEndTime();
 
     /**
      * Gets the ResourceStatus this result will cause.
      */
-    abstract public ResourceStatus getResourceStatus();
+    ResourceStatus getResourceStatus();
 }

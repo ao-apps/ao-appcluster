@@ -85,22 +85,12 @@ abstract public class ResourceSynchronizer<R extends Resource<R,RN>,RN extends R
     /**
      * Schedules an immediate synchronization if possible.
      */
-    abstract public void synchronizeNow();
+    abstract public void synchronizeNow(ResourceSynchronizationMode mode);
 
     /**
      * Gets the last synchronization result or <code>null</code> if unavailable.
      */
-    abstract public ResourceSynchronizationResult getLastSynchronizationResult();
-
-    /**
-     * Schedules an immediate test if possible.
-     */
-    abstract public void testNow();
-
-    /**
-     * Gets the last test result or <code>null</code> if unavailable.
-     */
-    abstract public ResourceTestResult getLastTestResult();
+    abstract public ResourceSynchronizationResult getLastResult();
 
     /**
      * Starts the synchronizer.

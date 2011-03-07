@@ -22,49 +22,76 @@
  */
 package com.aoindustries.appcluster;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Contains the results of one resource synchronization.
  *
  * @author  AO Industries, Inc.
  */
-public class ResourceSynchronizationResult extends ResourceResult {
+public class ResourceSynchronizationResult implements ResourceResult {
 
-    private final ResourceStatus resourceStatus;
-    private final String output;
-    private final String error;
+    private final ResourceSynchronizationMode mode;
+    private final List<ResourceSynchronizationResultStep> steps;
 
+    /**
+     * @param steps At least one step is required.
+     */
     public ResourceSynchronizationResult(
-        long startTime,
-        long endTime,
-        ResourceStatus resourceStatus,
-        String output,
-        String error
+        ResourceSynchronizationMode mode,
+        Collection<ResourceSynchronizationResultStep> steps
     ) {
-        super(startTime, endTime);
-        this.resourceStatus = resourceStatus;
-        this.output = output;
-        this.error = error;
+        this.mode = mode;
+        if(steps==null) throw new IllegalArgumentException("steps==null");
+        if(steps.isEmpty()) throw new IllegalArgumentException("steps.isEmpty()");
+        this.steps = steps.size()==1 ? Collections.singletonList(steps.iterator().next()) : Collections.unmodifiableList(new ArrayList<ResourceSynchronizationResultStep>(steps));
     }
 
     /**
-     * Gets the resource status that this result will cause.
+     * The start time is the earliest start time of any step.
+     */
+    @Override
+    public Timestamp getStartTime() {
+        long startTime = Long.MAX_VALUE;
+        for(ResourceSynchronizationResultStep step : steps) startTime = Math.min(startTime, step.startTime);
+        return new Timestamp(startTime);
+    }
+
+    /**
+     * The end time is the latest end time of any step.
+     */
+    @Override
+    public Timestamp getEndTime() {
+        long endTime = Long.MIN_VALUE;
+        for(ResourceSynchronizationResultStep step : steps) endTime = Math.min(endTime, step.endTime);
+        return new Timestamp(endTime);
+    }
+
+    /**
+     * The resource status is the highest level resource status of any step.
      */
     @Override
     public ResourceStatus getResourceStatus() {
-        return resourceStatus;
+        ResourceStatus status = ResourceStatus.UNKNOWN;
+        for(ResourceSynchronizationResultStep step : steps) status = AppCluster.max(status, step.getResourceStatus());
+        return status;
     }
 
     /**
-     * Gets the output associated with this test or <code>null</code> for none.
+     * Gets the mode of this synchronization.
      */
-    public String getOutput() {
-        return output;
+    public ResourceSynchronizationMode getMode() {
+        return mode;
     }
 
     /**
-     * Gets the error associated with this test or <code>null</code> for none.
+     * Gets the steps for this synchronization.
      */
-    public String getError() {
-        return error;
+    public List<ResourceSynchronizationResultStep> getSteps() {
+        return steps;
     }
 }

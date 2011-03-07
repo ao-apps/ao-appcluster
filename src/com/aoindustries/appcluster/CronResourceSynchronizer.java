@@ -27,7 +27,9 @@ import com.aoindustries.cron.CronJob;
 import com.aoindustries.cron.CronJobScheduleMode;
 import com.aoindustries.cron.MultiSchedule;
 import com.aoindustries.cron.Schedule;
+import com.aoindustries.util.ErrorPrinter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -72,10 +74,8 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
     private CronJob job; // All access uses jobLock
     private ResourceSynchronizerState state; // All access uses jobLock
     private String stateMessage; // All access uses jobLock
-    private boolean synchronizeNow; // All access uses jobLock
-    private ResourceSynchronizationResult lastSynchronizationResult; // All access uses jobLock
-    private boolean testNow; // All access uses jobLock
-    private ResourceTestResult lastTestResult; // All access uses jobLock
+    private ResourceSynchronizationMode synchronizeNowMode; // All access uses jobLock
+    private ResourceSynchronizationResult lastResult; // All access uses jobLock
 
     protected CronResourceSynchronizer(RN localResourceNode, RN remoteResourceNode, Schedule synchronizeSchedule, Schedule testSchedule) {
         super(localResourceNode, remoteResourceNode);
@@ -87,10 +87,8 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
         this.combinedSchedule = new MultiSchedule(combined);
         this.state = ResourceSynchronizerState.STOPPED;
         this.stateMessage = null;
-        this.synchronizeNow = false;
-        this.lastSynchronizationResult = null;
-        this.testNow = false;
-        this.lastTestResult = null;
+        this.synchronizeNowMode = null;
+        this.lastResult = null;
     }
 
     @Override
@@ -112,40 +110,19 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
      * sleeping.
      */
     @Override
-    public void synchronizeNow() {
+    public void synchronizeNow(ResourceSynchronizationMode mode) {
         synchronized(jobLock) {
             if(job!=null && state==ResourceSynchronizerState.SLEEPING) {
-                synchronizeNow = true;
+                synchronizeNowMode = mode;
                 CronDaemon.runImmediately(job);
             }
         }
     }
 
     @Override
-    public ResourceSynchronizationResult getLastSynchronizationResult() {
+    public ResourceSynchronizationResult getLastResult() {
         synchronized(jobLock) {
-            return lastSynchronizationResult;
-        }
-    }
-
-    /**
-     * Schedules an immediate test if the resource is enabled and
-     * sleeping.
-     */
-    @Override
-    public void testNow() {
-        synchronized(jobLock) {
-            if(job!=null && state==ResourceSynchronizerState.SLEEPING) {
-                testNow = true;
-                CronDaemon.runImmediately(job);
-            }
-        }
-    }
-
-    @Override
-    public ResourceTestResult getLastTestResult() {
-        synchronized(jobLock) {
-            return lastTestResult;
+            return lastResult;
         }
     }
 
@@ -156,39 +133,29 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
             if(!resource.getCluster().isEnabled()) {
                 state = ResourceSynchronizerState.DISABLED;
                 stateMessage = ApplicationResources.accessor.getMessage("CronResourceSynchronizer.start.clusterDisabled.stateMessage");
-                synchronizeNow = false;
-                lastSynchronizationResult = null; // TODO: Restore from persistence mechanism
-                testNow = false;
-                lastTestResult = null; // TODO: Restore from persistence mechanism
+                synchronizeNowMode = null;
+                lastResult = null; // TODO: Restore from persistence mechanism
             } else if(!resource.isEnabled()) {
                 state = ResourceSynchronizerState.DISABLED;
                 stateMessage = ApplicationResources.accessor.getMessage("CronResourceSynchronizer.start.resourceDisabled.stateMessage");
-                synchronizeNow = false;
-                lastSynchronizationResult = null; // TODO: Restore from persistence mechanism
-                testNow = false;
-                lastTestResult = null; // TODO: Restore from persistence mechanism
+                synchronizeNowMode = null;
+                lastResult = null; // TODO: Restore from persistence mechanism
             } else if(!localResourceNode.getNode().isEnabled()) {
                 state = ResourceSynchronizerState.DISABLED;
                 stateMessage = ApplicationResources.accessor.getMessage("CronResourceSynchronizer.start.localNodeDisabled.stateMessage");
-                synchronizeNow = false;
-                lastSynchronizationResult = null; // TODO: Restore from persistence mechanism
-                testNow = false;
-                lastTestResult = null; // TODO: Restore from persistence mechanism
+                synchronizeNowMode = null;
+                lastResult = null; // TODO: Restore from persistence mechanism
             } else if(!remoteResourceNode.getNode().isEnabled()) {
                 state = ResourceSynchronizerState.DISABLED;
                 stateMessage = ApplicationResources.accessor.getMessage("CronResourceSynchronizer.start.remoteNodeDisabled.stateMessage");
-                synchronizeNow = false;
-                lastSynchronizationResult = null; // TODO: Restore from persistence mechanism
-                testNow = false;
-                lastTestResult = null; // TODO: Restore from persistence mechanism
+                synchronizeNowMode = null;
+                lastResult = null; // TODO: Restore from persistence mechanism
             } else {
                 if(job==null) {
                     state = ResourceSynchronizerState.SLEEPING;
                     stateMessage = null;
-                    synchronizeNow = false;
-                    lastSynchronizationResult = null; // TODO: Restore from persistence mechanism
-                    testNow = false;
-                    lastTestResult = null; // TODO: Restore from persistence mechanism
+                    synchronizeNowMode = null;
+                    lastResult = null; // TODO: Restore from persistence mechanism
                     job = new CronJob() {
                         @Override
                         public Schedule getCronJobSchedule() {
@@ -207,14 +174,11 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
 
                         @Override
                         public void runCronJob(int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year) {
-                            boolean synchronizeNow;
-                            boolean testNow;
+                            final ResourceSynchronizationMode synchronizeNowMode;
                             synchronized(jobLock) {
                                 if(job!=this) return;
-                                synchronizeNow = CronResourceSynchronizer.this.synchronizeNow;
-                                if(synchronizeNow) CronResourceSynchronizer.this.synchronizeNow = false;
-                                testNow = CronResourceSynchronizer.this.testNow;
-                                if(testNow) CronResourceSynchronizer.this.testNow = false;
+                                synchronizeNowMode = CronResourceSynchronizer.this.synchronizeNowMode;
+                                CronResourceSynchronizer.this.synchronizeNowMode = null;
                             }
                             // Do not perform any synchronization or testing on an inconsistent resource
                             R resource = localResourceNode.getResource();
@@ -226,9 +190,9 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                 final ResourceNodeDnsResult remoteDnsResult = nodeResultMap.get(remoteResourceNode.getNode());
                                 if(
                                     (
-                                        synchronizeNow
+                                        synchronizeNowMode == ResourceSynchronizationMode.SYNCHRONIZE
                                         || synchronizeSchedule.isCronJobScheduled(minute, hour, dayOfMonth, month, dayOfWeek, year)
-                                    ) && canSynchronize(localDnsResult, remoteDnsResult)
+                                    ) && canSynchronize(ResourceSynchronizationMode.SYNCHRONIZE, localDnsResult, remoteDnsResult)
                                 ) {
                                     // Perform synchronization
                                     synchronized(jobLock) {
@@ -245,7 +209,7 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                                 final int oldThreadPriority = currentThread.getPriority();
                                                 try {
                                                     currentThread.setPriority(THREAD_PRIORITY);
-                                                    return synchronize(localDnsResult, remoteDnsResult);
+                                                    return synchronize(ResourceSynchronizationMode.SYNCHRONIZE, localDnsResult, remoteDnsResult);
                                                 } finally {
                                                     currentThread.setPriority(oldThreadPriority);
                                                 }
@@ -256,62 +220,77 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                     try {
                                         result = future.get(resource.getSynchronizeTimeout(), TimeUnit.SECONDS);
                                     } catch(Exception err) {
-                                        result = new ResourceSynchronizationResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, null, err.toString());
+                                        result = new ResourceSynchronizationResult(
+                                            ResourceSynchronizationMode.SYNCHRONIZE,
+                                            Collections.singletonList(
+                                                new ResourceSynchronizationResultStep(
+                                                    startTime,
+                                                    System.currentTimeMillis(),
+                                                    ResourceStatus.ERROR,
+                                                    "future.get",
+                                                    null,
+                                                    Collections.singletonList(ErrorPrinter.getStackTraces(err))
+                                                )
+                                            )
+                                        );
                                     }
-                                    System.err.println("DEBUG: Got synchronize result:");
-                                    System.err.println("    status="+result.getResourceStatus());
-                                    System.err.println("    output="+result.getOutput());
-                                    System.err.println("    error="+result.getError());
                                     synchronized(jobLock) {
                                         if(job!=this) return;
                                         state = ResourceSynchronizerState.SLEEPING;
                                         stateMessage = null;
-                                        lastSynchronizationResult = result; // TODO: Store to persistence mechanism
+                                        lastResult = result; // TODO: Store to persistence mechanism
                                     }
                                 } else if(
                                     (
-                                        testNow
+                                        synchronizeNowMode==ResourceSynchronizationMode.TEST_ONLY
                                         || testSchedule.isCronJobScheduled(minute, hour, dayOfMonth, month, dayOfWeek, year)
-                                    ) && canTest(localDnsResult, remoteDnsResult)
+                                    ) && canSynchronize(ResourceSynchronizationMode.TEST_ONLY, localDnsResult, remoteDnsResult)
                                 ) {
                                     // Perform test
                                     synchronized(jobLock) {
                                         if(job!=this) return;
                                         state = ResourceSynchronizerState.TESTING;
                                         stateMessage = null;
-                                        testNow = false;
                                     }
                                     long startTime = System.currentTimeMillis();
-                                    Future<ResourceTestResult> future = resource.getCluster().getExecutorService().submit(
-                                        new Callable<ResourceTestResult>() {
+                                    Future<ResourceSynchronizationResult> future = resource.getCluster().getExecutorService().submit(
+                                        new Callable<ResourceSynchronizationResult>() {
                                             @Override
-                                            public ResourceTestResult call() throws Exception {
+                                            public ResourceSynchronizationResult call() throws Exception {
                                                 final Thread currentThread = Thread.currentThread();
                                                 final int oldThreadPriority = currentThread.getPriority();
                                                 try {
                                                     currentThread.setPriority(THREAD_PRIORITY);
-                                                    return test(localDnsResult, remoteDnsResult);
+                                                    return synchronize(ResourceSynchronizationMode.TEST_ONLY, localDnsResult, remoteDnsResult);
                                                 } finally {
                                                     currentThread.setPriority(oldThreadPriority);
                                                 }
                                             }
                                         }
                                     );
-                                    ResourceTestResult result;
+                                    ResourceSynchronizationResult result;
                                     try {
                                         result = future.get(resource.getTestTimeout(), TimeUnit.SECONDS);
                                     } catch(Exception err) {
-                                        result = new ResourceTestResult(startTime, System.currentTimeMillis(), ResourceStatus.ERROR, null, err.toString());
+                                        result = new ResourceSynchronizationResult(
+                                            ResourceSynchronizationMode.TEST_ONLY,
+                                            Collections.singletonList(
+                                                new ResourceSynchronizationResultStep(
+                                                    startTime,
+                                                    System.currentTimeMillis(),
+                                                    ResourceStatus.ERROR,
+                                                    "future.get",
+                                                    null,
+                                                    Collections.singletonList(ErrorPrinter.getStackTraces(err))
+                                                )
+                                            )
+                                        );
                                     }
-                                    System.err.println("DEBUG: Got test result:");
-                                    System.err.println("    status="+result.getResourceStatus());
-                                    System.err.println("    output="+result.getOutput());
-                                    System.err.println("    error="+result.getError());
                                     synchronized(jobLock) {
                                         if(job!=this) return;
                                         state = ResourceSynchronizerState.SLEEPING;
                                         stateMessage = null;
-                                        lastTestResult = result; // TODO: Store to persistence mechanism
+                                        lastResult = result; // TODO: Store to persistence mechanism
                                     }
                                 }
                             }
@@ -336,10 +315,8 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                 job = null;
                 state = ResourceSynchronizerState.STOPPED;
                 stateMessage = null;
-                synchronizeNow = false;
-                lastSynchronizationResult = null;
-                testNow = false;
-                lastTestResult = null;
+                synchronizeNowMode = null;
+                lastResult = null;
             }
         }
     }
@@ -347,20 +324,10 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
     /**
      * Checks if a resource may be synchronized given the current DNS state of the nodes.
      */
-    abstract protected boolean canSynchronize(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult);
+    abstract protected boolean canSynchronize(ResourceSynchronizationMode mode, ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult);
 
     /**
-     * Synchronizes the resource.
+     * Synchronizes (or tests) the resource.
      */
-    abstract protected ResourceSynchronizationResult synchronize(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult);
-
-    /**
-     * Checks if a resource may be tested given the current DNS state of the nodes.
-     */
-    abstract protected boolean canTest(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult);
-
-    /**
-     * Tests the resource.
-     */
-    abstract protected ResourceTestResult test(ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult);
+    abstract protected ResourceSynchronizationResult synchronize(ResourceSynchronizationMode mode, ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult);
 }

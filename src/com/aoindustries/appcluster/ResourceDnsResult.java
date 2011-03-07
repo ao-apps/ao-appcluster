@@ -22,6 +22,7 @@
  */
 package com.aoindustries.appcluster;
 
+import java.sql.Timestamp;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,7 +39,7 @@ import org.xbill.DNS.Name;
  *
  * @author  AO Industries, Inc.
  */
-public class ResourceDnsResult extends ResourceResult {
+public class ResourceDnsResult implements ResourceResult {
 
     public static int WARNING_SECONDS = 10 + (ResourceDnsMonitor.DNS_CHECK_INTERVAL + ResourceDnsMonitor.DNS_ATTEMPTS * ResourceDnsMonitor.DNS_CHECK_TIMEOUT) / 1000;
     public static int ERROR_SECONDS = WARNING_SECONDS + ResourceDnsMonitor.DNS_CHECK_INTERVAL/1000;
@@ -85,6 +86,8 @@ public class ResourceDnsResult extends ResourceResult {
     }
 
     private final Resource<?,?> resource;
+    private final long startTime;
+    private final long endTime;
     private final Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> masterRecordLookups;
     private final MasterDnsStatus masterStatus;
     private final SortedSet<String> masterStatusMessages;
@@ -99,7 +102,8 @@ public class ResourceDnsResult extends ResourceResult {
         Collection<String> masterStatusMessages,
         Map<? extends Node,? extends ResourceNodeDnsResult> nodeResults
     ) {
-        super(startTime, endTime);
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.resource = resource;
         this.masterRecordLookups = masterRecordLookups==null ? null : getUnmodifiableDnsLookupResults(masterRecordLookups, resource.getMasterRecords(), resource.getEnabledNameservers());
         this.masterStatus = masterStatus;
@@ -117,6 +121,16 @@ public class ResourceDnsResult extends ResourceResult {
 
     public Resource<?,?> getResource() {
         return resource;
+    }
+
+    @Override
+    public Timestamp getStartTime() {
+        return new Timestamp(startTime);
+    }
+
+    @Override
+    public Timestamp getEndTime() {
+        return new Timestamp(endTime);
     }
 
     /**
