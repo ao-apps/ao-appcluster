@@ -101,7 +101,8 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                 for(RN resourceNode : this.resourceNodes) {
                     Node node = resourceNode.getNode();
                     if(!node.equals(localNode)) {
-                        newSynchronizers.put(node, newResourceSynchronizer(localResourceNode, resourceNode, resourceConfiguration));
+                        ResourceSynchronizer<R,RN> synchronizer = newResourceSynchronizer(localResourceNode, resourceNode, resourceConfiguration);
+                        if(synchronizer!=null) newSynchronizers.put(node, synchronizer);
                     }
                 }
                 this.synchronizers = Collections.unmodifiableMap(newSynchronizers);
@@ -232,7 +233,8 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
     }
 
     /**
-     * Creates the resource synchronizer for this specific type of resource.
+     * Creates the resource synchronizer for this specific type of resource or <code>null</code>
+     * if never performs any synchronization between these two nodes.
      */
     abstract protected ResourceSynchronizer<R,RN> newResourceSynchronizer(RN localResourceNode, RN remoteResourceNode, ResourceConfiguration<R,RN> resourceConfiguration) throws AppClusterConfigurationException;
 

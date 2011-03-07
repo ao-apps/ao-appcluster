@@ -91,18 +91,47 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
         this.lastResult = null;
     }
 
-    @Override
-    public ResourceSynchronizerState getState() {
-        synchronized(jobLock) {
-            return state;
-        }
+    /**
+     * Gets the synchronize schedule.
+     */
+    public Schedule getSynchronizeSchedule() {
+        return synchronizeSchedule;
     }
 
-    @Override
-    public String getStateMessage() {
+    /**
+     * Determines if the synchronizer can run now.
+     */
+    public boolean canSynchronizeNow(ResourceSynchronizationMode mode) {
         synchronized(jobLock) {
-            return stateMessage;
+            if(job==null) return false;
+            if(state!=ResourceSynchronizerState.SLEEPING) return false;
         }
+        R resource = localResourceNode.getResource();
+        ResourceDnsResult resourceDnsResult = resource.getDnsMonitor().getLastResult();
+        // Not allowed to synchronize while inconsistent
+        if(resourceDnsResult.getResourceStatus()==ResourceStatus.INCONSISTENT) return false;
+        Map<? extends Node,? extends ResourceNodeDnsResult> nodeResultMap = resourceDnsResult.getNodeResultMap();
+        final ResourceNodeDnsResult localDnsResult = nodeResultMap.get(localResourceNode.getNode());
+        final ResourceNodeDnsResult remoteDnsResult = nodeResultMap.get(remoteResourceNode.getNode());
+        return canSynchronize(mode, localDnsResult, remoteDnsResult);
+    }
+
+    /**
+     * Convenience method for JavaBeans property.
+     *
+     * @see #canSynchronizeNow(com.aoindustries.appcluster.ResourceSynchronizationMode)
+     */
+    public boolean getCanSynchronizeNow() {
+        return canSynchronizeNow(ResourceSynchronizationMode.SYNCHRONIZE);
+    }
+
+    /**
+     * Convenience method for JavaBeans property.
+     *
+     * @see #canTestNow(com.aoindustries.appcluster.ResourceSynchronizationMode)
+     */
+    public boolean getCanTestNow() {
+        return canSynchronizeNow(ResourceSynchronizationMode.TEST_ONLY);
     }
 
     /**
@@ -116,6 +145,27 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                 synchronizeNowMode = mode;
                 CronDaemon.runImmediately(job);
             }
+        }
+    }
+
+    /**
+     * Gets the test schedule.
+     */
+    public Schedule getTestSchedule() {
+        return testSchedule;
+    }
+
+    @Override
+    public ResourceSynchronizerState getState() {
+        synchronized(jobLock) {
+            return state;
+        }
+    }
+
+    @Override
+    public String getStateMessage() {
+        synchronized(jobLock) {
+            return stateMessage;
         }
     }
 

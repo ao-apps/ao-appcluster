@@ -44,7 +44,7 @@ public enum ResourceSynchronizerState {
 
     @Override
     public String toString() {
-        return ApplicationResources.accessor.getMessage("ResourceSynchronizationState." + name());
+        return ApplicationResources.accessor.getMessage("ResourceSynchronizerState." + name());
     }
 
     /**
