@@ -30,16 +30,18 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public enum ResourceSynchronizerState {
-    DISABLED(ResourceStatus.DISABLED),
-    STOPPED(ResourceStatus.STOPPED),
-    SLEEPING(ResourceStatus.HEALTHY),
-    TESTING(ResourceStatus.HEALTHY),
-    SYNCHRONIZING(ResourceStatus.HEALTHY);
+    DISABLED(ResourceStatus.DISABLED, ResourceStatus.DISABLED.getCssStyle()),
+    STOPPED(ResourceStatus.STOPPED, ResourceStatus.STOPPED.getCssStyle()),
+    SLEEPING(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle()),
+    TESTING(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle() + "background-color:#00ff00;"),
+    SYNCHRONIZING(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle() + "background-color:#4040ff;");
 
     private final ResourceStatus resourceStatus;
+    private final String cssStyle;
 
-    private ResourceSynchronizerState(ResourceStatus resourceStatus) {
+    private ResourceSynchronizerState(ResourceStatus resourceStatus, String cssStyle) {
         this.resourceStatus = resourceStatus;
+        this.cssStyle = cssStyle;
     }
 
     @Override
@@ -59,5 +61,12 @@ public enum ResourceSynchronizerState {
      */
     public String getName() {
         return name();
+    }
+
+    /**
+     * Gets the CSS style to use for this status or "" for no specific style requirement.
+     */
+    public String getCssStyle() {
+        return cssStyle;
     }
 }
