@@ -73,6 +73,14 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
     }
 
     /**
+     * Gets either an empty list or singleton list, containing str.
+     */
+    private static List<String> getList(String str) {
+        if(str==null || str.length()==0) return Collections.emptyList();
+        return Collections.singletonList(str);
+    }
+
+    /**
      * <ol>
      *   <li>
      *     For synchronize:
@@ -127,8 +135,8 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
                     System.currentTimeMillis(),
                     processResult.getExitVal()==0 ? ResourceStatus.HEALTHY : ResourceStatus.ERROR,
                     commandString,
-                    Collections.singletonList(processResult.getStdout()),
-                    Collections.singletonList(processResult.getStderr())
+                    getList(processResult.getStdout()),
+                    getList(processResult.getStderr())
                 );
             } catch(Exception exc) {
                 step = new ResourceSynchronizationResultStep(
@@ -160,8 +168,8 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
                     : exitVal==0 ? ResourceStatus.WARNING
                     : ResourceStatus.ERROR,
                     commandString,
-                    Collections.singletonList(processResult.getStdout()),
-                    Collections.singletonList(processResult.getStderr())
+                    getList(processResult.getStdout()),
+                    getList(processResult.getStderr())
                 );
             } catch(Exception exc) {
                 step = new ResourceSynchronizationResultStep(
