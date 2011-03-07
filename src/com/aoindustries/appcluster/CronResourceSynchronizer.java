@@ -256,7 +256,10 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                 if(
                                     (
                                         synchronizeNowMode == ResourceSynchronizationMode.SYNCHRONIZE
-                                        || synchronizeSchedule.isCronJobScheduled(minute, hour, dayOfMonth, month, dayOfWeek, year)
+                                        || (
+                                            synchronizeNowMode == null
+                                            && synchronizeSchedule.isCronJobScheduled(minute, hour, dayOfMonth, month, dayOfWeek, year)
+                                        )
                                     ) && canSynchronize(ResourceSynchronizationMode.SYNCHRONIZE, localDnsResult, remoteDnsResult)
                                 ) {
                                     // Perform synchronization
@@ -309,8 +312,11 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                     }
                                 } else if(
                                     (
-                                        synchronizeNowMode==ResourceSynchronizationMode.TEST_ONLY
-                                        || testSchedule.isCronJobScheduled(minute, hour, dayOfMonth, month, dayOfWeek, year)
+                                        synchronizeNowMode == ResourceSynchronizationMode.TEST_ONLY
+                                        || (
+                                            synchronizeNowMode == null
+                                            && testSchedule.isCronJobScheduled(minute, hour, dayOfMonth, month, dayOfWeek, year)
+                                        )
                                     ) && canSynchronize(ResourceSynchronizationMode.TEST_ONLY, localDnsResult, remoteDnsResult)
                                 ) {
                                     // Perform test
