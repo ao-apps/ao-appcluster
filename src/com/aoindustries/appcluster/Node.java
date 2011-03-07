@@ -122,7 +122,7 @@ public class Node {
     public ResourceStatus getStatus() {
         ResourceStatus status = ResourceStatus.UNKNOWN;
         if(!enabled) status = AppCluster.max(status, ResourceStatus.DISABLED);
-        for(Resource resource : cluster.getResources()) {
+        for(Resource<?,?> resource : cluster.getResources()) {
             ResourceNodeDnsResult nodeDnsResult = resource.getDnsMonitor().getLastResult().getNodeResultMap().get(this);
             if(nodeDnsResult!=null) {
                 status = AppCluster.max(status, nodeDnsResult.getNodeStatus().getResourceStatus());
@@ -133,6 +133,8 @@ public class Node {
                     }
                 }
             }
+            ResourceSynchronizer<?,?> synchronizer = resource.getSynchronizerMap().get(this);
+            if(synchronizer!=null) status = AppCluster.max(status, synchronizer.getResultStatus());
         }
         return status;
     }

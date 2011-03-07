@@ -93,6 +93,17 @@ abstract public class ResourceSynchronizer<R extends Resource<R,RN>,RN extends R
     abstract public ResourceSynchronizationResult getLastResult();
 
     /**
+     * Gets the synchronization result status.  Considered as STOPPED/DISABLED/STARTING if last result is not available.
+     */
+    public ResourceStatus getResultStatus() {
+        ResourceSynchronizationResult result = getLastResult();
+        if(result!=null) return result.getResourceStatus();
+        // No result, base off synchronizer state for STOPPED/DISABLED/STARTING
+        ResourceStatus status = getState().getResourceStatus();
+        return status==ResourceStatus.HEALTHY ? ResourceStatus.STARTING : status;
+    }
+
+    /**
      * Starts the synchronizer.
      */
     abstract protected void start();

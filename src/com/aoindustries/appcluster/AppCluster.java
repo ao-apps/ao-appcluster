@@ -72,7 +72,7 @@ public class AppCluster {
     private Name localHostname; // Protected by startedLock
     private String localUsername; // Protected by startedLock
     private Node localNode; // Protected by startedLock
-    private Set<? extends Resource> resources = Collections.emptySet(); // Protected by startedLock
+    private Set<? extends Resource<?,?>> resources = Collections.emptySet(); // Protected by startedLock
 
     private final List<ResourceListener> resourceListeners = new ArrayList<ResourceListener>();
     private ExecutorService resourceListenersOnDnsResultExecutorService; // Protected by resourceListeners
@@ -428,7 +428,7 @@ public class AppCluster {
     /**
      * Gets the set of all resources or empty set if not started.
      */
-    public Set<? extends Resource> getResources() {
+    public Set<? extends Resource<?,?>> getResources() {
         synchronized(startedLock) {
             return resources;
         }
@@ -438,10 +438,10 @@ public class AppCluster {
      * Gets a map view of the resources keyed on String resourceId.
      * This is for compatibility with JSP EL - it is not a fast implementation.
      */
-    public Map<String,? extends Resource> getResourceMap() {
+    public Map<String,? extends Resource<?,?>> getResourceMap() {
         synchronized(startedLock) {
-            LinkedHashMap<String,Resource> map = new LinkedHashMap<String,Resource>(resources.size()*4/3+1);
-            for(Resource resource : resources) map.put(resource.getId(), resource);
+            LinkedHashMap<String,Resource<?,?>> map = new LinkedHashMap<String,Resource<?,?>>(resources.size()*4/3+1);
+            for(Resource<?,?> resource : resources) map.put(resource.getId(), resource);
             return Collections.unmodifiableMap(map);
         }
     }
@@ -548,7 +548,7 @@ public class AppCluster {
         synchronized(startedLock) {
             if(started) {
                 // Stop per-resource monitoring and synchronization threads
-                for(Resource resource : resources) resource.stop();
+                for(Resource<?,?> resource : resources) resource.stop();
                 resources = Collections.emptySet();
 
                 // Stop the logger

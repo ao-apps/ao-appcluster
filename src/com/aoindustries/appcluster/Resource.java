@@ -198,8 +198,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
             // Overall synchronizer state
             status = AppCluster.max(status, synchronizer.getState().getResourceStatus());
             // Synchronization result
-            ResourceSynchronizationResult syncResult = synchronizer.getLastResult();
-            if(syncResult!=null) status = AppCluster.max(status, syncResult.getResourceStatus());
+            status = AppCluster.max(status, synchronizer.getResultStatus());
         }
         return status;
     }
