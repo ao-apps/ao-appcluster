@@ -30,7 +30,20 @@ import com.aoindustries.appcluster.ResourceSynchronizationMode;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
 import com.aoindustries.appcluster.ResourceSynchronizationResultStep;
 import com.aoindustries.cron.Schedule;
-import java.util.Collections;
+import com.aoindustries.util.ErrorPrinter;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.Collator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
 
 /**
  * Performs synchronization using JDBC.
@@ -71,23 +84,135 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
         }
     }
 
+    private static final Collator englishCollator = Collator.getInstance(Locale.ENGLISH);
+
+    /**
+     * Gets the catalogs.
+     */
+    private static SortedSet<String> getCatalogs(DatabaseMetaData metaData) throws SQLException {
+        ResultSet results = metaData.getCatalogs();
+        try {
+            SortedSet<String> catalogs = new TreeSet<String>(englishCollator);
+            while(results.next()) catalogs.add(results.getString(1));
+            return catalogs;
+        } finally {
+            results.close();
+        }
+    }
+
     @Override
     protected ResourceSynchronizationResult synchronize(ResourceSynchronizationMode mode, ResourceNodeDnsResult localDnsResult, ResourceNodeDnsResult remoteDnsResult) {
-        long startTime = System.currentTimeMillis();
+        List<ResourceSynchronizationResultStep> steps = new ArrayList<ResourceSynchronizationResultStep>();
+
+        // If exception is not caught within its own step, the error will be added with this step detail.
+        // Each step should update this.
+        long stepStartTime = System.currentTimeMillis();
+        String step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.connect");
+        List<String> stepOutputs = new ArrayList<String>();
+        List<String> stepErrors = new ArrayList<String>();
+
+        try {
+            // Will always synchronize or test from master to slave
+            String fromDataSourceName;
+            String toDataSourceName;
+            NodeDnsStatus localDnsStatus = localDnsResult.getNodeStatus();
+            NodeDnsStatus remoteDnsStatus = remoteDnsResult.getNodeStatus();
+            switch(mode) {
+                case SYNCHRONIZE :
+                    if(
+                        localDnsStatus==NodeDnsStatus.MASTER
+                        && remoteDnsStatus==NodeDnsStatus.SLAVE
+                    ) {
+                        fromDataSourceName = localResourceNode.getDataSource();
+                        toDataSourceName = remoteResourceNode.getDataSource();
+                    } else {
+                        throw new AssertionError();
+                    }
+                    break;
+                case TEST_ONLY :
+                    if(
+                        localDnsStatus==NodeDnsStatus.MASTER
+                        && remoteDnsStatus==NodeDnsStatus.SLAVE
+                    ) {
+                        fromDataSourceName = localResourceNode.getDataSource();
+                        toDataSourceName = remoteResourceNode.getDataSource();
+                    } else if(
+                        localDnsStatus==NodeDnsStatus.SLAVE
+                        && remoteDnsStatus==NodeDnsStatus.MASTER
+                    ) {
+                        fromDataSourceName = remoteResourceNode.getDataSource();
+                        toDataSourceName = localResourceNode.getDataSource();
+                    } else {
+                        throw new AssertionError();
+                    }
+                    break;
+                default : throw new AssertionError("Unexpected mode: "+mode);
+            }
+            stepOutputs.add("fromDataSourceName="+fromDataSourceName);
+            stepOutputs.add("toDataSourceName="+toDataSourceName);
+
+            // Lookup the data sources
+            Context ic = new InitialContext();
+            Context envCtx = (Context)ic.lookup("java:comp/env");
+            DataSource fromDataSource = (DataSource)envCtx.lookup(fromDataSourceName);
+            if(fromDataSource==null) throw new NullPointerException("fromDataSource is null");
+            DataSource toDataSource = (DataSource)envCtx.lookup(toDataSourceName);
+            if(toDataSource==null) throw new NullPointerException("toDataSource is null");
+            stepOutputs.add("fromDataSource="+fromDataSource);
+            stepOutputs.add("toDataSource="+toDataSource);
+
+            // Step #1: Connect to the data sources
+            Connection fromConn = fromDataSource.getConnection();
+            try {
+                stepOutputs.add("fromConn="+fromConn);
+                Connection toConn = toDataSource.getConnection();
+                try {
+                    stepOutputs.add("toConn="+toConn);
+                    // Connection successful
+                    steps.add(new ResourceSynchronizationResultStep(stepStartTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, step, stepOutputs, stepErrors));
+
+                    // Step #2 Compare meta data
+                    stepStartTime = System.currentTimeMillis();
+                    step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.compareMetaData");
+                    stepOutputs.clear();
+                    stepErrors.clear();
+
+                    DatabaseMetaData fromDbMeta = fromConn.getMetaData();
+                    DatabaseMetaData toDbMeta = toConn.getMetaData();
+
+                    SortedSet<String> fromCatalogs = getCatalogs(fromDbMeta);
+                    SortedSet<String> toCatalogs = getCatalogs(toDbMeta);
+                    stepOutputs.add("fromCatalogs="+fromCatalogs.toString());
+                    stepOutputs.add("toCatalogs="+toCatalogs.toString());
+                    // TODO
+                    steps.add(new ResourceSynchronizationResultStep(stepStartTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, step, stepOutputs, stepErrors));
+                } finally {
+                    toConn.close();
+                }
+            } finally {
+                fromConn.close();
+            }
+        } catch(ThreadDeath TD) {
+            throw TD;
+        } catch(Throwable T) {
+            stepErrors.add(ErrorPrinter.getStackTraces(T));
+            steps.add(
+                new ResourceSynchronizationResultStep(
+                    stepStartTime,
+                    System.currentTimeMillis(),
+                    ResourceStatus.ERROR,
+                    step,
+                    stepOutputs,
+                    stepErrors
+                )
+            );
+        }
+
         return new ResourceSynchronizationResult(
             localResourceNode,
             remoteResourceNode,
             mode,
-            Collections.singletonList(
-                new ResourceSynchronizationResultStep(
-                    startTime,
-                    System.currentTimeMillis(),
-                    ResourceStatus.HEALTHY,
-                    "TODO",
-                    null,
-                    null
-                )
-            )
+            steps
         );
     }
 }

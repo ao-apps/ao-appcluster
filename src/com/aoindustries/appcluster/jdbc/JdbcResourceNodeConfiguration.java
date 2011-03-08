@@ -33,6 +33,11 @@ import com.aoindustries.appcluster.Node;
  */
 public interface JdbcResourceNodeConfiguration extends CronResourceNodeConfiguration<JdbcResource,JdbcResourceNode> {
 
+    /**
+     * @see JdbcResourceNode#getDataSource()
+     */
+    String getDataSource();
+
     @Override
     JdbcResourceNode newResourceNode(Node node) throws AppClusterConfigurationException;
 }

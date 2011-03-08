@@ -44,8 +44,8 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
 
     /**
      * @param description May not be <code>null</code>
-     * @param outputs <code>null</code> is converted to empty list
-     * @param errors <code>null</code> is converted to empty list
+     * @param outputs <code>null</code> is converted to empty list and a defensive copy is made
+     * @param errors <code>null</code> is converted to empty list and a defensive copy is made
      */
     public ResourceSynchronizationResultStep(
         long startTime,

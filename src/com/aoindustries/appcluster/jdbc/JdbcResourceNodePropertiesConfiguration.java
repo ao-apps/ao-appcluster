@@ -34,8 +34,16 @@ import com.aoindustries.appcluster.Node;
  */
 public class JdbcResourceNodePropertiesConfiguration extends CronResourceNodePropertiesConfiguration<JdbcResource,JdbcResourceNode> implements JdbcResourceNodeConfiguration {
 
+    private final String dataSource;
+
     protected JdbcResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
         super(properties, resourceId, nodeId);
+        this.dataSource = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".dataSource");
+    }
+
+    @Override
+    public String getDataSource() {
+        return dataSource;
     }
 
     @Override

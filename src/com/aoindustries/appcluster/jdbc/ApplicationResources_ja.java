@@ -22,30 +22,25 @@
  */
 package com.aoindustries.appcluster.jdbc;
 
-import com.aoindustries.appcluster.AppClusterConfigurationException;
-import com.aoindustries.appcluster.CronResourceNode;
-import com.aoindustries.appcluster.Node;
+import com.aoindustries.util.i18n.EditableResourceBundle;
+import java.io.File;
+import java.util.Locale;
 
 /**
- * The per-node settings for a JDBC resource.
- *
- * @see  JdbcResource
+ * Provides a simplified interface for obtaining localized values from the ApplicationResources.properties files.
  *
  * @author  AO Industries, Inc.
  */
-public class JdbcResourceNode extends CronResourceNode<JdbcResource,JdbcResourceNode> {
-
-    private final String dataSource;
-
-    protected JdbcResourceNode(Node node, JdbcResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
-        super(node, resourceNodeConfiguration);
-        this.dataSource = resourceNodeConfiguration.getDataSource();
-    }
+public final class ApplicationResources_ja extends EditableResourceBundle {
 
     /**
-     * Gets the data source JNDI name to this node.
+     * Do not use directly.
      */
-    public String getDataSource() {
-        return dataSource;
+    public ApplicationResources_ja() {
+        super(
+            new File(System.getProperty("user.home")+"/common/ao/cvswork/ao-appcluster/src/com/aoindustries/appcluster/jdbc/ApplicationResources_ja.properties"),
+            Locale.JAPANESE,
+            ApplicationResources.bundleSet
+        );
     }
 }
