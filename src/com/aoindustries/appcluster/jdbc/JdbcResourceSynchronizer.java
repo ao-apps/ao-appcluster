@@ -87,14 +87,29 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
     private static final Collator englishCollator = Collator.getInstance(Locale.ENGLISH);
 
     /**
-     * Gets the catalogs.
+     * Gets the catalog.
      */
-    private static SortedSet<String> getCatalogs(DatabaseMetaData metaData) throws SQLException {
+    private static String getCatalog(DatabaseMetaData metaData) throws SQLException {
         ResultSet results = metaData.getCatalogs();
         try {
-            SortedSet<String> catalogs = new TreeSet<String>(englishCollator);
-            while(results.next()) catalogs.add(results.getString(1));
-            return catalogs;
+            if(!results.next()) throw new SQLException(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.getCatalog.noRow"));
+            String catalog = results.getString(1);
+            if(results.next()) throw new SQLException(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.getCatalog.moreThanOneRow"));
+            return catalog;
+        } finally {
+            results.close();
+        }
+    }
+
+    /**
+     * Gets the schemas for the provided catalog.
+     */
+    private static SortedSet<String> getSchemas(DatabaseMetaData metaData, String catalog) throws SQLException {
+        ResultSet results = metaData.getSchemas(catalog, null);
+        try {
+            SortedSet<String> schemas = new TreeSet<String>(englishCollator);
+            while(results.next()) schemas.add(results.getString(1));
+            return schemas;
         } finally {
             results.close();
         }
@@ -148,8 +163,10 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                     break;
                 default : throw new AssertionError("Unexpected mode: "+mode);
             }
-            stepOutputs.add("fromDataSourceName="+fromDataSourceName);
-            stepOutputs.add("toDataSourceName="+toDataSourceName);
+            stepOutputs.add(
+                "fromDataSourceName="+fromDataSourceName+"\n"
+                + "toDataSourceName="+toDataSourceName
+            );
 
             // Lookup the data sources
             Context ic = new InitialContext();
@@ -158,16 +175,16 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             if(fromDataSource==null) throw new NullPointerException("fromDataSource is null");
             DataSource toDataSource = (DataSource)envCtx.lookup(toDataSourceName);
             if(toDataSource==null) throw new NullPointerException("toDataSource is null");
-            stepOutputs.add("fromDataSource="+fromDataSource);
-            stepOutputs.add("toDataSource="+toDataSource);
 
             // Step #1: Connect to the data sources
             Connection fromConn = fromDataSource.getConnection();
             try {
-                stepOutputs.add("fromConn="+fromConn);
                 Connection toConn = toDataSource.getConnection();
                 try {
-                    stepOutputs.add("toConn="+toConn);
+                    stepOutputs.add(
+                        "fromConn="+fromConn+"\n"
+                        + "toConn="+toConn
+                    );
                     // Connection successful
                     steps.add(new ResourceSynchronizationResultStep(stepStartTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, step, stepOutputs, stepErrors));
 
@@ -180,10 +197,20 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                     DatabaseMetaData fromDbMeta = fromConn.getMetaData();
                     DatabaseMetaData toDbMeta = toConn.getMetaData();
 
-                    SortedSet<String> fromCatalogs = getCatalogs(fromDbMeta);
-                    SortedSet<String> toCatalogs = getCatalogs(toDbMeta);
-                    stepOutputs.add("fromCatalogs="+fromCatalogs.toString());
-                    stepOutputs.add("toCatalogs="+toCatalogs.toString());
+                    String fromCatalog = getCatalog(fromDbMeta);
+                    String toCatalog = getCatalog(toDbMeta);
+                    stepOutputs.add(
+                        "fromCatalog="+fromCatalog+"\n"
+                        + "toCatalog="+toCatalog
+                    );
+
+                    SortedSet<String> fromSchemas = getSchemas(fromDbMeta, fromCatalog);
+                    SortedSet<String> toSchemas = getSchemas(toDbMeta, toCatalog);
+                    stepOutputs.add(
+                        "fromSchemas="+fromSchemas.toString()+"\n"
+                        + "toCatalogs="+toSchemas.toString()
+                    );
+
                     // TODO
                     steps.add(new ResourceSynchronizationResultStep(stepStartTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, step, stepOutputs, stepErrors));
                 } finally {
