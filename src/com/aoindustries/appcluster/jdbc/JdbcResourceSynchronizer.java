@@ -64,6 +64,8 @@ import javax.sql.DataSource;
 /**
  * Performs synchronization using JDBC.
  *
+ * TODO: Make no-warn tables, including public.user_login_keys
+ *
  * TODO: Verify permissions?
  * TODO: Verify indexes?
  * TODO: Verify foreign keys?
