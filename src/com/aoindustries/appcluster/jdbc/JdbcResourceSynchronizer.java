@@ -33,12 +33,22 @@ import com.aoindustries.cron.Schedule;
 import com.aoindustries.sql.Catalog;
 import com.aoindustries.sql.Column;
 import com.aoindustries.sql.DatabaseMetaData;
+import com.aoindustries.sql.Index;
 import com.aoindustries.sql.Schema;
 import com.aoindustries.sql.Table;
 import com.aoindustries.util.ErrorPrinter;
 import com.aoindustries.util.StringUtility;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.Date;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -52,9 +62,19 @@ import javax.sql.DataSource;
 /**
  * Performs synchronization using JDBC.
  *
+ * TODO: Mismatch on test is a warning only (each step will have output / warning / error)
+ * TODO: Display output of table status counts as a table.
+ * 
+ * TODO: Verify permissions?
+ * TODO: Verify indexes?
+ * TODO: Verify foreign keys?
+ *
  * @author  AO Industries, Inc.
  */
 public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResource,JdbcResourceNode> {
+
+    private static final int FETCH_SIZE = 1000;
+    private static final String INDENT = "    ";
 
     protected JdbcResourceSynchronizer(JdbcResourceNode localResourceNode, JdbcResourceNode remoteResourceNode, Schedule synchronizeSchedule, Schedule testSchedule) {
         super(localResourceNode, remoteResourceNode, synchronizeSchedule, testSchedule);
@@ -209,7 +229,20 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                             step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.compareData");
                             stepOutput.setLength(0);
                             stepError.setLength(0);
-                            // TODO: Test data from here
+
+                            testSchemasData(fromConn, toConn, resource.getTestTimeout(), fromCatalog, toCatalog, schemas, tableTypes, excludeTables, stepOutput, stepError);
+                            steps.add(
+                                new ResourceSynchronizationResultStep(
+                                    stepStartTime,
+                                    System.currentTimeMillis(),
+                                    stepError.length()==0 ? ResourceStatus.HEALTHY : ResourceStatus.ERROR,
+                                    step,
+                                    stepOutput,
+                                    stepError
+                                )
+                            );
+
+                            // Nothing should have been changed, roll-back just to be safe
                             toConn.rollback();
                         } else if(mode==ResourceSynchronizationMode.SYNCHRONIZE) {
                             stepStartTime = System.currentTimeMillis();
@@ -323,8 +356,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
     }
 
     private static void compareTable(Table fromTable, Table toTable, StringBuilder stepError) throws SQLException {
-        assert fromTable.getSchema().getName().equals(toTable.getSchema().getName());
-        assert fromTable.getName().equals(toTable.getName());
+        assert fromTable.equals(toTable);
         if(!fromTable.getTableType().equals(toTable.getTableType())) {
             stepError.append(
                 ApplicationResources.accessor.getMessage(
@@ -336,8 +368,9 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                 )
             ).append('\n');
         } else {
-            SortedMap<String,Column> fromColumns = fromTable.getColumns();
-            SortedMap<String,Column> toColumns = toTable.getColumns();
+            // Compare columns
+            SortedMap<String,Column> fromColumns = fromTable.getColumnMap();
+            SortedMap<String,Column> toColumns = toTable.getColumnMap();
             SortedSet<String> allColumnNames = new TreeSet<String>(DatabaseMetaData.getCollator());
             allColumnNames.addAll(fromColumns.keySet());
             allColumnNames.addAll(toColumns.keySet());
@@ -359,6 +392,8 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                     }
                 }
             }
+            // Compare primary key
+            comparePrimaryKey(fromTable.getPrimaryKey(), toTable.getPrimaryKey(), stepError);
         }
     }
 
@@ -495,6 +530,493 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                     toColumn.getIsAutoincrement()
                 )
             ).append('\n');
+        }
+    }
+
+    private static void comparePrimaryKey(Index fromPrimaryKey, Index toPrimaryKey, StringBuilder stepError) {
+        if(fromPrimaryKey==null) {
+            Table fromTable = fromPrimaryKey.getTable();
+            Schema fromSchema = fromTable.getSchema();
+            stepError.append(
+                ApplicationResources.accessor.getMessage(
+                    "JdbcResourceSynchronizer.comparePrimaryKey.primaryKeyMissing",
+                    fromSchema.getCatalog(),
+                    fromSchema,
+                    fromTable
+                )
+            ).append('\n');
+        }
+        if(toPrimaryKey==null) {
+            Table toTable = toPrimaryKey.getTable();
+            Schema toSchema = toTable.getSchema();
+            stepError.append(
+                ApplicationResources.accessor.getMessage(
+                    "JdbcResourceSynchronizer.comparePrimaryKey.primaryKeyMissing",
+                    toSchema.getCatalog(),
+                    toSchema,
+                    toTable
+                )
+            ).append('\n');
+        }
+        if(fromPrimaryKey!=null && toPrimaryKey!=null) {
+            if(!StringUtility.equals(fromPrimaryKey.getName(), toPrimaryKey.getName())) {
+                stepError.append(
+                    ApplicationResources.accessor.getMessage(
+                        "JdbcResourceSynchronizer.comparePrimaryKey.mismatch.name",
+                        fromPrimaryKey.getTable().getSchema(),
+                        fromPrimaryKey.getTable(),
+                        fromPrimaryKey.getName(),
+                        toPrimaryKey.getName()
+                    )
+                ).append('\n');
+            }
+            if(!fromPrimaryKey.getColumns().equals(toPrimaryKey.getColumns())) {
+                stepError.append(
+                    ApplicationResources.accessor.getMessage(
+                        "JdbcResourceSynchronizer.comparePrimaryKey.mismatch.columns",
+                        fromPrimaryKey.getTable().getSchema(),
+                        fromPrimaryKey.getTable(),
+                        "(" + StringUtility.join(fromPrimaryKey.getColumns(), ", ") + ")",
+                        "(" + StringUtility.join(toPrimaryKey.getColumns(), ", ") + ")"
+                    )
+                ).append('\n');
+            }
+        }
+    }
+
+    private static void testSchemasData(Connection fromConn, Connection toConn, int timeout, Catalog fromCatalog, Catalog toCatalog, Set<String> schemas, Set<String> tableTypes, Set<String> excludeTables, StringBuilder stepOutput, StringBuilder stepError) throws SQLException {
+        for(String schema : schemas) {
+            testSchemaData(fromConn, toConn, timeout, fromCatalog.getSchema(schema), toCatalog.getSchema(schema), tableTypes, excludeTables, stepOutput, stepError);
+        }
+    }
+
+    private static void testSchemaData(Connection fromConn, Connection toConn, int timeout, Schema fromSchema, Schema toSchema, Set<String> tableTypes, Set<String> excludeTables, StringBuilder stepOutput, StringBuilder stepError) throws SQLException {
+        assert fromSchema.equals(toSchema);
+
+        stepOutput.append(fromSchema).append(":\n");
+
+        SortedMap<String,Table> fromTables = fromSchema.getTables();
+        SortedMap<String,Table> toTables = toSchema.getTables();
+
+        assert fromTables.keySet().equals(toTables.keySet()) : "This should have been caught by the meta data checks";
+
+        for(String tableName : fromTables.keySet()) {
+            Table fromTable = fromTables.get(tableName);
+            Table toTable = toTables.get(tableName);
+            String tableType = fromTable.getTableType();
+            assert tableType.equals(toTable.getTableType()) : "This should have been caught by the meta data checks";
+            if(
+                !excludeTables.contains(fromSchema.getName()+'.'+tableName)
+                && tableTypes.contains(tableType)
+            ) {
+                if("TABLE".equals(tableType)) testTableData(fromConn, toConn, timeout, fromTable, toTable, stepOutput, stepError);
+                else throw new SQLException("Unimplemented table type: " + tableType);
+            }
+        }
+    }
+
+    /**
+     * Appends a value in a per-type way.
+     */
+    private static void appendValue(StringBuilder sb, int dataType, Object value) {
+        if(value==null) {
+            sb.append("NULL");
+        } else {
+            switch(dataType) {
+                // Types without quotes
+                case Types.BIGINT :
+                case Types.BIT :
+                case Types.BOOLEAN :
+                case Types.DOUBLE :
+                case Types.FLOAT :
+                case Types.INTEGER :
+                case Types.NULL :
+                case Types.REAL :
+                case Types.SMALLINT :
+                case Types.TINYINT :
+                    sb.append(value.toString());
+                    break;
+                // All other types will use quotes
+                default :
+                    try {
+                        sb.append('\'');
+                        StringUtility.replace(value.toString(), "'", "''", sb);
+                        sb.append('\'');
+                    } catch(IOException exc) {
+                        throw new AssertionError(exc); // Should not happen
+                    }
+            }
+        }
+    }
+
+    /**
+     * A row encapsulates one set of results.
+     */
+    static class Row implements Comparable<Row> {
+
+        private final Column[] primaryKeyColumns;
+        private final Column[] nonPrimaryKeyColumns;
+        private final Object[] values;
+
+        Row(Column[] primaryKeyColumns, Column[] nonPrimaryKeyColumns, Object[] values) {
+            this.primaryKeyColumns = primaryKeyColumns;
+            this.nonPrimaryKeyColumns = nonPrimaryKeyColumns;
+            this.values = values;
+        }
+
+        private static int compare(byte[] ba1, byte[] ba2) {
+            int len = Math.min(ba1.length, ba2.length);
+            for(int i=0; i<len; i++) {
+                int b1 = ba1[i]&255;
+                int b2 = ba2[i]&255;
+                if(b1<b2) return -1;
+                if(b1>b2) return 1;
+            }
+            if(ba1.length>len) return 1;
+            if(ba2.length>len) return -1;
+            return 0;
+        }
+
+        /**
+         * Orders rows by the values of the primary key columns.
+         * Orders rows in the same exact way as the underlying database to make
+         * sure that the one-pass comparison is correct.
+         * Only returns zero when the primary key values are an exact match.
+         * The comparison is consistent with equals for all primary key values.
+         */
+        @Override
+        public int compareTo(Row other) {
+            for(Column primaryKeyColumn : primaryKeyColumns) {
+                int index = primaryKeyColumn.getOrdinalPosition() - 1;
+                Object val = values[index];
+                Object otherVal = other.values[index];
+                int diff;
+                switch(primaryKeyColumn.getDataType()) {
+                    case Types.BIGINT :
+                        diff = ((Long)val).compareTo((Long)otherVal);
+                        break;
+                    // These were converted to UTF8 byte[] during order by.
+                    // Use the same conversion here
+                    case Types.CHAR :
+                    case Types.VARCHAR :
+                        try {
+                            byte[] utf8Bytes = ((String)val).getBytes("UTF-8");
+                            byte[] otherUtf8Bytes = ((String)otherVal).getBytes("UTF-8");
+                            //diff = ((String)val).compareTo((String)otherVal);
+                            diff = compare(utf8Bytes, otherUtf8Bytes);
+                        } catch(UnsupportedEncodingException exc) {
+                            throw new RuntimeException(exc);
+                        }
+                        break;
+                    case Types.DATE :
+                        diff = ((Date)val).compareTo((Date)otherVal);
+                        break;
+                    case Types.DECIMAL :
+                    case Types.NUMERIC :
+                        diff = ((BigDecimal)val).compareTo((BigDecimal)otherVal);
+                        break;
+                    case Types.DOUBLE :
+                        diff = ((Double)val).compareTo((Double)otherVal);
+                        break;
+                    case Types.FLOAT :
+                        diff = ((Float)val).compareTo((Float)otherVal);
+                        break;
+                    case Types.INTEGER :
+                        diff = ((Integer)val).compareTo((Integer)otherVal);
+                        break;
+                    case Types.SMALLINT :
+                        diff = ((Short)val).compareTo((Short)otherVal);
+                        break;
+                    case Types.TIME :
+                        diff = ((Time)val).compareTo((Time)otherVal);
+                        break;
+                    case Types.TIMESTAMP :
+                        diff = ((Timestamp)val).compareTo((Timestamp)otherVal);
+                        break;
+                    default : throw new UnsupportedOperationException("Type comparison not implemented: "+primaryKeyColumn.getDataType());
+                }
+                assert (diff==0) == (val.equals(otherVal)) : "Not consistent with equals: val="+val+", otherVal="+otherVal;
+                if(diff!=0) return diff;
+            }
+            return 0; // Exact match
+        }
+
+        boolean equalsNonPrimaryKey(Row other) {
+            for(Column nonPrimaryKeyColumn : nonPrimaryKeyColumns) {
+                int index = nonPrimaryKeyColumn.getOrdinalPosition() - 1;
+                if(
+                    !StringUtility.equals(
+                        values[index],
+                        other.values[index]
+                    )
+                ) return false;
+            }
+            return true;
+        }
+
+        /**
+         * Gets a string representation of the primary key values of this row.
+         * This is only meant to be human readable, not for sending to SQL directly.
+         */
+        String getPrimaryKeyValues() {
+            StringBuilder sb = new StringBuilder();
+            sb.append('(');
+            boolean didOne = false;
+            for(Column primaryKeyColumn : primaryKeyColumns) {
+                if(didOne) sb.append(", ");
+                else didOne = true;
+                appendValue(sb, primaryKeyColumn.getDataType(), values[primaryKeyColumn.getOrdinalPosition()-1]);
+            }
+            sb.append(')');
+            return sb.toString();
+        }
+    }
+
+    /**
+     * Iterates rows from a result set, ensuring that each row is properly ordered after the previous.
+     */
+    static class RowIterator {
+        private final Column[] columns;
+        private final Column[] primaryKeyColumns;
+        private final Column[] nonPrimaryKeyColumns;
+        private final ResultSet results;
+        private Row previousRow;
+        private Row nextRow;
+
+        RowIterator(List<Column> columns, Index primaryKey, ResultSet results) throws SQLException {
+            this.columns = columns.toArray(new Column[columns.size()]);
+            List<Column> pkColumns = primaryKey.getColumns();
+            this.primaryKeyColumns = pkColumns.toArray(new Column[pkColumns.size()]);
+            nonPrimaryKeyColumns = new Column[columns.size() - pkColumns.size()];
+            int index = 0;
+            for(Column column : this.columns) {
+                if(!pkColumns.contains(column)) nonPrimaryKeyColumns[index++] = column;
+            }
+            if(index!=nonPrimaryKeyColumns.length) throw new AssertionError();
+            this.results = results;
+            this.nextRow = getNextRow();
+        }
+
+        /**
+         * Gest the next row from the results.
+         */
+        private Row getNextRow() throws SQLException {
+            if(results.next()) {
+                Object[] values = new Object[columns.length];
+                for(int index=0; index<values.length; index++) values[index] = results.getObject(index+1);
+                return new Row(primaryKeyColumns, nonPrimaryKeyColumns, values);
+            } else {
+                return null;
+            }
+        }
+
+        /**
+         * Gets and does not remove the next row.
+         *
+         * @return  the next row or <code>null</code> when all rows have been read.
+         */
+        Row peek() {
+            return nextRow;
+        }
+
+        /**
+         * Gets and removes the next row.
+         *
+         * @return  the next row or <code>null</code> when all rows have been read.
+         */
+        Row remove() throws SQLException {
+            if(nextRow==null) return nextRow;
+            Row newNextRow = getNextRow();
+            if(newNextRow==null) {
+                previousRow = null;
+                nextRow = null;
+                return null;
+            }
+            if(previousRow!=null) {
+                // Make sure this row is after the previous
+                if(newNextRow.compareTo(previousRow)<=0) throw new SQLException("Rows out of order: " + previousRow.getPrimaryKeyValues() + " and " + newNextRow.getPrimaryKeyValues());
+            }
+            previousRow = nextRow;
+            nextRow = newNextRow;
+            return newNextRow;
+        }
+    }
+
+    /**
+     * Queries both from and to tables, sorted by each column of the primary key in ascending order.
+     * All differences are found in a single pass through the tables, with no buffering and only a single query of each result.
+     */
+    private static void testTableData(Connection fromConn, Connection toConn, int timeout, Table fromTable, Table toTable, StringBuilder stepOutput, StringBuilder stepError) throws SQLException {
+        stepOutput.append(INDENT).append(fromTable.getName()).append(":\n");
+        assert fromTable.equals(toTable);
+        final String schema = fromTable.getSchema().getName();
+        List<Column> columns = fromTable.getColumns();
+        Index primaryKey = fromTable.getPrimaryKey();
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT ");
+        boolean didOne = false;
+        for(Column column : columns) {
+            if(didOne) sql.append(", ");
+            else didOne = true;
+            switch(column.getDataType()) {
+                // These will be verified using md5
+                case Types.BINARY :
+                case Types.BLOB :
+                case Types.LONGVARBINARY :
+                case Types.VARBINARY :
+                    sql.append(" md5(\"").append(column.getName()).append("\")");
+                    break;
+                // All others are fully compared
+                default :
+                    sql.append('"').append(column.getName()).append('"');
+            }
+        }
+        sql.append(" FROM \"").append(schema).append("\".\"").append(fromTable.getName()).append("\" ORDER BY ");
+        didOne = false;
+        for(Column column : primaryKey.getColumns()) {
+            if(didOne) sql.append(", ");
+            else didOne = true;
+            switch(column.getDataType()) {
+                // These will be verified using md5
+                case Types.BINARY :
+                case Types.BLOB :
+                case Types.LONGVARBINARY :
+                case Types.VARBINARY :
+                    throw new SQLException("Type not supported in primary key: "+column.getDataType());
+                // These will be converted to UTF8 bytea for collator-neutral ordering (not dependent on PostgreSQL lc_collate setting)
+                case Types.CHAR :
+                case Types.VARCHAR :
+                    sql.append("convert_to(\"").append(column.getName()).append("\", 'UTF8')");
+                    break;
+                // All others are compared directly
+                default :
+                    sql.append('"').append(column.getName()).append('"');
+            }
+        }
+        String sqlString = sql.toString();
+        Statement fromStmt = fromConn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+        try {
+            fromStmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+            fromStmt.setFetchSize(FETCH_SIZE);
+            // Not yet implemented by PostgreSQL: fromStmt.setPoolable(false);
+            // Not yet implemented by PostgreSQL: fromStmt.setQueryTimeout(timeout);
+            Statement toStmt = toConn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+            try {
+                toStmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+                toStmt.setFetchSize(FETCH_SIZE);
+                // Not yet implemented by PostgreSQL: toStmt.setPoolable(false);
+                // Not yet implemented by PostgreSQL: toStmt.setQueryTimeout(timeout);
+                ResultSet fromResults = fromStmt.executeQuery(sqlString);
+                try {
+                    ResultSet toResults = toStmt.executeQuery(sqlString);
+                    try {
+                        long matches = 0;
+                        long modified = 0;
+                        long missing = 0;
+                        long extra = 0;
+                        RowIterator fromIter = new RowIterator(columns, primaryKey, fromResults);
+                        RowIterator toIter = new RowIterator(columns, primaryKey, toResults);
+                        while(true) {
+                            Row fromRow = fromIter.peek();
+                            Row toRow = toIter.peek();
+                            if(fromRow!=null) {
+                                if(toRow!=null) {
+                                    int primaryKeyDiff = fromRow.compareTo(toRow);
+                                    if(primaryKeyDiff==0) {
+                                        // Primary keys have already been compared and are known to be equal, only need to compare the remaining columns
+                                        if(fromRow.equalsNonPrimaryKey(toRow)) {
+                                            // Exact match, remove both
+                                            matches++;
+                                            fromIter.remove();
+                                            toIter.remove();
+                                        } else {
+                                            // Modified
+                                            stepError.append(
+                                                ApplicationResources.accessor.getMessage(
+                                                    "JdbcResourceSynchronizer.testTableData.modified",
+                                                    schema,
+                                                    fromTable,
+                                                    fromRow.getPrimaryKeyValues()
+                                                )
+                                            ).append('\n');
+                                            modified++;
+                                            fromIter.remove();
+                                            toIter.remove();
+                                        }
+                                    } else if(primaryKeyDiff<0) {
+                                        // Missing
+                                        stepError.append(
+                                            ApplicationResources.accessor.getMessage(
+                                                "JdbcResourceSynchronizer.testTableData.missing",
+                                                schema,
+                                                fromTable,
+                                                fromRow.getPrimaryKeyValues()
+                                            )
+                                        ).append('\n');
+                                        missing++;
+                                        fromIter.remove();
+                                    } else {
+                                        assert primaryKeyDiff>0;
+                                        // Extra
+                                        stepError.append(
+                                            ApplicationResources.accessor.getMessage(
+                                                "JdbcResourceSynchronizer.testTableData.extra",
+                                                schema,
+                                                toTable,
+                                                toRow.getPrimaryKeyValues()
+                                            )
+                                        ).append('\n');
+                                        extra++;
+                                        toIter.remove();
+                                    }
+                                } else {
+                                    // Missing
+                                    stepError.append(
+                                        ApplicationResources.accessor.getMessage(
+                                            "JdbcResourceSynchronizer.testTableData.missing",
+                                            schema,
+                                            fromTable,
+                                            fromRow.getPrimaryKeyValues()
+                                        )
+                                    ).append('\n');
+                                    missing++;
+                                    fromIter.remove();
+                                }
+                            } else {
+                                if(toRow!=null) {
+                                    // Extra
+                                    stepError.append(
+                                        ApplicationResources.accessor.getMessage(
+                                            "JdbcResourceSynchronizer.testTableData.extra",
+                                            schema,
+                                            toTable,
+                                            toRow.getPrimaryKeyValues()
+                                        )
+                                    ).append('\n');
+                                    extra++;
+                                    toIter.remove();
+                                } else {
+                                    // All rows done
+                                    break;
+                                }
+                            }
+                        }
+                        // Add totals to stepOutput
+                        stepOutput.append(INDENT).append(INDENT).append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testTableData.results.matches", matches)).append('\n');
+                        stepOutput.append(INDENT).append(INDENT).append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testTableData.results.modified", modified)).append('\n');
+                        stepOutput.append(INDENT).append(INDENT).append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testTableData.results.missing", missing)).append('\n');
+                        stepOutput.append(INDENT).append(INDENT).append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testTableData.results.extra", extra)).append('\n');
+                    } finally {
+                        toResults.close();
+                    }
+                } finally {
+                    fromResults.close();
+                }
+            } finally {
+                toStmt.close();
+            }
+        } finally {
+            fromStmt.close();
         }
     }
 }
