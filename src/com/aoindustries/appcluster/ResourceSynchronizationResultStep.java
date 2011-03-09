@@ -40,6 +40,7 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
     private final ResourceStatus resourceStatus;
     private final String description;
     private final List<String> outputs;
+    private final List<String> warnings;
     private final List<String> errors;
 
     private static List<String> asUnmodifiableList(CharSequence chars) {
@@ -49,8 +50,9 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
 
     /**
      * @param description May not be <code>null</code>
-     * @param outputs <code>null</code> or empty is converted to empty list
-     * @param errors <code>null</code> or empty is converted to empty list
+     * @param output <code>null</code> or empty is converted to empty list
+     * @param warning <code>null</code> or empty is converted to empty list
+     * @param error <code>null</code> or empty is converted to empty list
      */
     public ResourceSynchronizationResultStep(
         long startTime,
@@ -58,6 +60,7 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
         ResourceStatus resourceStatus,
         String description,
         CharSequence output,
+        CharSequence warning,
         CharSequence error
     ) {
         this.startTime = startTime;
@@ -66,12 +69,14 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
         if(description==null) throw new IllegalArgumentException("description==null");
         this.description = description;
         this.outputs = asUnmodifiableList(output);
+        this.warnings = asUnmodifiableList(warning);
         this.errors = asUnmodifiableList(error);
     }
 
     /**
      * @param description May not be <code>null</code>
      * @param outputs <code>null</code> is converted to empty list and a defensive copy is made
+     * @param warnings <code>null</code> is converted to empty list and a defensive copy is made
      * @param errors <code>null</code> is converted to empty list and a defensive copy is made
      */
     public ResourceSynchronizationResultStep(
@@ -80,6 +85,7 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
         ResourceStatus resourceStatus,
         String description,
         Collection<String> outputs,
+        Collection<String> warnings,
         Collection<String> errors
     ) {
         this.startTime = startTime;
@@ -90,6 +96,9 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
         if(outputs==null || outputs.isEmpty()) this.outputs = Collections.emptyList();
         else if(outputs.size()==1) this.outputs = Collections.singletonList(outputs.iterator().next());
         else this.outputs = Collections.unmodifiableList(new ArrayList<String>(outputs));
+        if(warnings==null || warnings.isEmpty()) this.warnings = Collections.emptyList();
+        else if(warnings.size()==1) this.warnings = Collections.singletonList(warnings.iterator().next());
+        else this.warnings = Collections.unmodifiableList(new ArrayList<String>(warnings));
         if(errors==null || errors.isEmpty()) this.errors = Collections.emptyList();
         else if(errors.size()==1) this.errors = Collections.singletonList(errors.iterator().next());
         else this.errors = Collections.unmodifiableList(new ArrayList<String>(errors));
@@ -125,6 +134,13 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
      */
     public List<String> getOutputs() {
         return outputs;
+    }
+
+    /**
+     * Gets the warnings associated with this test or empty list for none.
+     */
+    public List<String> getWarnings() {
+        return warnings;
     }
 
     /**

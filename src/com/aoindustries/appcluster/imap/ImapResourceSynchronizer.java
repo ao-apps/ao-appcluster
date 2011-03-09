@@ -86,6 +86,7 @@ public class ImapResourceSynchronizer extends CronResourceSynchronizer<ImapResou
                     ResourceStatus.HEALTHY,
                     "TODO",
                     (Collection<String>)null,
+                    null,
                     null
                 )
             )

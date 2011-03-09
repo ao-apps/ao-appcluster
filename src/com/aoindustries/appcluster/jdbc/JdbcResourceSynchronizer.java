@@ -36,6 +36,7 @@ import com.aoindustries.sql.DatabaseMetaData;
 import com.aoindustries.sql.Index;
 import com.aoindustries.sql.Schema;
 import com.aoindustries.sql.Table;
+import com.aoindustries.util.Arrays;
 import com.aoindustries.util.ErrorPrinter;
 import com.aoindustries.util.StringUtility;
 import java.io.IOException;
@@ -129,6 +130,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
         long stepStartTime = System.currentTimeMillis();
         String step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.connect");
         StringBuilder stepOutput = new StringBuilder();
+        StringBuilder stepWarning = new StringBuilder();
         StringBuilder stepError = new StringBuilder();
 
         try {
@@ -195,12 +197,13 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                     toConn.setAutoCommit(false);
 
                     // Connection successful
-                    steps.add(new ResourceSynchronizationResultStep(stepStartTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, step, stepOutput, stepError));
+                    steps.add(new ResourceSynchronizationResultStep(stepStartTime, System.currentTimeMillis(), ResourceStatus.HEALTHY, step, stepOutput, stepWarning, stepError));
 
                     // Step #2 Compare meta data
                     stepStartTime = System.currentTimeMillis();
                     step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.compareMetaData");
                     stepOutput.setLength(0);
+                    stepWarning.setLength(0);
                     stepError.setLength(0);
 
                     Catalog fromCatalog = getCatalog(new DatabaseMetaData(fromConn));
@@ -215,9 +218,12 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                         new ResourceSynchronizationResultStep(
                             stepStartTime,
                             System.currentTimeMillis(),
-                            stepError.length()==0 ? ResourceStatus.HEALTHY : ResourceStatus.ERROR,
+                            stepError.length()!=0 ? ResourceStatus.ERROR
+                            : stepWarning.length()!=0 ? ResourceStatus.WARNING
+                            : ResourceStatus.HEALTHY,
                             step,
                             stepOutput,
+                            stepWarning,
                             stepError
                         )
                     );
@@ -228,16 +234,20 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                             stepStartTime = System.currentTimeMillis();
                             step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.compareData");
                             stepOutput.setLength(0);
+                            stepWarning.setLength(0);
                             stepError.setLength(0);
 
-                            testSchemasData(fromConn, toConn, resource.getTestTimeout(), fromCatalog, toCatalog, schemas, tableTypes, excludeTables, stepOutput, stepError);
+                            testSchemasData(fromConn, toConn, resource.getTestTimeout(), fromCatalog, toCatalog, schemas, tableTypes, excludeTables, stepOutput, stepWarning);
                             steps.add(
                                 new ResourceSynchronizationResultStep(
                                     stepStartTime,
                                     System.currentTimeMillis(),
-                                    stepError.length()==0 ? ResourceStatus.HEALTHY : ResourceStatus.ERROR,
+                                    stepError.length()!=0 ? ResourceStatus.ERROR
+                                    : stepWarning.length()!=0 ? ResourceStatus.WARNING
+                                    : ResourceStatus.HEALTHY,
                                     step,
                                     stepOutput,
+                                    stepWarning,
                                     stepError
                                 )
                             );
@@ -248,6 +258,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                             stepStartTime = System.currentTimeMillis();
                             step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.synchronizeData");
                             stepOutput.setLength(0);
+                            stepWarning.setLength(0);
                             stepError.setLength(0);
                             // TODO: Synchronize data from here
                             // Everything OK, commit changes
@@ -282,6 +293,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                     ResourceStatus.ERROR,
                     step,
                     stepOutput,
+                    stepWarning,
                     stepError
                 )
             );
@@ -584,13 +596,13 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
         }
     }
 
-    private static void testSchemasData(Connection fromConn, Connection toConn, int timeout, Catalog fromCatalog, Catalog toCatalog, Set<String> schemas, Set<String> tableTypes, Set<String> excludeTables, StringBuilder stepOutput, StringBuilder stepError) throws SQLException {
+    private static void testSchemasData(Connection fromConn, Connection toConn, int timeout, Catalog fromCatalog, Catalog toCatalog, Set<String> schemas, Set<String> tableTypes, Set<String> excludeTables, StringBuilder stepOutput, StringBuilder stepWarning) throws SQLException {
         for(String schema : schemas) {
-            testSchemaData(fromConn, toConn, timeout, fromCatalog.getSchema(schema), toCatalog.getSchema(schema), tableTypes, excludeTables, stepOutput, stepError);
+            testSchemaData(fromConn, toConn, timeout, fromCatalog.getSchema(schema), toCatalog.getSchema(schema), tableTypes, excludeTables, stepOutput, stepWarning);
         }
     }
 
-    private static void testSchemaData(Connection fromConn, Connection toConn, int timeout, Schema fromSchema, Schema toSchema, Set<String> tableTypes, Set<String> excludeTables, StringBuilder stepOutput, StringBuilder stepError) throws SQLException {
+    private static void testSchemaData(Connection fromConn, Connection toConn, int timeout, Schema fromSchema, Schema toSchema, Set<String> tableTypes, Set<String> excludeTables, StringBuilder stepOutput, StringBuilder stepWarning) throws SQLException {
         assert fromSchema.equals(toSchema);
 
         stepOutput.append(fromSchema).append(":\n");
@@ -609,7 +621,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                 !excludeTables.contains(fromSchema.getName()+'.'+tableName)
                 && tableTypes.contains(tableType)
             ) {
-                if("TABLE".equals(tableType)) testTableData(fromConn, toConn, timeout, fromTable, toTable, stepOutput, stepError);
+                if("TABLE".equals(tableType)) testTableData(fromConn, toConn, timeout, fromTable, toTable, stepOutput, stepWarning);
                 else throw new SQLException("Unimplemented table type: " + tableType);
             }
         }
@@ -664,19 +676,6 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             this.values = values;
         }
 
-        private static int compare(byte[] ba1, byte[] ba2) {
-            int len = Math.min(ba1.length, ba2.length);
-            for(int i=0; i<len; i++) {
-                int b1 = ba1[i]&255;
-                int b2 = ba2[i]&255;
-                if(b1<b2) return -1;
-                if(b1>b2) return 1;
-            }
-            if(ba1.length>len) return 1;
-            if(ba2.length>len) return -1;
-            return 0;
-        }
-
         /**
          * Orders rows by the values of the primary key columns.
          * Orders rows in the same exact way as the underlying database to make
@@ -700,10 +699,11 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                     case Types.CHAR :
                     case Types.VARCHAR :
                         try {
-                            byte[] utf8Bytes = ((String)val).getBytes("UTF-8");
-                            byte[] otherUtf8Bytes = ((String)otherVal).getBytes("UTF-8");
                             //diff = ((String)val).compareTo((String)otherVal);
-                            diff = compare(utf8Bytes, otherUtf8Bytes);
+                            diff = Arrays.compare(
+                                ((String)val).getBytes("UTF-8"),
+                                ((String)otherVal).getBytes("UTF-8")
+                            );
                         } catch(UnsupportedEncodingException exc) {
                             throw new RuntimeException(exc);
                         }
@@ -846,7 +846,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
      * Queries both from and to tables, sorted by each column of the primary key in ascending order.
      * All differences are found in a single pass through the tables, with no buffering and only a single query of each result.
      */
-    private static void testTableData(Connection fromConn, Connection toConn, int timeout, Table fromTable, Table toTable, StringBuilder stepOutput, StringBuilder stepError) throws SQLException {
+    private static void testTableData(Connection fromConn, Connection toConn, int timeout, Table fromTable, Table toTable, StringBuilder stepOutput, StringBuilder stepWarning) throws SQLException {
         stepOutput.append(INDENT).append(fromTable.getName()).append(":\n");
         assert fromTable.equals(toTable);
         final String schema = fromTable.getSchema().getName();
@@ -931,7 +931,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                                             toIter.remove();
                                         } else {
                                             // Modified
-                                            stepError.append(
+                                            stepWarning.append(
                                                 ApplicationResources.accessor.getMessage(
                                                     "JdbcResourceSynchronizer.testTableData.modified",
                                                     schema,
@@ -945,7 +945,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                                         }
                                     } else if(primaryKeyDiff<0) {
                                         // Missing
-                                        stepError.append(
+                                        stepWarning.append(
                                             ApplicationResources.accessor.getMessage(
                                                 "JdbcResourceSynchronizer.testTableData.missing",
                                                 schema,
@@ -958,7 +958,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                                     } else {
                                         assert primaryKeyDiff>0;
                                         // Extra
-                                        stepError.append(
+                                        stepWarning.append(
                                             ApplicationResources.accessor.getMessage(
                                                 "JdbcResourceSynchronizer.testTableData.extra",
                                                 schema,
@@ -971,7 +971,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                                     }
                                 } else {
                                     // Missing
-                                    stepError.append(
+                                    stepWarning.append(
                                         ApplicationResources.accessor.getMessage(
                                             "JdbcResourceSynchronizer.testTableData.missing",
                                             schema,
@@ -985,7 +985,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                             } else {
                                 if(toRow!=null) {
                                     // Extra
-                                    stepError.append(
+                                    stepWarning.append(
                                         ApplicationResources.accessor.getMessage(
                                             "JdbcResourceSynchronizer.testTableData.extra",
                                             schema,

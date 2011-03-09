@@ -154,6 +154,7 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
                     processResult.getExitVal()==0 ? ResourceStatus.HEALTHY : ResourceStatus.ERROR,
                     commandString,
                     getList(processResult.getStdout()),
+                    null,
                     getList(processResult.getStderr())
                 );
             } catch(Exception exc) {
@@ -162,6 +163,7 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
                     System.currentTimeMillis(),
                     ResourceStatus.ERROR,
                     commandString,
+                    null,
                     null,
                     Collections.singletonList(ErrorPrinter.getStackTraces(exc))
                 );
@@ -187,7 +189,8 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
                     : ResourceStatus.ERROR,
                     commandString,
                     getList(processResult.getStdout()),
-                    getList(processResult.getStderr())
+                    exitVal==0 ? getList(processResult.getStderr()) : null,
+                    exitVal!=0 ? getList(processResult.getStderr()) : null
                 );
             } catch(Exception exc) {
                 step = new ResourceSynchronizationResultStep(
@@ -195,6 +198,7 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
                     System.currentTimeMillis(),
                     ResourceStatus.ERROR,
                     commandString,
+                    null,
                     null,
                     Collections.singletonList(ErrorPrinter.getStackTraces(exc))
                 );
