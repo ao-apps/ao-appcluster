@@ -258,6 +258,11 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                             stepWarning.setLength(0);
                             stepError.setLength(0);
                             // TODO: Synchronize data from here
+                            // 1) Find all foreign keys
+                            // 2) Topological sort to find dependency path
+                            //    Error if any loops
+                            // 3) Remove extra backwards
+                            // 4) Update/insert forwards
                             // Everything OK, commit changes
                             toConn.commit();
                         } else {
