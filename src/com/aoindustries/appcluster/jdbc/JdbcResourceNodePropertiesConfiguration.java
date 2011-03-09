@@ -38,7 +38,7 @@ public class JdbcResourceNodePropertiesConfiguration extends CronResourceNodePro
 
     protected JdbcResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
         super(properties, resourceId, nodeId);
-        this.dataSource = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".dataSource");
+        this.dataSource = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".dataSource", true);
     }
 
     @Override

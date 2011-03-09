@@ -45,10 +45,10 @@ public abstract class ResourcePropertiesConfiguration<R extends Resource<R,RN>,R
         this.properties = properties;
         this.id = id;
         this.enabled = properties.getBoolean("appcluster.resource."+id+".enabled");
-        this.display = properties.getString("appcluster.resource."+id+".display");
+        this.display = properties.getString("appcluster.resource."+id+".display", true);
         this.masterRecords = properties.getUniqueNames("appcluster.resource."+id+".masterRecords");
         this.masterRecordsTtl = properties.getInt("appcluster.resource."+id+".masterRecordsTtl");
-        this.type = properties.getString("appcluster.resource."+id+".type");
+        this.type = properties.getString("appcluster.resource."+id+".type", true);
     }
 
     @Override

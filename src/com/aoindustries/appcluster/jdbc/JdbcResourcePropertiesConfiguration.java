@@ -39,14 +39,36 @@ import java.util.Set;
  */
 public class JdbcResourcePropertiesConfiguration extends CronResourcePropertiesConfiguration<JdbcResource,JdbcResourceNode> implements JdbcResourceConfiguration {
 
+    private final Set<String> schemas;
+    private final Set<String> tableTypes;
+    private final Set<String> excludeTables;
+
     protected JdbcResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
         super(properties, id);
+        this.schemas = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".schemas", true);
+        this.tableTypes = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".tableTypes", true);
+        this.excludeTables = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".excludeTables", false);
+    }
+
+    @Override
+    public Set<String> getSchemas() {
+        return schemas;
+    }
+
+    @Override
+    public Set<String> getTableTypes() {
+        return tableTypes;
+    }
+
+    @Override
+    public Set<String> getExcludeTables() {
+        return excludeTables;
     }
 
     @Override
     public Set<? extends JdbcResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
         String resourceId = getId();
-        Set<String> nodeIds = properties.getUniqueStrings("appcluster.resource."+id+".nodes");
+        Set<String> nodeIds = properties.getUniqueStrings("appcluster.resource."+id+".nodes", true);
         Set<JdbcResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<JdbcResourceNodePropertiesConfiguration>(nodeIds.size()*4/3+1);
         for(String nodeId : nodeIds) {
             if(!resourceNodes.add(new JdbcResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();

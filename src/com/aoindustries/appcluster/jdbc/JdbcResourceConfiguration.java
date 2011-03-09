@@ -36,6 +36,21 @@ import java.util.Set;
  */
 public interface JdbcResourceConfiguration extends CronResourceConfiguration<JdbcResource,JdbcResourceNode> {
 
+    /**
+     * @see JdbcResource#getSchemas()
+     */
+    Collection<String> getSchemas();
+
+    /**
+     * @see JdbcResource#getTableTypes()
+     */
+    Collection<String> getTableTypes();
+
+    /**
+     * @see JdbcResource#getExcludeTables()
+     */
+    Collection<String> getExcludeTables();
+
     @Override
     Set<? extends JdbcResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
 

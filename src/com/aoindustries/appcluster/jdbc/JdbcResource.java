@@ -28,6 +28,9 @@ import com.aoindustries.appcluster.CronResource;
 import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Resources are synchronized through JDBC.
@@ -36,8 +39,15 @@ import java.util.Collection;
  */
 public class JdbcResource extends CronResource<JdbcResource,JdbcResourceNode> {
 
+    private final Set<String> schemas;
+    private final Set<String> tableTypes;
+    private final Set<String> excludeTables;
+
     protected JdbcResource(AppCluster cluster, JdbcResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
+        this.schemas = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getSchemas()));
+        this.tableTypes = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getTableTypes()));
+        this.excludeTables = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getExcludeTables()));
     }
 
     /**
@@ -46,6 +56,27 @@ public class JdbcResource extends CronResource<JdbcResource,JdbcResourceNode> {
     @Override
     public boolean getAllowMultiMaster() {
         return false;
+    }
+
+    /**
+     * Gets the set of schemas that will be synchronized.
+     */
+    public Set<String> getSchemas() {
+        return schemas;
+    }
+
+    /**
+     * Gets the set of table types that will be synchronized.
+     */
+    public Set<String> getTableTypes() {
+        return tableTypes;
+    }
+
+    /**
+     * Gets the set of tables that will be excluded from synchronization, in schema.name format.
+     */
+    public Set<String> getExcludeTables() {
+        return excludeTables;
     }
 
     @Override

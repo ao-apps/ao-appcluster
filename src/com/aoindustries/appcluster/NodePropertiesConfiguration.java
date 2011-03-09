@@ -44,9 +44,9 @@ public class NodePropertiesConfiguration implements NodeConfiguration {
         this.properties = properties;
         this.id = id;
         this.enabled = properties.getBoolean("appcluster.node."+id+".enabled");
-        this.display = properties.getString("appcluster.node."+id+".display");
+        this.display = properties.getString("appcluster.node."+id+".display", true);
         this.hostname = properties.getName("appcluster.node."+id+".hostname");
-        this.username = properties.getString("appcluster.node."+id+".username");
+        this.username = properties.getString("appcluster.node."+id+".username", true);
         this.nameservers = properties.getUniqueNames("appcluster.node."+id+".nameservers");
     }
 

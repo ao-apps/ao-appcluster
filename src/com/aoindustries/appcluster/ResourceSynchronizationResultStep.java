@@ -42,6 +42,33 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
     private final List<String> outputs;
     private final List<String> errors;
 
+    private static List<String> asUnmodifiableList(CharSequence chars) {
+        if(chars==null || chars.length()==0) return Collections.emptyList();
+        return Collections.singletonList(chars.toString());
+    }
+
+    /**
+     * @param description May not be <code>null</code>
+     * @param outputs <code>null</code> or empty is converted to empty list
+     * @param errors <code>null</code> or empty is converted to empty list
+     */
+    public ResourceSynchronizationResultStep(
+        long startTime,
+        long endTime,
+        ResourceStatus resourceStatus,
+        String description,
+        CharSequence output,
+        CharSequence error
+    ) {
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.resourceStatus = resourceStatus;
+        if(description==null) throw new IllegalArgumentException("description==null");
+        this.description = description;
+        this.outputs = asUnmodifiableList(output);
+        this.errors = asUnmodifiableList(error);
+    }
+
     /**
      * @param description May not be <code>null</code>
      * @param outputs <code>null</code> is converted to empty list and a defensive copy is made

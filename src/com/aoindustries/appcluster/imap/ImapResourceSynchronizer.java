@@ -30,6 +30,7 @@ import com.aoindustries.appcluster.ResourceSynchronizationMode;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
 import com.aoindustries.appcluster.ResourceSynchronizationResultStep;
 import com.aoindustries.cron.Schedule;
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -84,7 +85,7 @@ public class ImapResourceSynchronizer extends CronResourceSynchronizer<ImapResou
                     System.currentTimeMillis(),
                     ResourceStatus.HEALTHY,
                     "TODO",
-                    null,
+                    (Collection<String>)null,
                     null
                 )
             )

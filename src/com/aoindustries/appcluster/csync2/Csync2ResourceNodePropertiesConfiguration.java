@@ -38,7 +38,7 @@ public class Csync2ResourceNodePropertiesConfiguration extends CronResourceNodeP
 
     protected Csync2ResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
         super(properties, resourceId, nodeId);
-        this.exe = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".exe");
+        this.exe = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".exe", true);
     }
 
     @Override

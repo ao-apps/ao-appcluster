@@ -196,26 +196,30 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
     }
 
     /**
-     * Gets a trimmed property value, not allowing null or empty string.
+     * Gets a trimmed property value, if required, not allowing null or empty string.
+     * If not required, will convert empty string to null.
      */
-    public String getString(String propertyName) throws AppClusterConfigurationException {
+    public String getString(String propertyName, boolean required) throws AppClusterConfigurationException {
         String value;
         synchronized(fileMonitorLock) {
             value = properties.getProperty(propertyName);
         }
-        if(value==null || (value=value.trim()).length()==0) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getString.missingValue", propertyName));
+        if(value==null || (value=value.trim()).length()==0) {
+            if(required) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getString.missingValue", propertyName));
+            else value = null;
+        }
         return value;
     }
 
     public boolean getBoolean(String propertyName) throws AppClusterConfigurationException {
-        String value = getString(propertyName);
+        String value = getString(propertyName, true);
         if("true".equals(value)) return true;
         if("false".equals(value)) return false;
         throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getBoolean.invalidValue", propertyName, value));
     }
 
     public int getInt(String propertyName) throws AppClusterConfigurationException {
-        String value = getString(propertyName);
+        String value = getString(propertyName, true);
         try {
             return Integer.parseInt(value);
         } catch(NumberFormatException exc) {
@@ -225,7 +229,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
 
     public Name getName(String propertyName) throws AppClusterConfigurationException {
         try {
-            return Name.fromString(getString(propertyName));
+            return Name.fromString(getString(propertyName, true));
         } catch(TextParseException exc) {
             throw new AppClusterConfigurationException(exc);
         }
@@ -233,7 +237,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
 
     public Schedule getSchedule(String propertyName) throws AppClusterConfigurationException {
         try {
-            return MatcherSchedule.parseSchedule(getString(propertyName));
+            return MatcherSchedule.parseSchedule(getString(propertyName, true));
         } catch(IllegalArgumentException exc) {
             throw new AppClusterConfigurationException(exc);
         }
@@ -242,8 +246,10 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
     /**
      * Gets a unique set of trimmed strings.  Must have at least one value.
      */
-    public Set<String> getUniqueStrings(String propertyName) throws AppClusterConfigurationException {
-        List<String> values = StringUtility.splitStringCommaSpace(getString(propertyName));
+    public Set<String> getUniqueStrings(String propertyName, boolean required) throws AppClusterConfigurationException {
+        String paramValue = getString(propertyName, required);
+        if(paramValue==null) return Collections.emptySet();
+        List<String> values = StringUtility.splitStringCommaSpace(paramValue);
         Set<String> set = new LinkedHashSet<String>(values.size()*4/3+1);
         for(String value : values) {
             value = value.trim();
@@ -253,7 +259,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
                 );
             }
         }
-        if(set.isEmpty()) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getString.missingValue", propertyName));
+        if(required && set.isEmpty()) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getString.missingValue", propertyName));
         return Collections.unmodifiableSet(set);
     }
 
@@ -262,7 +268,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
      */
     public Set<? extends Name> getUniqueNames(String propertyName) throws AppClusterConfigurationException {
         try {
-            List<String> values = StringUtility.splitStringCommaSpace(getString(propertyName));
+            List<String> values = StringUtility.splitStringCommaSpace(getString(propertyName, true));
             Set<Name> set = new LinkedHashSet<Name>(values.size()*4/3+1);
             for(String value : values) {
                 value = value.trim();
@@ -286,21 +292,21 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
 
     @Override
     public String getDisplay() throws AppClusterConfigurationException {
-        return getString("appcluster.display");
+        return getString("appcluster.display", true);
     }
 
     @Override
     public AppClusterLogger getClusterLogger() throws AppClusterConfigurationException {
         String propertyName = "appcluster.log.type";
-        String logType = getString(propertyName);
-        if("jdbc".equals(logType)) return new JdbcClusterLogger(getString("appcluster.log.name"));
-        if("properties".equals(logType)) return new PropertiesClusterLogger(new File(getString("appcluster.log.path")));
+        String logType = getString(propertyName, true);
+        if("jdbc".equals(logType)) return new JdbcClusterLogger(getString("appcluster.log.name", true));
+        if("properties".equals(logType)) return new PropertiesClusterLogger(new File(getString("appcluster.log.path", true)));
         throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getClusterLogger.unexpectedType", propertyName, logType));
     }
 
     @Override
     public Set<? extends NodePropertiesConfiguration> getNodeConfigurations() throws AppClusterConfigurationException {
-        Set<String> ids = getUniqueStrings("appcluster.nodes");
+        Set<String> ids = getUniqueStrings("appcluster.nodes", true);
         Set<NodePropertiesConfiguration> nodes = new LinkedHashSet<NodePropertiesConfiguration>(ids.size()*4/3+1);
         for(String id : ids) {
             if(
@@ -335,16 +341,16 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
     @Override
     public Set<? extends ResourceConfiguration<?,?>> getResourceConfigurations() throws AppClusterConfigurationException {
         // Get all of the resource types
-        Set<String> types = getUniqueStrings("appcluster.resourceTypes");
+        Set<String> types = getUniqueStrings("appcluster.resourceTypes", true);
         Map<String,ResourcePropertiesConfigurationFactory<?,?>> factories = new HashMap<String,ResourcePropertiesConfigurationFactory<?,?>>(types.size()*4/3+1);
         for(String type : types) {
-            factories.put(type, getResourcePropertiesConfigurationFactory(getString("appcluster.resourceType."+type+".factory")));
+            factories.put(type, getResourcePropertiesConfigurationFactory(getString("appcluster.resourceType."+type+".factory", true)));
         }
-        Set<String> ids = getUniqueStrings("appcluster.resources");
+        Set<String> ids = getUniqueStrings("appcluster.resources", true);
         Set<ResourceConfiguration<?,?>> resources = new LinkedHashSet<ResourceConfiguration<?,?>>(ids.size()*4/3+1);
         for(String id : ids) {
             String propertyName = "appcluster.resource."+id+".type";
-            String type = getString(propertyName);
+            String type = getString(propertyName, true);
             ResourcePropertiesConfigurationFactory factory = factories.get(type);
             if(factory==null) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getResourceConfigurations.unexpectedType", propertyName, type));
             if(!resources.add(factory.newResourcePropertiesConfiguration(this, id))) throw new AssertionError();
