@@ -299,6 +299,7 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                                     ResourceStatus.ERROR,
                                                     "future.get",
                                                     null,
+                                                    null,
                                                     Collections.singletonList(ErrorPrinter.getStackTraces(err))
                                                 )
                                             )
@@ -355,6 +356,7 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                                                     System.currentTimeMillis(),
                                                     ResourceStatus.ERROR,
                                                     "future.get",
+                                                    null,
                                                     null,
                                                     Collections.singletonList(ErrorPrinter.getStackTraces(err))
                                                 )

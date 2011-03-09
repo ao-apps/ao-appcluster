@@ -34,6 +34,7 @@ import com.aoindustries.sql.Catalog;
 import com.aoindustries.sql.Column;
 import com.aoindustries.sql.DatabaseMetaData;
 import com.aoindustries.sql.Index;
+import com.aoindustries.sql.SQLUtility;
 import com.aoindustries.sql.Schema;
 import com.aoindustries.sql.Table;
 import com.aoindustries.util.Arrays;
@@ -63,9 +64,6 @@ import javax.sql.DataSource;
 /**
  * Performs synchronization using JDBC.
  *
- * TODO: Mismatch on test is a warning only (each step will have output / warning / error)
- * TODO: Display output of table status counts as a table.
- * 
  * TODO: Verify permissions?
  * TODO: Verify indexes?
  * TODO: Verify foreign keys?
@@ -75,7 +73,6 @@ import javax.sql.DataSource;
 public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResource,JdbcResourceNode> {
 
     private static final int FETCH_SIZE = 1000;
-    private static final String INDENT = "    ";
 
     protected JdbcResourceSynchronizer(JdbcResourceNode localResourceNode, JdbcResourceNode remoteResourceNode, Schedule synchronizeSchedule, Schedule testSchedule) {
         super(localResourceNode, remoteResourceNode, synchronizeSchedule, testSchedule);
@@ -597,15 +594,52 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
     }
 
     private static void testSchemasData(Connection fromConn, Connection toConn, int timeout, Catalog fromCatalog, Catalog toCatalog, Set<String> schemas, Set<String> tableTypes, Set<String> excludeTables, StringBuilder stepOutput, StringBuilder stepWarning) throws SQLException {
-        for(String schema : schemas) {
-            testSchemaData(fromConn, toConn, timeout, fromCatalog.getSchema(schema), toCatalog.getSchema(schema), tableTypes, excludeTables, stepOutput, stepWarning);
+        List<Object> outputTable = new ArrayList<Object>();
+        try {
+            for(String schema : schemas) {
+                testSchemaData(fromConn, toConn, timeout, fromCatalog.getSchema(schema), toCatalog.getSchema(schema), tableTypes, excludeTables, outputTable, stepWarning);
+            }
+        } finally {
+            try {
+                SQLUtility.printTable(
+                    new String[] {
+                        ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testSchemasData.column.schema"),
+                        ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testSchemasData.column.table"),
+                        ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testSchemasData.column.matches"),
+                        ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testSchemasData.column.modified"),
+                        ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testSchemasData.column.missing"),
+                        ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testSchemasData.column.extra"),
+                    },
+                    outputTable.toArray(),
+                    stepOutput,
+                    true,
+                    new boolean[] {
+                        false,
+                        false,
+                        true,
+                        true,
+                        true,
+                        true
+                    }
+                );
+            } catch(IOException exc) {
+                throw new AssertionError(exc);
+            }
         }
     }
 
-    private static void testSchemaData(Connection fromConn, Connection toConn, int timeout, Schema fromSchema, Schema toSchema, Set<String> tableTypes, Set<String> excludeTables, StringBuilder stepOutput, StringBuilder stepWarning) throws SQLException {
+    private static void testSchemaData(
+        Connection fromConn,
+        Connection toConn,
+        int timeout,
+        Schema fromSchema,
+        Schema toSchema,
+        Set<String> tableTypes,
+        Set<String> excludeTables,
+        List<Object> outputTable,
+        StringBuilder stepWarning
+    ) throws SQLException {
         assert fromSchema.equals(toSchema);
-
-        stepOutput.append(fromSchema).append(":\n");
 
         SortedMap<String,Table> fromTables = fromSchema.getTables();
         SortedMap<String,Table> toTables = toSchema.getTables();
@@ -621,7 +655,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                 !excludeTables.contains(fromSchema.getName()+'.'+tableName)
                 && tableTypes.contains(tableType)
             ) {
-                if("TABLE".equals(tableType)) testTableData(fromConn, toConn, timeout, fromTable, toTable, stepOutput, stepWarning);
+                if("TABLE".equals(tableType)) testTableData(fromConn, toConn, timeout, fromTable, toTable, outputTable, stepWarning);
                 else throw new SQLException("Unimplemented table type: " + tableType);
             }
         }
@@ -846,8 +880,15 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
      * Queries both from and to tables, sorted by each column of the primary key in ascending order.
      * All differences are found in a single pass through the tables, with no buffering and only a single query of each result.
      */
-    private static void testTableData(Connection fromConn, Connection toConn, int timeout, Table fromTable, Table toTable, StringBuilder stepOutput, StringBuilder stepWarning) throws SQLException {
-        stepOutput.append(INDENT).append(fromTable.getName()).append(":\n");
+    private static void testTableData(
+        Connection fromConn,
+        Connection toConn,
+        int timeout,
+        Table fromTable,
+        Table toTable,
+        List<Object> outputTable,
+        StringBuilder stepWarning
+    ) throws SQLException {
         assert fromTable.equals(toTable);
         final String schema = fromTable.getSchema().getName();
         List<Column> columns = fromTable.getColumns();
@@ -1002,10 +1043,12 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                             }
                         }
                         // Add totals to stepOutput
-                        stepOutput.append(INDENT).append(INDENT).append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testTableData.results.matches", matches)).append('\n');
-                        stepOutput.append(INDENT).append(INDENT).append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testTableData.results.modified", modified)).append('\n');
-                        stepOutput.append(INDENT).append(INDENT).append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testTableData.results.missing", missing)).append('\n');
-                        stepOutput.append(INDENT).append(INDENT).append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.testTableData.results.extra", extra)).append('\n');
+                        outputTable.add(schema);
+                        outputTable.add(fromTable.getName());
+                        outputTable.add(matches);
+                        outputTable.add(modified==0 ? null : modified);
+                        outputTable.add(missing==0 ? null : missing);
+                        outputTable.add(extra==0 ? null : extra);
                     } finally {
                         toResults.close();
                     }
