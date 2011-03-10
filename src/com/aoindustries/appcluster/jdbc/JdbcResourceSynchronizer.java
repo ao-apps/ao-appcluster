@@ -1388,10 +1388,14 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                         );
                     }
                     ResultSet results = pstmt.executeQuery();
-                    if(!results.next()) throw new NoRowException();
-                    Object realValue = results.getObject(1);
-                    if(results.next()) throw new SQLException("More than one row returned");
-                    return realValue;
+                    try {
+                        if(!results.next()) throw new NoRowException();
+                        Object realValue = results.getObject(1);
+                        if(results.next()) throw new SQLException("More than one row returned");
+                        return realValue;
+                    } finally {
+                        results.close();
+                    }
                 } finally {
                     pstmt.close();
                 }
