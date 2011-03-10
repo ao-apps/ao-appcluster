@@ -69,6 +69,11 @@ import javax.sql.DataSource;
 
 /**
  * Performs synchronization using JDBC.
+ * Every table must have a primary key.
+ * Also, assumes that updating a non-primary key value will have no affect on other data.
+ * Primary keys themselves are never updated, rows will be deleted and then inserted in this case.
+ * For table dependencies, only uses primary keys and foreign keys that go to primary keys.
+ * There must not be any cycle in the dependency graph.
  *
  * TODO: Verify permissions?
  * TODO: Verify indexes?
