@@ -42,12 +42,14 @@ public class JdbcResource extends CronResource<JdbcResource,JdbcResourceNode> {
     private final Set<String> schemas;
     private final Set<String> tableTypes;
     private final Set<String> excludeTables;
+    private final Set<String> noWarnTables;
 
     protected JdbcResource(AppCluster cluster, JdbcResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
         this.schemas = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getSchemas()));
         this.tableTypes = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getTableTypes()));
         this.excludeTables = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getExcludeTables()));
+        this.noWarnTables = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getNoWarnTables()));
     }
 
     /**
@@ -77,6 +79,13 @@ public class JdbcResource extends CronResource<JdbcResource,JdbcResourceNode> {
      */
     public Set<String> getExcludeTables() {
         return excludeTables;
+    }
+
+    /**
+     * Gets the set of tables that will not cause warnings when the data is not an exact match, in schema.name format.
+     */
+    public Set<String> getNoWarnTables() {
+        return noWarnTables;
     }
 
     @Override

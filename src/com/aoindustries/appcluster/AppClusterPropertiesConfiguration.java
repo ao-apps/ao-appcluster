@@ -244,7 +244,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
     }
 
     /**
-     * Gets a unique set of trimmed strings.  Must have at least one value.
+     * Gets a unique set of trimmed strings.  Must have at least one value when required.
      */
     public Set<String> getUniqueStrings(String propertyName, boolean required) throws AppClusterConfigurationException {
         String paramValue = getString(propertyName, required);
@@ -260,7 +260,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
             }
         }
         if(required && set.isEmpty()) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getString.missingValue", propertyName));
-        return Collections.unmodifiableSet(set);
+        return com.aoindustries.util.Collections.optimalUnmodifiableSet(set);
     }
 
     /**
@@ -279,7 +279,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
                 }
             }
             if(set.isEmpty()) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getString.missingValue", propertyName));
-            return Collections.unmodifiableSet(set);
+            return com.aoindustries.util.Collections.optimalUnmodifiableSet(set);
         } catch(TextParseException exc) {
             throw new AppClusterConfigurationException(exc);
         }
@@ -313,7 +313,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
                 !nodes.add(new NodePropertiesConfiguration(this, id))
             ) throw new AssertionError();
         }
-        return Collections.unmodifiableSet(nodes);
+        return com.aoindustries.util.Collections.optimalUnmodifiableSet(nodes);
     }
 
     private static final Map<String,ResourcePropertiesConfigurationFactory> factoryCache = new HashMap<String,ResourcePropertiesConfigurationFactory>();
@@ -355,6 +355,6 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
             if(factory==null) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getResourceConfigurations.unexpectedType", propertyName, type));
             if(!resources.add(factory.newResourcePropertiesConfiguration(this, id))) throw new AssertionError();
         }
-        return Collections.unmodifiableSet(resources);
+        return com.aoindustries.util.Collections.optimalUnmodifiableSet(resources);
     }
 }

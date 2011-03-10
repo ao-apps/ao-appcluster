@@ -42,12 +42,14 @@ public class JdbcResourcePropertiesConfiguration extends CronResourcePropertiesC
     private final Set<String> schemas;
     private final Set<String> tableTypes;
     private final Set<String> excludeTables;
+    private final Set<String> noWarnTables;
 
     protected JdbcResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
         super(properties, id);
         this.schemas = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".schemas", true);
         this.tableTypes = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".tableTypes", true);
         this.excludeTables = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".excludeTables", false);
+        this.noWarnTables = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".noWarnTables", false);
     }
 
     @Override
@@ -63,6 +65,11 @@ public class JdbcResourcePropertiesConfiguration extends CronResourcePropertiesC
     @Override
     public Set<String> getExcludeTables() {
         return excludeTables;
+    }
+
+    @Override
+    public Set<String> getNoWarnTables() {
+        return noWarnTables;
     }
 
     @Override

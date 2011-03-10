@@ -51,6 +51,11 @@ public interface JdbcResourceConfiguration extends CronResourceConfiguration<Jdb
      */
     Collection<String> getExcludeTables();
 
+    /**
+     * @see JdbcResource#getNoWarnTables()
+     */
+    Collection<String> getNoWarnTables();
+
     @Override
     Set<? extends JdbcResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
 
