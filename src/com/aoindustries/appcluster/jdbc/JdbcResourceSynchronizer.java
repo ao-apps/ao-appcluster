@@ -35,6 +35,7 @@ import com.aoindustries.sql.Catalog;
 import com.aoindustries.sql.Column;
 import com.aoindustries.sql.DatabaseMetaData;
 import com.aoindustries.sql.Index;
+import com.aoindustries.sql.NoRowException;
 import com.aoindustries.sql.SQLUtility;
 import com.aoindustries.sql.Schema;
 import com.aoindustries.sql.Table;
@@ -848,6 +849,16 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
         }
     }
 
+    private static Column[] getNonPrimaryKeyColumns(List<Column> columns, List<Column> pkColumns) {
+        Column[] nonPrimaryKeyColumns = new Column[columns.size() - pkColumns.size()];
+        int index = 0;
+        for(Column column : columns) {
+            if(!pkColumns.contains(column)) nonPrimaryKeyColumns[index++] = column;
+        }
+        if(index!=nonPrimaryKeyColumns.length) throw new AssertionError();
+        return nonPrimaryKeyColumns;
+    }
+
     /**
      * Iterates rows from a result set, ensuring that each row is properly ordered after the previous.
      */
@@ -863,12 +874,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             this.columns = columns.toArray(new Column[columns.size()]);
             List<Column> pkColumns = primaryKey.getColumns();
             this.primaryKeyColumns = pkColumns.toArray(new Column[pkColumns.size()]);
-            nonPrimaryKeyColumns = new Column[columns.size() - pkColumns.size()];
-            int index = 0;
-            for(Column column : this.columns) {
-                if(!pkColumns.contains(column)) nonPrimaryKeyColumns[index++] = column;
-            }
-            if(index!=nonPrimaryKeyColumns.length) throw new AssertionError();
+            this.nonPrimaryKeyColumns = getNonPrimaryKeyColumns(columns, pkColumns);
             this.results = results;
             this.nextRow = getNextRow();
         }
@@ -1145,11 +1151,13 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             for(int i=sortedTables.size()-1; i>=0; i--) {
                 deleteExtraRows(fromConn, toConn, synchronizeTimeout, sortedTables.get(i), stepOutput, matches, modifieds, missings, deletes);
             }
-            // TODO: Synchronize data from here
 
-            // 3) Remove extra backwards
-            // 4) Update/insert forwards
-            // Everything OK, commit changes
+            // Update/insert forwards
+            for(Table table : sortedTables) {
+                if(modifieds.get(table)>0 || missings.get(table)>0) {
+                    updateAndInsertRows(fromConn, toConn, synchronizeTimeout, table, stepOutput, matches, modifieds, missings, updates, inserts);
+                }
+            }
         } finally {
             List<Object> outputTable = new ArrayList<Object>();
             for(Table table : tables) {
@@ -1228,7 +1236,6 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                 toStmt.setFetchSize(FETCH_SIZE);
                 // Not yet implemented by PostgreSQL: toStmt.setPoolable(false);
                 // Not yet implemented by PostgreSQL: toStmt.setQueryTimeout(timeout);
-                // TODO: Track other counts here, to be able to skip update/insert scans
                 ResultSet fromResults = fromStmt.executeQuery(selectSql);
                 try {
                     ResultSet toResults = toStmt.executeQuery(selectSql);
@@ -1297,6 +1304,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
         }
 
         if(!deleteRows.isEmpty()) {
+            List<Column> pkColumns = primaryKey.getColumns();
             // Delete the rows in one big prepared statement, logging output
             StringBuilder deleteSql = new StringBuilder();
             deleteSql.append("DELETE FROM\n"
@@ -1310,10 +1318,10 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                     didOneRow = true;
                 }
                 boolean didOneColumn = false;
-                for(Column column : primaryKey.getColumns()) {
+                for(Column pkColumn : pkColumns) {
                     if(didOneColumn) deleteSql.append(" AND ");
                     else didOneColumn = true;
-                    deleteSql.append('"').append(column.getName()).append("\"=?");
+                    deleteSql.append('"').append(pkColumn.getName()).append("\"=?");
                 }
                 deleteSql.append(")\n");
                 stepOutput.append(
@@ -1329,10 +1337,10 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             try {
                 int pos = 1;
                 for(Row deleteRow : deleteRows) {
-                    for(Column column : primaryKey.getColumns()) {
+                    for(Column pkColumn : pkColumns) {
                         pstmt.setObject(
                             pos++,
-                            deleteRow.values[column.getOrdinalPosition()-1]
+                            deleteRow.values[pkColumn.getOrdinalPosition()-1]
                         );
                     }
                 }
@@ -1343,5 +1351,271 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             }
         }
         deletesMap.put(table, (long)deleteRows.size());
+    }
+
+    /**
+     * Gets the real value for a row and column, using the propery byte[] instead of md5 hash.
+     */
+    private static Object getRealValue(Connection fromConn, Row row, Column column) throws SQLException {
+        switch(column.getDataType()) {
+            // These were verified using md5, lookup the actual value
+            case Types.BINARY :
+            case Types.BLOB :
+            case Types.LONGVARBINARY :
+            case Types.VARBINARY :
+            {
+                Table table = column.getTable();
+                StringBuilder sql = new StringBuilder();
+                sql.append("SELECT \"").append(column.getName()).append("\" FROM \"").append(table.getSchema().getName()).append("\".\"").append(table.getName()).append("\" WHERE ");
+                boolean didOne = false;
+                for(Column pkColumn : table.getPrimaryKey().getColumns()) {
+                    if(didOne) sql.append(" AND ");
+                    else didOne = true;
+                    sql.append('"').append(pkColumn.getName()).append("\"=?");
+                }
+                PreparedStatement pstmt = fromConn.prepareStatement(sql.toString(), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+                try {
+                    int pos = 1;
+                    for(Column pkColumn : table.getPrimaryKey().getColumns()) {
+                        pstmt.setObject(
+                            pos++,
+                            row.values[pkColumn.getOrdinalPosition()-1]
+                        );
+                    }
+                    ResultSet results = pstmt.executeQuery();
+                    if(!results.next()) throw new NoRowException();
+                    Object realValue = results.getObject(1);
+                    if(results.next()) throw new SQLException("More than one row returned");
+                    return realValue;
+                } finally {
+                    pstmt.close();
+                }
+            }
+            // All others are already fully loaded
+            default :
+                return row.values[column.getOrdinalPosition()-1];
+        }
+    }
+
+    /**
+     * Updates and inserts rows.
+     */
+    private static void updateAndInsertRows(
+        Connection fromConn,
+        Connection toConn,
+        int synchronizeTimeout,
+        Table table,
+        StringBuilder stepOutput,
+        Map<Table, Long> matchesMap,
+        Map<Table, Long> modifiedsMap,
+        Map<Table, Long> missingsMap,
+        Map<Table, Long> updatesMap,
+        Map<Table, Long> insertsMap
+    ) throws SQLException {
+        final String schema = table.getSchema().getName();
+        final List<Column> columns = table.getColumns();
+        final Index primaryKey = table.getPrimaryKey();
+        // Find rows to update and insert
+        List<Row> updateRows = new ArrayList<Row>();
+        List<Row> insertRows = new ArrayList<Row>();
+        String selectSql = getSelectSql(table);
+        Statement fromStmt = fromConn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+        try {
+            fromStmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+            fromStmt.setFetchSize(FETCH_SIZE);
+            // Not yet implemented by PostgreSQL: fromStmt.setPoolable(false);
+            // Not yet implemented by PostgreSQL: fromStmt.setQueryTimeout(timeout);
+            Statement toStmt = toConn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+            try {
+                toStmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+                toStmt.setFetchSize(FETCH_SIZE);
+                // Not yet implemented by PostgreSQL: toStmt.setPoolable(false);
+                // Not yet implemented by PostgreSQL: toStmt.setQueryTimeout(timeout);
+                ResultSet fromResults = fromStmt.executeQuery(selectSql);
+                try {
+                    ResultSet toResults = toStmt.executeQuery(selectSql);
+                    try {
+                        long matches = 0;
+                        RowIterator fromIter = new RowIterator(columns, primaryKey, fromResults);
+                        RowIterator toIter = new RowIterator(columns, primaryKey, toResults);
+                        while(true) {
+                            Row fromRow = fromIter.peek();
+                            Row toRow = toIter.peek();
+                            if(fromRow!=null) {
+                                if(toRow!=null) {
+                                    int primaryKeyDiff = fromRow.compareTo(toRow);
+                                    if(primaryKeyDiff==0) {
+                                        // Primary keys have already been compared and are known to be equal, only need to compare the remaining columns
+                                        if(fromRow.equalsNonPrimaryKey(toRow)) {
+                                            // Exact match, remove both
+                                            matches++;
+                                        } else {
+                                            updateRows.add(fromRow);
+                                        }
+                                        fromIter.remove();
+                                        toIter.remove();
+                                    } else if(primaryKeyDiff<0) {
+                                        // Missing
+                                        insertRows.add(fromRow);
+                                        fromIter.remove();
+                                    } else {
+                                        assert primaryKeyDiff>0;
+                                        // Extra
+                                        throw new SQLException("Should already have been deleted from "+schema+"."+table.getName()+": "+toRow.getPrimaryKeyValues());
+                                        // toIter.remove();
+                                    }
+                                } else {
+                                    // Missing
+                                    insertRows.add(fromRow);
+                                    fromIter.remove();
+                                }
+                            } else {
+                                if(toRow!=null) {
+                                    // Extra
+                                    throw new SQLException("Should already have been deleted from "+schema+"."+table.getName()+": "+toRow.getPrimaryKeyValues());
+                                    //toIter.remove();
+                                } else {
+                                    // All rows done
+                                    break;
+                                }
+                            }
+                        }
+                        if(matches!=matchesMap.get(table)) throw new SQLException("Unexpected number of matches on second pass of "+schema+"."+table.getName()+": Expected "+matchesMap.get(table)+", got "+matches);
+                        if(updateRows.size()!=modifiedsMap.get(table)) throw new SQLException("Unexpected number of modifieds on second pass of "+schema+"."+table.getName()+": Expected "+modifiedsMap.get(table)+", got "+updateRows.size());
+                        if(insertRows.size()!=missingsMap.get(table)) throw new SQLException("Unexpected number of missings on second pass of "+schema+"."+table.getName()+": Expected "+missingsMap.get(table)+", got "+insertRows.size());
+                    } finally {
+                        toResults.close();
+                    }
+                } finally {
+                    fromResults.close();
+                }
+            } finally {
+                toStmt.close();
+            }
+        } finally {
+            fromStmt.close();
+        }
+
+        List<Column> pkColumns = primaryKey.getColumns();
+        if(!updateRows.isEmpty()) {
+            // Updates the rows in a batched prepared statement, logging output
+            StringBuilder updateSql = new StringBuilder();
+            updateSql.append("UPDATE\n"
+                    + "  \"").append(schema).append("\".\"").append(table.getName()).append("\"\n"
+                    + "SET");
+            boolean didOneColumn = false;
+            for(Column column : getNonPrimaryKeyColumns(columns, pkColumns)) {
+                if(didOneColumn) updateSql.append(",\n  \"");
+                else {
+                    updateSql.append("\n  \"");
+                    didOneColumn = true;
+                }
+                updateSql.append(column.getName()).append("\"=?");
+            }
+            updateSql.append("\n"
+                    + "WHERE\n");
+            didOneColumn = false;
+            for(Column pkColumn : pkColumns) {
+                if(didOneColumn) updateSql.append("  AND ");
+                else {
+                    updateSql.append("  ");
+                    didOneColumn = true;
+                }
+                updateSql.append('"').append(pkColumn.getName()).append("\"=?\n");
+            }
+            PreparedStatement pstmt = toConn.prepareStatement(updateSql.toString());
+            try {
+                for(Row updateRow : updateRows) {
+                    stepOutput.append(
+                        ApplicationResources.accessor.getMessage(
+                            "JdbcResourceSynchronizer.updateAndInsertRows.update",
+                            schema,
+                            table,
+                            updateRow.getPrimaryKeyValues()
+                        )
+                    ).append('\n');
+                    int pos = 1;
+                    for(Column column : getNonPrimaryKeyColumns(columns, pkColumns)) {
+                        pstmt.setObject(
+                            pos++,
+                            getRealValue(fromConn, updateRow, column)
+                        );
+                    }
+                    for(Column pkColumn : pkColumns) {
+                        pstmt.setObject(
+                            pos++,
+                            updateRow.values[pkColumn.getOrdinalPosition()-1]
+                        );
+                    }
+                    pstmt.addBatch();
+                }
+                int[] counts = pstmt.executeBatch();
+                if(counts.length!=updateRows.size()) throw new SQLException("Unexpected batch size for "+schema+"."+table.getName()+": Expected "+updateRows.size()+", got "+counts.length);
+                for(int c=0;c<counts.length;c++) {
+                    if(counts[c]!=1) throw new SQLException("Unexpected update count for "+schema+"."+table.getName()+": Expected 1, got "+counts[c]);
+                }
+            } finally {
+                pstmt.close();
+            }
+        }
+        updatesMap.put(table, (long)updateRows.size());
+
+        if(!insertRows.isEmpty()) {
+            // Updates the rows in a batched prepared statement, logging output
+            StringBuilder insertSql = new StringBuilder();
+            insertSql.append("INSERT INTO\n"
+                    + "  \"").append(schema).append("\".\"").append(table.getName()).append("\"\n"
+                    + "(");
+            boolean didOneColumn = false;
+            for(Column column : columns) {
+                if(didOneColumn) insertSql.append(",\n  \"");
+                else {
+                    insertSql.append("\n  \"");
+                    didOneColumn = true;
+                }
+                insertSql.append(column.getName()).append('"');
+            }
+            insertSql.append("\n"
+                    + ") VALUES (");
+            didOneColumn = false;
+            for(Column column : columns) {
+                if(didOneColumn) insertSql.append(",\n  ?");
+                else {
+                    insertSql.append("\n  ?");
+                    didOneColumn = true;
+                }
+            }
+            insertSql.append("\n"
+                    + ")");
+            PreparedStatement pstmt = toConn.prepareStatement(insertSql.toString());
+            try {
+                for(Row insertRow : insertRows) {
+                    stepOutput.append(
+                        ApplicationResources.accessor.getMessage(
+                            "JdbcResourceSynchronizer.updateAndInsertRows.insert",
+                            schema,
+                            table,
+                            insertRow.getPrimaryKeyValues()
+                        )
+                    ).append('\n');
+                    int pos = 1;
+                    for(Column column : columns) {
+                        pstmt.setObject(
+                            pos++,
+                            getRealValue(fromConn, insertRow, column)
+                        );
+                    }
+                    pstmt.addBatch();
+                }
+                int[] counts = pstmt.executeBatch();
+                if(counts.length!=insertRows.size()) throw new SQLException("Unexpected batch size for "+schema+"."+table.getName()+": Expected "+insertRows.size()+", got "+counts.length);
+                for(int c=0;c<counts.length;c++) {
+                    if(counts[c]!=1) throw new SQLException("Unexpected insert count for "+schema+"."+table.getName()+": Expected 1, got "+counts[c]);
+                }
+            } finally {
+                pstmt.close();
+            }
+        }
+        insertsMap.put(table, (long)insertRows.size());
     }
 }
