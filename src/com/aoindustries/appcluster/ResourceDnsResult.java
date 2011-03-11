@@ -22,6 +22,7 @@
  */
 package com.aoindustries.appcluster;
 
+import com.aoindustries.util.AoCollections;
 import java.sql.Timestamp;
 import java.text.Collator;
 import java.util.Collection;
@@ -47,16 +48,16 @@ public class ResourceDnsResult implements ResourceResult {
     static final Comparator<Object> defaultLocaleCollator = Collator.getInstance();
 
     static SortedSet<String> getUnmodifiableSortedSet(Collection<String> collection, Comparator<Object> collator) {
-        if(collection==null || collection.isEmpty()) return com.aoindustries.util.Collections.emptySortedSet();
-        if(collection.size()==1) return com.aoindustries.util.Collections.singletonSortedSet(collection.iterator().next());
+        if(collection==null || collection.isEmpty()) return AoCollections.emptySortedSet();
+        if(collection.size()==1) return AoCollections.singletonSortedSet(collection.iterator().next());
         SortedSet<String> sortedSet = new TreeSet<String>(collator);
         sortedSet.addAll(collection);
         return Collections.unmodifiableSortedSet(sortedSet);
     }
 
     static SortedSet<String> getUnmodifiableSortedSet(String[] array, Comparator<Object> collator) {
-        if(array==null || array.length==0) return com.aoindustries.util.Collections.emptySortedSet();
-        if(array.length==1) return com.aoindustries.util.Collections.singletonSortedSet(array[0]);
+        if(array==null || array.length==0) return AoCollections.emptySortedSet();
+        if(array.length==1) return AoCollections.singletonSortedSet(array[0]);
         SortedSet<String> sortedSet = new TreeSet<String>(collator);
         for(String elem : array) sortedSet.add(elem);
         return Collections.unmodifiableSortedSet(sortedSet);

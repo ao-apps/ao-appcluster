@@ -27,7 +27,7 @@ package com.aoindustries.appcluster;
  */
 public class AppClusterConfigurationException extends AppClusterException {
 
-    // TODO: private static final long serialVersionUID = -6681668618314172644L;
+    private static final long serialVersionUID = 8980544839280152074L;
 
     public AppClusterConfigurationException() {
     }

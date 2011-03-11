@@ -62,11 +62,6 @@ public interface AppClusterConfiguration {
     String getDisplay() throws AppClusterConfigurationException;
 
     /**
-     * Gets the logger for the cluster.
-     */
-    AppClusterLogger getClusterLogger() throws AppClusterConfigurationException;
-
-    /**
      * Gets the set of nodes for the cluster.
      */
     Set<? extends NodeConfiguration> getNodeConfigurations() throws AppClusterConfigurationException;

@@ -24,6 +24,7 @@ package com.aoindustries.appcluster;
 
 import com.aoindustries.cron.MatcherSchedule;
 import com.aoindustries.cron.Schedule;
+import com.aoindustries.util.AoCollections;
 import com.aoindustries.util.StringUtility;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -260,7 +261,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
             }
         }
         if(required && set.isEmpty()) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getString.missingValue", propertyName));
-        return com.aoindustries.util.Collections.optimalUnmodifiableSet(set);
+        return AoCollections.optimalUnmodifiableSet(set);
     }
 
     /**
@@ -279,7 +280,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
                 }
             }
             if(set.isEmpty()) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getString.missingValue", propertyName));
-            return com.aoindustries.util.Collections.optimalUnmodifiableSet(set);
+            return AoCollections.optimalUnmodifiableSet(set);
         } catch(TextParseException exc) {
             throw new AppClusterConfigurationException(exc);
         }
@@ -296,15 +297,6 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
     }
 
     @Override
-    public AppClusterLogger getClusterLogger() throws AppClusterConfigurationException {
-        String propertyName = "appcluster.log.type";
-        String logType = getString(propertyName, true);
-        if("jdbc".equals(logType)) return new JdbcClusterLogger(getString("appcluster.log.name", true));
-        if("properties".equals(logType)) return new PropertiesClusterLogger(new File(getString("appcluster.log.path", true)));
-        throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getClusterLogger.unexpectedType", propertyName, logType));
-    }
-
-    @Override
     public Set<? extends NodePropertiesConfiguration> getNodeConfigurations() throws AppClusterConfigurationException {
         Set<String> ids = getUniqueStrings("appcluster.nodes", true);
         Set<NodePropertiesConfiguration> nodes = new LinkedHashSet<NodePropertiesConfiguration>(ids.size()*4/3+1);
@@ -313,7 +305,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
                 !nodes.add(new NodePropertiesConfiguration(this, id))
             ) throw new AssertionError();
         }
-        return com.aoindustries.util.Collections.optimalUnmodifiableSet(nodes);
+        return AoCollections.optimalUnmodifiableSet(nodes);
     }
 
     private static final Map<String,ResourcePropertiesConfigurationFactory> factoryCache = new HashMap<String,ResourcePropertiesConfigurationFactory>();
@@ -355,6 +347,6 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
             if(factory==null) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getResourceConfigurations.unexpectedType", propertyName, type));
             if(!resources.add(factory.newResourcePropertiesConfiguration(this, id))) throw new AssertionError();
         }
-        return com.aoindustries.util.Collections.optimalUnmodifiableSet(resources);
+        return AoCollections.optimalUnmodifiableSet(resources);
     }
 }

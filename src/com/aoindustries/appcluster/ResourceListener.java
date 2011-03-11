@@ -25,8 +25,6 @@ package com.aoindustries.appcluster;
 /**
  * Is notified when the status of a resource changes.
  *
- * TODO: Alert administrators on certain statuses
- *
  * @author  AO Industries, Inc.
  */
 public interface ResourceListener {

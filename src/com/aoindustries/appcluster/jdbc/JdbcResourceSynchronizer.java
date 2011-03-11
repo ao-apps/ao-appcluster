@@ -30,7 +30,6 @@ import com.aoindustries.appcluster.ResourceSynchronizationMode;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
 import com.aoindustries.appcluster.ResourceSynchronizationResultStep;
 import com.aoindustries.cron.Schedule;
-import com.aoindustries.graph.GraphUtils;
 import com.aoindustries.sql.Catalog;
 import com.aoindustries.sql.Column;
 import com.aoindustries.sql.DatabaseMetaData;
@@ -42,6 +41,7 @@ import com.aoindustries.sql.Table;
 import com.aoindustries.util.Arrays;
 import com.aoindustries.util.ErrorPrinter;
 import com.aoindustries.util.StringUtility;
+import com.aoindustries.util.graph.TopologicalSorter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -431,16 +431,16 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             comparePrimaryKey(fromTable.getPrimaryKey(), toTable.getPrimaryKey(), stepError);
             // Compare foreign keys
             //stepError.append(fromTable.getSchema()).append('.').append(fromTable.getName()).append('\n');
-            Set<? extends Table> fromConnected = fromTable.getConnectedVertices();
+            Set<? extends Table> fromConnected = fromTable.getImportedTables();
             //stepError.append("    fromConnected....: ").append(fromConnected).append('\n');
-            Set<? extends Table> toConnected = toTable.getConnectedVertices();
+            Set<? extends Table> toConnected = toTable.getImportedTables();
             //stepError.append("    toConnected......: ").append(toConnected).append('\n');
             if(!fromConnected.equals(toConnected)) {
                 stepError.append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.compareTable.mismatchedConnectedVertices", fromTable.getSchema(), fromTable, fromConnected, toConnected)).append('\n');
             }
-            Set<? extends Table> fromBackConnected = fromTable.getBackConnectedVertices();
+            Set<? extends Table> fromBackConnected = fromTable.getExportedTables();
             //stepError.append("    fromBackConnected: ").append(fromBackConnected).append('\n');
-            Set<? extends Table> toBackConnected = toTable.getBackConnectedVertices();
+            Set<? extends Table> toBackConnected = toTable.getExportedTables();
             //stepError.append("    toBackConnected..: ").append(toBackConnected).append('\n');
             if(!fromBackConnected.equals(toBackConnected)) {
                 stepError.append(ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.compareTable.mismatchedBackConnectedVertices", fromTable.getSchema(), fromTable, fromBackConnected, toBackConnected)).append('\n');
@@ -1145,8 +1145,8 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
         Map<Table,Long> deletes = new HashMap<Table,Long>();
         try {
             // Topological sort based on foreign key dependencies
-            List<Table> sortedTables = new GraphUtils<Table,SQLException>().topologicalSort(tables, true);
-            // stepOutput.append("sortedTables=").append(sortedTables).append('\n');
+            List<Table> sortedTables = new TopologicalSorter<Table,SQLException>(catalog.getForeignKeyGraph(), true).sortGraph();
+            stepOutput.append("sortedTables=").append(sortedTables).append('\n');
 
             // Keep counts from the delete pass to help avoid unnecessary second scans
             Map<Table,Long> modifieds = new HashMap<Table,Long>();
@@ -1154,13 +1154,16 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
 
             // Delete extra rows from each table backwards
             for(int i=sortedTables.size()-1; i>=0; i--) {
-                deleteExtraRows(fromConn, toConn, synchronizeTimeout, sortedTables.get(i), stepOutput, matches, modifieds, missings, deletes);
+                Table table = sortedTables.get(i);
+                if(tables.contains(table)) deleteExtraRows(fromConn, toConn, synchronizeTimeout, table, stepOutput, matches, modifieds, missings, deletes);
             }
 
             // Update/insert forwards
             for(Table table : sortedTables) {
-                if(modifieds.get(table)>0 || missings.get(table)>0) {
-                    updateAndInsertRows(fromConn, toConn, synchronizeTimeout, table, stepOutput, matches, modifieds, missings, updates, inserts);
+                if(tables.contains(table)) {
+                    if(modifieds.get(table)>0 || missings.get(table)>0) {
+                        updateAndInsertRows(fromConn, toConn, synchronizeTimeout, table, stepOutput, matches, modifieds, missings, updates, inserts);
+                    }
                 }
             }
         } finally {

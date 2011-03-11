@@ -177,13 +177,30 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
     }
 
     /**
+     * Saves the last result to be restored later.  Not yet implemented.
+     */
+    private void saveLastResult(ResourceSynchronizationResult result) {
+        assert Thread.holdsLock(jobLock);
+        // Not yet implemented
+    }
+
+    /**
+     * Reads the last result that was saved.
+     */
+    private ResourceSynchronizationResult loadLastResult() {
+        assert Thread.holdsLock(jobLock);
+        // Not yet implemented
+        return null;
+    }
+
+    /**
      * Sets the last result, firing listeners, too.
      */
     private void setLastResult(ResourceSynchronizationResult newResult) {
         assert Thread.holdsLock(jobLock);
-        // TODO: Store to persistence mechanism
         ResourceSynchronizationResult oldResult = this.lastResult;
         this.lastResult = newResult;
+        saveLastResult(newResult);
 
         // Notify listeners
         localResourceNode.getResource().getCluster().notifyResourceListenersOnSynchronizationResult(oldResult, newResult);
@@ -197,29 +214,28 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
                 state = ResourceSynchronizerState.DISABLED;
                 stateMessage = ApplicationResources.accessor.getMessage("CronResourceSynchronizer.start.clusterDisabled.stateMessage");
                 synchronizeNowMode = null;
-                lastResult = null; // TODO: Restore from persistence mechanism
+                lastResult = loadLastResult();
             } else if(!resource.isEnabled()) {
                 state = ResourceSynchronizerState.DISABLED;
                 stateMessage = ApplicationResources.accessor.getMessage("CronResourceSynchronizer.start.resourceDisabled.stateMessage");
                 synchronizeNowMode = null;
-                lastResult = null; // TODO: Restore from persistence mechanism
+                lastResult = loadLastResult();
             } else if(!localResourceNode.getNode().isEnabled()) {
                 state = ResourceSynchronizerState.DISABLED;
                 stateMessage = ApplicationResources.accessor.getMessage("CronResourceSynchronizer.start.localNodeDisabled.stateMessage");
                 synchronizeNowMode = null;
-                lastResult = null; // TODO: Restore from persistence mechanism
+                lastResult = loadLastResult();
             } else if(!remoteResourceNode.getNode().isEnabled()) {
                 state = ResourceSynchronizerState.DISABLED;
                 stateMessage = ApplicationResources.accessor.getMessage("CronResourceSynchronizer.start.remoteNodeDisabled.stateMessage");
                 synchronizeNowMode = null;
-                lastResult = null; // TODO: Restore from persistence mechanism
+                lastResult = loadLastResult();
             } else {
                 if(job==null) {
                     state = ResourceSynchronizerState.SLEEPING;
                     stateMessage = null;
                     synchronizeNowMode = null;
-                    lastResult = null; // TODO: Restore from persistence mechanism
-                    // TODO: Run as soon as possible when last results are unknown?
+                    lastResult = loadLastResult();
 
                     job = new CronJob() {
                         @Override

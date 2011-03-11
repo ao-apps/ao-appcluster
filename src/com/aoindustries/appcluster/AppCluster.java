@@ -67,7 +67,6 @@ public class AppCluster {
     private boolean enabled = false; // Protected by startedLock
     private String display; // Protected by startedLock
     private ExecutorService executorService; // Protected by startLock
-    private AppClusterLogger clusterLogger; // Protected by startedLock
     private Set<? extends Node> nodes = Collections.emptySet(); // Protected by startedLock
     private Name localHostname; // Protected by startedLock
     private String localUsername; // Protected by startedLock
@@ -362,15 +361,6 @@ public class AppCluster {
     }
 
     /**
-     * Gets the cluster logger or <code>null</code> if not started.
-     */
-    public AppClusterLogger getClusterLogger() {
-        synchronized(startedLock) {
-            return clusterLogger;
-        }
-    }
-
-    /**
      * Gets the set of all nodes or empty set if not started.
      */
     public Set<? extends Node> getNodes() {
@@ -529,10 +519,6 @@ public class AppCluster {
                     );
                 }
 
-                // Start the logger
-                clusterLogger = configuration.getClusterLogger();
-                clusterLogger.start();
-
                 // Start per-resource monitoring and synchronization threads
                 Set<Resource<?,?>> newResources = new LinkedHashSet<Resource<?,?>>(resourceConfigurations.size()*4/3+1);
                 for(ResourceConfiguration<?,?> resourceConfiguration : resourceConfigurations) {
@@ -563,12 +549,6 @@ public class AppCluster {
                 // Stop per-resource monitoring and synchronization threads
                 for(Resource<?,?> resource : resources) resource.stop();
                 resources = Collections.emptySet();
-
-                // Stop the logger
-                if(clusterLogger!=null) {
-                    clusterLogger.stop();
-                    clusterLogger = null;
-                }
 
                 // Stop the executor service
                 if(executorService!=null) {

@@ -22,7 +22,7 @@
  */
 package com.aoindustries.appcluster;
 
-import com.aoindustries.util.Collections;
+import com.aoindustries.util.AoCollections;
 import com.aoindustries.util.StringUtility;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +65,7 @@ public class LoggerResourceListener implements ResourceListener {
                             DnsLookupResult oldDnsLookupResult = oldMasterLookups==null ? null : oldMasterLookups.get(enabledNameserver);
                             SortedSet<String> newAddresses = newDnsLookupResult.getAddresses();
                             SortedSet<String> oldAddresses = oldDnsLookupResult==null ? null : oldDnsLookupResult.getAddresses();
-                            if(oldAddresses==null) oldAddresses = Collections.emptySortedSet();
+                            if(oldAddresses==null) oldAddresses = AoCollections.emptySortedSet();
                             if(!newAddresses.equals(oldAddresses)) {
                                 logger.log(
                                     level,
@@ -82,7 +82,7 @@ public class LoggerResourceListener implements ResourceListener {
                             }
                             SortedSet<String> newStatusMessages = newDnsLookupResult.getStatusMessages();
                             SortedSet<String> oldStatusMessages = oldDnsLookupResult==null ? null : oldDnsLookupResult.getStatusMessages();
-                            if(oldStatusMessages==null) oldStatusMessages = Collections.emptySortedSet();
+                            if(oldStatusMessages==null) oldStatusMessages = AoCollections.emptySortedSet();
                             if(!newStatusMessages.equals(oldStatusMessages)) {
                                 for(String statusMessage : newStatusMessages) {
                                     logger.log(
@@ -133,7 +133,7 @@ public class LoggerResourceListener implements ResourceListener {
                                 DnsLookupResult oldDnsLookupResult = oldNodeLookups==null ? null : oldNodeLookups.get(enabledNameserver);
                                 SortedSet<String> newAddresses = newDnsLookupResult.getAddresses();
                                 SortedSet<String> oldAddresses = oldDnsLookupResult==null ? null : oldDnsLookupResult.getAddresses();
-                                if(oldAddresses==null) oldAddresses = Collections.emptySortedSet();
+                                if(oldAddresses==null) oldAddresses = AoCollections.emptySortedSet();
                                 if(!newAddresses.equals(oldAddresses)) {
                                     logger.log(
                                         level,
@@ -151,7 +151,7 @@ public class LoggerResourceListener implements ResourceListener {
                                 }
                                 SortedSet<String> newStatusMessages = newDnsLookupResult.getStatusMessages();
                                 SortedSet<String> oldStatusMessages = oldDnsLookupResult==null ? null : oldDnsLookupResult.getStatusMessages();
-                                if(oldStatusMessages==null) oldStatusMessages = Collections.emptySortedSet();
+                                if(oldStatusMessages==null) oldStatusMessages = AoCollections.emptySortedSet();
                                 if(!newStatusMessages.equals(oldStatusMessages)) {
                                     for(String statusMessage : newStatusMessages) {
                                         logger.log(
