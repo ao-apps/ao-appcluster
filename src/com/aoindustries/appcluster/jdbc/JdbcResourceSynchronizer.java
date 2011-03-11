@@ -1145,8 +1145,9 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
         Map<Table,Long> deletes = new HashMap<Table,Long>();
         try {
             // Topological sort based on foreign key dependencies
-            List<Table> sortedTables = new TopologicalSorter<Table,SQLException>(catalog.getForeignKeyGraph(), true).sortGraph();
-            stepOutput.append("sortedTables=").append(sortedTables).append('\n');
+            List<Table> sortedTables = new ArrayList<Table>(new TopologicalSorter<Table,SQLException>(catalog.getForeignKeyGraph(), true).sortGraph());
+            sortedTables.retainAll(tables);
+            // stepOutput.append("sortedTables=").append(sortedTables).append('\n');
 
             // Keep counts from the delete pass to help avoid unnecessary second scans
             Map<Table,Long> modifieds = new HashMap<Table,Long>();
@@ -1154,16 +1155,13 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
 
             // Delete extra rows from each table backwards
             for(int i=sortedTables.size()-1; i>=0; i--) {
-                Table table = sortedTables.get(i);
-                if(tables.contains(table)) deleteExtraRows(fromConn, toConn, synchronizeTimeout, table, stepOutput, matches, modifieds, missings, deletes);
+                deleteExtraRows(fromConn, toConn, synchronizeTimeout, sortedTables.get(i), stepOutput, matches, modifieds, missings, deletes);
             }
 
             // Update/insert forwards
             for(Table table : sortedTables) {
-                if(tables.contains(table)) {
-                    if(modifieds.get(table)>0 || missings.get(table)>0) {
-                        updateAndInsertRows(fromConn, toConn, synchronizeTimeout, table, stepOutput, matches, modifieds, missings, updates, inserts);
-                    }
+                if(modifieds.get(table)>0 || missings.get(table)>0) {
+                    updateAndInsertRows(fromConn, toConn, synchronizeTimeout, table, stepOutput, matches, modifieds, missings, updates, inserts);
                 }
             }
         } finally {
