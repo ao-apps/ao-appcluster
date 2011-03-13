@@ -38,7 +38,7 @@ import com.aoindustries.sql.NoRowException;
 import com.aoindustries.sql.SQLUtility;
 import com.aoindustries.sql.Schema;
 import com.aoindustries.sql.Table;
-import com.aoindustries.util.Arrays;
+import com.aoindustries.util.AoArrays;
 import com.aoindustries.util.ErrorPrinter;
 import com.aoindustries.util.StringUtility;
 import com.aoindustries.util.graph.TopologicalSorter;
@@ -428,7 +428,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                 }
             }
             // Compare primary key
-            comparePrimaryKey(fromTable.getPrimaryKey(), toTable.getPrimaryKey(), stepError);
+            comparePrimaryKey(fromTable, toTable, fromTable.getPrimaryKey(), toTable.getPrimaryKey(), stepError);
             // Compare foreign keys
             //stepError.append(fromTable.getSchema()).append('.').append(fromTable.getName()).append('\n');
             Set<? extends Table> fromConnected = fromTable.getImportedTables();
@@ -584,9 +584,8 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
         }
     }
 
-    private static void comparePrimaryKey(Index fromPrimaryKey, Index toPrimaryKey, StringBuilder stepError) {
+    private static void comparePrimaryKey(Table fromTable, Table toTable, Index fromPrimaryKey, Index toPrimaryKey, StringBuilder stepError) {
         if(fromPrimaryKey==null) {
-            Table fromTable = fromPrimaryKey.getTable();
             Schema fromSchema = fromTable.getSchema();
             stepError.append(
                 ApplicationResources.accessor.getMessage(
@@ -598,7 +597,6 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             ).append('\n');
         }
         if(toPrimaryKey==null) {
-            Table toTable = toPrimaryKey.getTable();
             Schema toSchema = toTable.getSchema();
             stepError.append(
                 ApplicationResources.accessor.getMessage(
@@ -614,8 +612,8 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                 stepError.append(
                     ApplicationResources.accessor.getMessage(
                         "JdbcResourceSynchronizer.comparePrimaryKey.mismatch.name",
-                        fromPrimaryKey.getTable().getSchema(),
-                        fromPrimaryKey.getTable(),
+                        fromTable.getSchema(),
+                        fromTable,
                         fromPrimaryKey.getName(),
                         toPrimaryKey.getName()
                     )
@@ -625,8 +623,8 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                 stepError.append(
                     ApplicationResources.accessor.getMessage(
                         "JdbcResourceSynchronizer.comparePrimaryKey.mismatch.columns",
-                        fromPrimaryKey.getTable().getSchema(),
-                        fromPrimaryKey.getTable(),
+                        fromTable.getSchema(),
+                        fromTable,
                         "(" + StringUtility.join(fromPrimaryKey.getColumns(), ", ") + ")",
                         "(" + StringUtility.join(toPrimaryKey.getColumns(), ", ") + ")"
                     )
@@ -782,7 +780,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                     case Types.VARCHAR :
                         try {
                             //diff = ((String)val).compareTo((String)otherVal);
-                            diff = Arrays.compare(
+                            diff = AoArrays.compare(
                                 ((String)val).getBytes("UTF-8"),
                                 ((String)otherVal).getBytes("UTF-8")
                             );
@@ -1145,9 +1143,10 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
         Map<Table,Long> deletes = new HashMap<Table,Long>();
         try {
             // Topological sort based on foreign key dependencies
-            List<Table> sortedTables = new ArrayList<Table>(new TopologicalSorter<Table,SQLException>(catalog.getForeignKeyGraph(), true).sortGraph());
+            List<Table> sortedTables = new ArrayList<Table>(new TopologicalSorter<Table,SQLException>(catalog.getForeignKeyGraph(tableTypes), true).sortGraph());
+            //stepOutput.append("sortedTables=").append(sortedTables).append('\n');
             sortedTables.retainAll(tables);
-            // stepOutput.append("sortedTables=").append(sortedTables).append('\n');
+            //stepOutput.append("sortedTables=").append(sortedTables).append('\n');
 
             // Keep counts from the delete pass to help avoid unnecessary second scans
             Map<Table,Long> modifieds = new HashMap<Table,Long>();
