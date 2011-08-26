@@ -38,9 +38,9 @@ public final class ApplicationResources_ja extends EditableResourceBundle {
      */
     public ApplicationResources_ja() {
         super(
-            new File(System.getProperty("user.home")+"/common/ao/cvswork/ao-appcluster/src/com/aoindustries/appcluster/ApplicationResources_ja.properties"),
             Locale.JAPANESE,
-            ApplicationResources.bundleSet
+            ApplicationResources.bundleSet,
+            new File(System.getProperty("user.home")+"/common/ao/cvswork/ao-appcluster/src/com/aoindustries/appcluster/ApplicationResources_ja.properties")
         );
     }
 }
