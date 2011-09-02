@@ -22,7 +22,7 @@
  */
 package com.aoindustries.appcluster;
 
-import java.util.Collections;
+import com.aoindustries.util.AoCollections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +53,7 @@ public class Node {
         Set<? extends Name> configNameservers = nodeConfiguration.getNameservers();
         Set<Nameserver> newNameservers = new LinkedHashSet<Nameserver>(configNameservers.size()*4/3+1);
         for(Name nameserver : configNameservers) newNameservers.add(new Nameserver(cluster, nameserver));
-        this.nameservers = Collections.unmodifiableSet(newNameservers);
+        this.nameservers = AoCollections.optimalUnmodifiableSet(newNameservers);
     }
 
     @Override

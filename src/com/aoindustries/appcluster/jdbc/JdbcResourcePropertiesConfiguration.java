@@ -102,7 +102,7 @@ public class JdbcResourcePropertiesConfiguration extends CronResourcePropertiesC
         for(String nodeId : nodeIds) {
             if(!resourceNodes.add(new JdbcResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
         }
-        return Collections.unmodifiableSet(resourceNodes);
+        return AoCollections.optimalUnmodifiableSet(resourceNodes);
     }
 
     @Override

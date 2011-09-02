@@ -27,9 +27,8 @@ import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.CronResource;
 import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
+import com.aoindustries.util.AoCollections;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -45,7 +44,7 @@ public class Csync2Resource extends CronResource<Csync2Resource,Csync2ResourceNo
     protected Csync2Resource(AppCluster cluster, Csync2ResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
         this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
-        this.groups = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getGroups()));
+        this.groups = AoCollections.unmodifiableCopySet(resourceConfiguration.getGroups());
     }
 
     @Override

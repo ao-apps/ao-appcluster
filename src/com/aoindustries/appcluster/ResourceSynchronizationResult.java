@@ -22,10 +22,9 @@
  */
 package com.aoindustries.appcluster;
 
+import com.aoindustries.util.AoCollections;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -54,7 +53,7 @@ public class ResourceSynchronizationResult implements ResourceResult {
         this.mode = mode;
         if(steps==null) throw new IllegalArgumentException("steps==null");
         if(steps.isEmpty()) throw new IllegalArgumentException("steps.isEmpty()");
-        this.steps = steps.size()==1 ? Collections.singletonList(steps.iterator().next()) : Collections.unmodifiableList(new ArrayList<ResourceSynchronizationResultStep>(steps));
+        this.steps = AoCollections.unmodifiableCopyList(steps);
     }
 
     public ResourceNode<?,?> getLocalResourceNode() {

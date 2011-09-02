@@ -22,8 +22,7 @@
  */
 package com.aoindustries.appcluster;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import com.aoindustries.util.AoCollections;
 import java.util.Set;
 import org.xbill.DNS.Name;
 
@@ -40,7 +39,7 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
 
     protected ResourceNode(Node node, ResourceNodeConfiguration<R,RN> resourceNodeConfiguration) {
         this.node = node;
-        this.nodeRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceNodeConfiguration.getNodeRecords()));
+        this.nodeRecords = AoCollections.unmodifiableCopySet(resourceNodeConfiguration.getNodeRecords());
     }
 
     void init(R resource) {
@@ -54,8 +53,8 @@ abstract public class ResourceNode<R extends Resource<R,RN>,RN extends ResourceN
 
     @Override
     public boolean equals(Object o) {
-        if(!(o instanceof ResourceNode)) return false;
-        ResourceNode other = (ResourceNode)o;
+        if(!(o instanceof ResourceNode<?,?>)) return false;
+        ResourceNode<?,?> other = (ResourceNode<?,?>)o;
         return
             resource.equals(other.resource)
             && node.equals(other.node)

@@ -22,6 +22,7 @@
  */
 package com.aoindustries.appcluster;
 
+import com.aoindustries.util.AoCollections;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -58,7 +59,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         this.id = resourceConfiguration.getId();
         this.enabled = cluster.isEnabled() && resourceConfiguration.isEnabled();
         this.display = resourceConfiguration.getDisplay();
-        this.masterRecords = Collections.unmodifiableSet(new LinkedHashSet<Name>(resourceConfiguration.getMasterRecords()));
+        this.masterRecords = AoCollections.unmodifiableCopySet(resourceConfiguration.getMasterRecords());
         this.masterRecordsTtl = resourceConfiguration.getMasterRecordsTtl();
         this.type = resourceConfiguration.getType();
         @SuppressWarnings("unchecked")
@@ -70,13 +71,13 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
             rn.init(rThis);
             newResourceNodes.add(rn);
         }
-        this.resourceNodes = Collections.unmodifiableSet(newResourceNodes);
+        this.resourceNodes = AoCollections.optimalUnmodifiableSet(newResourceNodes);
         final Set<Nameserver> newEnabledNameservers = new LinkedHashSet<Nameserver>();
         for(ResourceNode<?,?> resourceNode : resourceNodes) {
             Node node = resourceNode.getNode();
             if(node.isEnabled()) newEnabledNameservers.addAll(node.getNameservers());
         }
-        this.enabledNameservers = Collections.unmodifiableSet(newEnabledNameservers);
+        this.enabledNameservers = AoCollections.optimalUnmodifiableSet(newEnabledNameservers);
 
         this.dnsMonitor = new ResourceDnsMonitor(this);
 
@@ -105,7 +106,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                         if(synchronizer!=null) newSynchronizers.put(node, synchronizer);
                     }
                 }
-                this.synchronizers = Collections.unmodifiableMap(newSynchronizers);
+                this.synchronizers = AoCollections.optimalUnmodifiableMap(newSynchronizers);
             }
         }
     }

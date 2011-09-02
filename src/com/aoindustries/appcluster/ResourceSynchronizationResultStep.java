@@ -22,8 +22,8 @@
  */
 package com.aoindustries.appcluster;
 
+import com.aoindustries.util.AoCollections;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -93,15 +93,12 @@ public class ResourceSynchronizationResultStep implements ResourceResult {
         this.resourceStatus = resourceStatus;
         if(description==null) throw new IllegalArgumentException("description==null");
         this.description = description;
-        if(outputs==null || outputs.isEmpty()) this.outputs = Collections.emptyList();
-        else if(outputs.size()==1) this.outputs = Collections.singletonList(outputs.iterator().next());
-        else this.outputs = Collections.unmodifiableList(new ArrayList<String>(outputs));
-        if(warnings==null || warnings.isEmpty()) this.warnings = Collections.emptyList();
-        else if(warnings.size()==1) this.warnings = Collections.singletonList(warnings.iterator().next());
-        else this.warnings = Collections.unmodifiableList(new ArrayList<String>(warnings));
-        if(errors==null || errors.isEmpty()) this.errors = Collections.emptyList();
-        else if(errors.size()==1) this.errors = Collections.singletonList(errors.iterator().next());
-        else this.errors = Collections.unmodifiableList(new ArrayList<String>(errors));
+        if(outputs==null) this.outputs = Collections.emptyList();
+        else this.outputs = AoCollections.unmodifiableCopyList(outputs);
+        if(warnings==null) this.warnings = Collections.emptyList();
+        else this.warnings = AoCollections.unmodifiableCopyList(warnings);
+        if(errors==null) this.errors = Collections.emptyList();
+        else this.errors = AoCollections.unmodifiableCopyList(errors);
     }
 
     @Override

@@ -42,8 +42,8 @@ import org.xbill.DNS.Name;
  */
 public class ResourceDnsResult implements ResourceResult {
 
-    public static int WARNING_SECONDS = 10 + (ResourceDnsMonitor.DNS_CHECK_INTERVAL + ResourceDnsMonitor.DNS_ATTEMPTS * ResourceDnsMonitor.DNS_CHECK_TIMEOUT) / 1000;
-    public static int ERROR_SECONDS = WARNING_SECONDS + ResourceDnsMonitor.DNS_CHECK_INTERVAL/1000;
+    public static final int WARNING_SECONDS = 10 + (ResourceDnsMonitor.DNS_CHECK_INTERVAL + ResourceDnsMonitor.DNS_ATTEMPTS * ResourceDnsMonitor.DNS_CHECK_TIMEOUT) / 1000;
+    public static final int ERROR_SECONDS = WARNING_SECONDS + ResourceDnsMonitor.DNS_CHECK_INTERVAL/1000;
 
     static final Comparator<Object> defaultLocaleCollator = Collator.getInstance();
 
@@ -81,9 +81,9 @@ public class ResourceDnsResult implements ResourceResult {
                 if(dnsLookupResult==null) throw new IllegalArgumentException("Missing DNS lookup result " + dnsLookupResult);
                 newDnsLookupResults.put(nameserver, dnsLookupResult);
             }
-            newDnsRecordLookups.put(dnsRecord, Collections.unmodifiableMap(newDnsLookupResults));
+            newDnsRecordLookups.put(dnsRecord, AoCollections.optimalUnmodifiableMap(newDnsLookupResults));
         }
-        return Collections.unmodifiableMap(newDnsRecordLookups);
+        return AoCollections.optimalUnmodifiableMap(newDnsRecordLookups);
     }
 
     private final Resource<?,?> resource;
@@ -117,7 +117,7 @@ public class ResourceDnsResult implements ResourceResult {
             if(nodeResult==null) throw new IllegalArgumentException("Missing node " + node);
             newNodeResults.put(node, nodeResult);
         }
-        this.nodeResults = Collections.unmodifiableMap(newNodeResults);
+        this.nodeResults = AoCollections.optimalUnmodifiableMap(newNodeResults);
     }
 
     public Resource<?,?> getResource() {

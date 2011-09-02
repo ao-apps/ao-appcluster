@@ -29,9 +29,6 @@ import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
 import com.aoindustries.util.AoCollections;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,11 +47,11 @@ public class JdbcResource extends CronResource<JdbcResource,JdbcResourceNode> {
 
     protected JdbcResource(AppCluster cluster, JdbcResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
-        this.schemas = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getSchemas()));
-        this.tableTypes = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getTableTypes()));
-        this.excludeTables = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getExcludeTables()));
-        this.noWarnTables = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getNoWarnTables()));
-        this.prepareSlaves = AoCollections.optimalUnmodifiableMap(new LinkedHashMap<String,String>(resourceConfiguration.getPrepareSlaves()));
+        this.schemas = AoCollections.unmodifiableCopySet(resourceConfiguration.getSchemas());
+        this.tableTypes = AoCollections.unmodifiableCopySet(resourceConfiguration.getTableTypes());
+        this.excludeTables = AoCollections.unmodifiableCopySet(resourceConfiguration.getExcludeTables());
+        this.noWarnTables = AoCollections.unmodifiableCopySet(resourceConfiguration.getNoWarnTables());
+        this.prepareSlaves = AoCollections.unmodifiableCopyMap(resourceConfiguration.getPrepareSlaves());
     }
 
     /**

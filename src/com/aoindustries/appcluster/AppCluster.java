@@ -22,6 +22,7 @@
  */
 package com.aoindustries.appcluster;
 
+import com.aoindustries.util.AoCollections;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -389,7 +390,7 @@ public class AppCluster {
             nodeMap = new LinkedHashMap<String,Node>(nodes.size()*4/3+1);
             for(Node node : nodes) nodeMap.put(node.getId(), node);
         }
-        return Collections.unmodifiableMap(nodeMap);
+        return AoCollections.optimalUnmodifiableMap(nodeMap);
     }
 
     /**
@@ -445,7 +446,7 @@ public class AppCluster {
         synchronized(startedLock) {
             LinkedHashMap<String,Resource<?,?>> map = new LinkedHashMap<String,Resource<?,?>>(resources.size()*4/3+1);
             for(Resource<?,?> resource : resources) map.put(resource.getId(), resource);
-            return Collections.unmodifiableMap(map);
+            return AoCollections.optimalUnmodifiableMap(map);
         }
     }
 
@@ -471,7 +472,7 @@ public class AppCluster {
                 for(NodeConfiguration nodeConfiguration : nodeConfigurations) {
                     newNodes.add(new Node(this, nodeConfiguration));
                 }
-                nodes = Collections.unmodifiableSet(newNodes);
+                nodes = AoCollections.optimalUnmodifiableSet(newNodes);
 
                 // Find the localNode
                 localNode = null;
@@ -534,7 +535,7 @@ public class AppCluster {
                     newResources.add(resource);
                     resource.start();
                 }
-                resources = Collections.unmodifiableSet(newResources);
+                resources = AoCollections.optimalUnmodifiableSet(newResources);
             } catch(TextParseException exc) {
                 throw new AppClusterConfigurationException(exc);
             } catch(UnknownHostException exc) {
@@ -600,7 +601,7 @@ public class AppCluster {
             ResourceStatus status = ResourceStatus.UNKNOWN;
             if(!started) status = max(status, ResourceStatus.STOPPED);
             if(!enabled) status = max(status, ResourceStatus.DISABLED);
-            for(Resource resource : getResources()) status = max(status, resource.getStatus());
+            for(Resource<?,?> resource : getResources()) status = max(status, resource.getStatus());
             return status;
         }
     }

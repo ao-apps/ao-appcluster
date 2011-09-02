@@ -27,8 +27,8 @@ import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
 import com.aoindustries.appcluster.CronResourcePropertiesConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
+import com.aoindustries.util.AoCollections;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -51,7 +51,7 @@ public class ImapResourcePropertiesConfiguration extends CronResourcePropertiesC
         for(String nodeId : nodeIds) {
             if(!resourceNodes.add(new ImapResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
         }
-        return Collections.unmodifiableSet(resourceNodes);
+        return AoCollections.optimalUnmodifiableSet(resourceNodes);
     }
 
     @Override
