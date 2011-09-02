@@ -770,50 +770,57 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                 Object val = values[index];
                 Object otherVal = other.values[index];
                 int diff;
-                switch(primaryKeyColumn.getDataType()) {
-                    case Types.BIGINT :
-                        diff = ((Long)val).compareTo((Long)otherVal);
-                        break;
-                    // These were converted to UTF8 byte[] during order by.
-                    // Use the same conversion here
-                    case Types.CHAR :
-                    case Types.VARCHAR :
-                        try {
-                            //diff = ((String)val).compareTo((String)otherVal);
-                            diff = AoArrays.compare(
-                                ((String)val).getBytes("UTF-8"),
-                                ((String)otherVal).getBytes("UTF-8")
-                            );
-                        } catch(UnsupportedEncodingException exc) {
-                            throw new RuntimeException(exc);
-                        }
-                        break;
-                    case Types.DATE :
-                        diff = ((Date)val).compareTo((Date)otherVal);
-                        break;
-                    case Types.DECIMAL :
-                    case Types.NUMERIC :
-                        diff = ((BigDecimal)val).compareTo((BigDecimal)otherVal);
-                        break;
-                    case Types.DOUBLE :
-                        diff = ((Double)val).compareTo((Double)otherVal);
-                        break;
-                    case Types.FLOAT :
-                        diff = ((Float)val).compareTo((Float)otherVal);
-                        break;
-                    case Types.INTEGER :
-                        diff = ((Integer)val).compareTo((Integer)otherVal);
-                        break;
-                    case Types.SMALLINT :
-                        diff = ((Short)val).compareTo((Short)otherVal);
-                        break;
-                    case Types.TIME :
-                        diff = ((Time)val).compareTo((Time)otherVal);
-                        break;
-                    case Types.TIMESTAMP :
-                        diff = ((Timestamp)val).compareTo((Timestamp)otherVal);
-                        break;
-                    default : throw new UnsupportedOperationException("Type comparison not implemented: "+primaryKeyColumn.getDataType());
+                int dataType = primaryKeyColumn.getDataType();
+                try {
+                    switch(dataType) {
+                        case Types.BIGINT :
+                            diff = ((Long)val).compareTo((Long)otherVal);
+                            break;
+                        // These were converted to UTF8 byte[] during order by.
+                        // Use the same conversion here
+                        case Types.CHAR :
+                        case Types.VARCHAR :
+                            try {
+                                //diff = ((String)val).compareTo((String)otherVal);
+                                diff = AoArrays.compare(
+                                    ((String)val).getBytes("UTF-8"),
+                                    ((String)otherVal).getBytes("UTF-8")
+                                );
+                            } catch(UnsupportedEncodingException exc) {
+                                throw new RuntimeException(exc);
+                            }
+                            break;
+                        case Types.DATE :
+                            diff = ((Date)val).compareTo((Date)otherVal);
+                            break;
+                        case Types.DECIMAL :
+                        case Types.NUMERIC :
+                            diff = ((BigDecimal)val).compareTo((BigDecimal)otherVal);
+                            break;
+                        case Types.DOUBLE :
+                            diff = ((Double)val).compareTo((Double)otherVal);
+                            break;
+                        case Types.FLOAT :
+                            diff = ((Float)val).compareTo((Float)otherVal);
+                            break;
+                        case Types.INTEGER :
+                            diff = ((Integer)val).compareTo((Integer)otherVal);
+                            break;
+                        case Types.SMALLINT :
+                            diff = ((Short)val).compareTo((Short)otherVal);
+                            break;
+                        case Types.TIME :
+                            diff = ((Time)val).compareTo((Time)otherVal);
+                            break;
+                        case Types.TIMESTAMP :
+                            diff = ((Timestamp)val).compareTo((Timestamp)otherVal);
+                            break;
+                        default : throw new UnsupportedOperationException("Type comparison not implemented: "+primaryKeyColumn.getDataType());
+                    }
+                } catch(ClassCastException e) {
+                    ClassCastException newE = new ClassCastException(e.getMessage()+": dataType="+dataType+", otherVal.class.name="+otherVal.getClass().getName());
+                    newE.initCause(e);
+                    throw newE;
                 }
                 assert (diff==0) == (val.equals(otherVal)) : "Not consistent with equals: val="+val+", otherVal="+otherVal;
                 if(diff!=0) return diff;
