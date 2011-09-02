@@ -262,30 +262,77 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                             // Nothing should have been changed, roll-back just to be safe
                             toConn.rollback();
                         } else if(mode==ResourceSynchronizationMode.SYNCHRONIZE) {
-                            stepStartTime = System.currentTimeMillis();
-                            step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.synchronizeData");
-                            stepOutput.setLength(0);
-                            stepWarning.setLength(0);
-                            stepError.setLength(0);
+                            // Run any preparation steps
+                            boolean hasError = false;
+                            for(Map.Entry<String,String> prepareSlave : resource.getPrepareSlaves().entrySet()) {
+                                stepStartTime = System.currentTimeMillis();
+                                step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.prepareSlave", prepareSlave.getKey());
+                                stepOutput.setLength(0);
+                                stepWarning.setLength(0);
+                                stepError.setLength(0);
+                                try {
+                                    Statement stmt = toConn.createStatement();
+                                    try {
+                                        int updateCount = stmt.executeUpdate(prepareSlave.getValue());
+                                        stepOutput.append(
+                                            ApplicationResources.accessor.getMessage(
+                                                "JdbcResourceSynchronizer.synchronize.step.prepareSlave.updateCount",
+                                                prepareSlave.getKey(),
+                                                updateCount
+                                            )
+                                        );
+                                    } finally {
+                                        stmt.close();
+                                    }
+                                } catch(SQLException e) {
+                                    ErrorPrinter.printStackTraces(e, stepError);
+                                }
+                                steps.add(
+                                    new ResourceSynchronizationResultStep(
+                                        stepStartTime,
+                                        System.currentTimeMillis(),
+                                        stepError.length()!=0 ? ResourceStatus.ERROR
+                                        : stepWarning.length()!=0 ? ResourceStatus.WARNING
+                                        : ResourceStatus.HEALTHY,
+                                        step,
+                                        stepOutput,
+                                        stepWarning,
+                                        stepError
+                                    )
+                                );
+                                if(stepError.length()>0) {
+                                    hasError = true;
+                                    break;
+                                }
+                            }
+                            if(!hasError) {
+                                stepStartTime = System.currentTimeMillis();
+                                step = ApplicationResources.accessor.getMessage("JdbcResourceSynchronizer.synchronize.step.synchronizeData");
+                                stepOutput.setLength(0);
+                                stepWarning.setLength(0);
+                                stepError.setLength(0);
 
-                            synchronizeData(fromConn, toConn, resource.getSynchronizeTimeout(), fromCatalog, schemas, tableTypes, excludeTables, stepOutput);
-                            steps.add(
-                                new ResourceSynchronizationResultStep(
-                                    stepStartTime,
-                                    System.currentTimeMillis(),
-                                    stepError.length()!=0 ? ResourceStatus.ERROR
-                                    : stepWarning.length()!=0 ? ResourceStatus.WARNING
-                                    : ResourceStatus.HEALTHY,
-                                    step,
-                                    stepOutput,
-                                    stepWarning,
-                                    stepError
-                                )
-                            );
+                                synchronizeData(fromConn, toConn, resource.getSynchronizeTimeout(), fromCatalog, schemas, tableTypes, excludeTables, stepOutput);
+                                steps.add(
+                                    new ResourceSynchronizationResultStep(
+                                        stepStartTime,
+                                        System.currentTimeMillis(),
+                                        stepError.length()!=0 ? ResourceStatus.ERROR
+                                        : stepWarning.length()!=0 ? ResourceStatus.WARNING
+                                        : ResourceStatus.HEALTHY,
+                                        step,
+                                        stepOutput,
+                                        stepWarning,
+                                        stepError
+                                    )
+                                );
 
-                            // Commit/rollback based on errors
-                            if(stepError.length()==0) toConn.commit();
-                            else toConn.rollback();
+                                // Commit/rollback based on errors
+                                if(stepError.length()==0) toConn.commit();
+                                else toConn.rollback();
+                            } else {
+                                toConn.rollback();
+                            }
                         } else {
                             throw new AssertionError("Unexpected mode: "+mode);
                         }

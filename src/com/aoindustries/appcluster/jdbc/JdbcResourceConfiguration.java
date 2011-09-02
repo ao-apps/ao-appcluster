@@ -27,6 +27,7 @@ import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.CronResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -55,6 +56,11 @@ public interface JdbcResourceConfiguration extends CronResourceConfiguration<Jdb
      * @see JdbcResource#getNoWarnTables()
      */
     Collection<String> getNoWarnTables();
+
+    /**
+     * @see JdbcResource#getPrepareSlaves()
+     */
+    Map<String,String> getPrepareSlaves();
 
     @Override
     Set<? extends JdbcResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;

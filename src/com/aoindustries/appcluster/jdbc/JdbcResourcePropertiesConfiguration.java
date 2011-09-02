@@ -27,9 +27,12 @@ import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.AppClusterPropertiesConfiguration;
 import com.aoindustries.appcluster.CronResourcePropertiesConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
+import com.aoindustries.util.AoCollections;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -43,6 +46,7 @@ public class JdbcResourcePropertiesConfiguration extends CronResourcePropertiesC
     private final Set<String> tableTypes;
     private final Set<String> excludeTables;
     private final Set<String> noWarnTables;
+    private final Map<String,String> prepareSlaves;
 
     protected JdbcResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
         super(properties, id);
@@ -50,6 +54,19 @@ public class JdbcResourcePropertiesConfiguration extends CronResourcePropertiesC
         this.tableTypes = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".tableTypes", true);
         this.excludeTables = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".excludeTables", false);
         this.noWarnTables = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".noWarnTables", false);
+        Set<String> prepareSlaveNames = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".prepareSlaves", false);
+        if(prepareSlaveNames.isEmpty()) {
+            this.prepareSlaves = Collections.emptyMap();
+        } else {
+            Map<String,String> newPrepareSlaves = new LinkedHashMap<String,String>(prepareSlaveNames.size()*4/3+1);
+            for(String prepareSlaveName : prepareSlaveNames) {
+                newPrepareSlaves.put(
+                    prepareSlaveName,
+                    properties.getString("appcluster.resource."+id+"."+type+".prepareSlave."+prepareSlaveName, true)
+                );
+            }
+            this.prepareSlaves = AoCollections.optimalUnmodifiableMap(newPrepareSlaves);
+        }
     }
 
     @Override
@@ -70,6 +87,11 @@ public class JdbcResourcePropertiesConfiguration extends CronResourcePropertiesC
     @Override
     public Set<String> getNoWarnTables() {
         return noWarnTables;
+    }
+
+    @Override
+    public Map<String,String> getPrepareSlaves() {
+        return prepareSlaves;
     }
 
     @Override

@@ -27,9 +27,12 @@ import com.aoindustries.appcluster.AppClusterConfigurationException;
 import com.aoindustries.appcluster.CronResource;
 import com.aoindustries.appcluster.ResourceConfiguration;
 import com.aoindustries.appcluster.ResourceNode;
+import com.aoindustries.util.AoCollections;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -43,6 +46,7 @@ public class JdbcResource extends CronResource<JdbcResource,JdbcResourceNode> {
     private final Set<String> tableTypes;
     private final Set<String> excludeTables;
     private final Set<String> noWarnTables;
+    private final Map<String,String> prepareSlaves;
 
     protected JdbcResource(AppCluster cluster, JdbcResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
         super(cluster, resourceConfiguration, resourceNodes);
@@ -50,6 +54,7 @@ public class JdbcResource extends CronResource<JdbcResource,JdbcResourceNode> {
         this.tableTypes = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getTableTypes()));
         this.excludeTables = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getExcludeTables()));
         this.noWarnTables = Collections.unmodifiableSet(new LinkedHashSet<String>(resourceConfiguration.getNoWarnTables()));
+        this.prepareSlaves = AoCollections.optimalUnmodifiableMap(new LinkedHashMap<String,String>(resourceConfiguration.getPrepareSlaves()));
     }
 
     /**
@@ -86,6 +91,15 @@ public class JdbcResource extends CronResource<JdbcResource,JdbcResourceNode> {
      */
     public Set<String> getNoWarnTables() {
         return noWarnTables;
+    }
+
+    /**
+     * Gets the set of SQL statements that should be executed on the slave in preparation for a synchronization pass.
+     * This should be executed in iteration order.  The key is a unique name of the statement for reference and debugging,
+     * while the SQL statement is the value.
+     */
+    public Map<String,String> getPrepareSlaves() {
+        return prepareSlaves;
     }
 
     @Override
