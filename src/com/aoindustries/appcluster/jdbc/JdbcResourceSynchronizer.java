@@ -850,11 +850,9 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
                         case Types.FLOAT :
                             diff = ((Float)val).compareTo((Float)otherVal);
                             break;
+                        case Types.SMALLINT :
                         case Types.INTEGER :
                             diff = ((Integer)val).compareTo((Integer)otherVal);
-                            break;
-                        case Types.SMALLINT :
-                            diff = ((Short)val).compareTo((Short)otherVal);
                             break;
                         case Types.TIME :
                             diff = ((Time)val).compareTo((Time)otherVal);
