@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2012  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -30,6 +30,7 @@ import com.aoindustries.appcluster.ResourceSynchronizationMode;
 import com.aoindustries.appcluster.ResourceSynchronizationResult;
 import com.aoindustries.appcluster.ResourceSynchronizationResultStep;
 import com.aoindustries.cron.Schedule;
+import com.aoindustries.lang.ObjectUtils;
 import com.aoindustries.sql.Catalog;
 import com.aoindustries.sql.Column;
 import com.aoindustries.sql.DatabaseMetaData;
@@ -513,7 +514,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             ).append('\n');
         }
         // String typeName
-        if(!StringUtility.equals(fromColumn.getTypeName(), toColumn.getTypeName())) {
+        if(!ObjectUtils.equals(fromColumn.getTypeName(), toColumn.getTypeName())) {
             stepError.append(
                 ApplicationResources.accessor.getMessage(
                     "JdbcResourceSynchronizer.compareColumn.mismatch.typeName",
@@ -526,7 +527,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             ).append('\n');
         }
         // Integer columnSize
-        if(!StringUtility.equals(fromColumn.getColumnSize(), toColumn.getColumnSize())) {
+        if(!ObjectUtils.equals(fromColumn.getColumnSize(), toColumn.getColumnSize())) {
             stepError.append(
                 ApplicationResources.accessor.getMessage(
                     "JdbcResourceSynchronizer.compareColumn.mismatch.columnSize",
@@ -539,7 +540,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             ).append('\n');
         }
         // Integer decimalDigits
-        if(!StringUtility.equals(fromColumn.getDecimalDigits(), toColumn.getDecimalDigits())) {
+        if(!ObjectUtils.equals(fromColumn.getDecimalDigits(), toColumn.getDecimalDigits())) {
             stepError.append(
                 ApplicationResources.accessor.getMessage(
                     "JdbcResourceSynchronizer.compareColumn.mismatch.decimalDigits",
@@ -565,7 +566,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             ).append('\n');
         }
         // String columnDef
-        if(!StringUtility.equals(fromColumn.getColumnDef(), toColumn.getColumnDef())) {
+        if(!ObjectUtils.equals(fromColumn.getColumnDef(), toColumn.getColumnDef())) {
             stepError.append(
                 ApplicationResources.accessor.getMessage(
                     "JdbcResourceSynchronizer.compareColumn.mismatch.columnDef",
@@ -578,7 +579,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             ).append('\n');
         }
         // Integer charOctetLength
-        if(!StringUtility.equals(fromColumn.getCharOctetLength(), toColumn.getCharOctetLength())) {
+        if(!ObjectUtils.equals(fromColumn.getCharOctetLength(), toColumn.getCharOctetLength())) {
             stepError.append(
                 ApplicationResources.accessor.getMessage(
                     "JdbcResourceSynchronizer.compareColumn.mismatch.charOctetLength",
@@ -604,7 +605,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             ).append('\n');
         }
         // String isNullable
-        if(!StringUtility.equals(fromColumn.getIsNullable(), toColumn.getIsNullable())) {
+        if(!ObjectUtils.equals(fromColumn.getIsNullable(), toColumn.getIsNullable())) {
             stepError.append(
                 ApplicationResources.accessor.getMessage(
                     "JdbcResourceSynchronizer.compareColumn.mismatch.isNullable",
@@ -617,7 +618,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             ).append('\n');
         }
         // String isAutoincrement
-        if(!StringUtility.equals(fromColumn.getIsAutoincrement(), toColumn.getIsAutoincrement())) {
+        if(!ObjectUtils.equals(fromColumn.getIsAutoincrement(), toColumn.getIsAutoincrement())) {
             stepError.append(
                 ApplicationResources.accessor.getMessage(
                     "JdbcResourceSynchronizer.compareColumn.mismatch.isAutoincrement",
@@ -655,7 +656,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             ).append('\n');
         }
         if(fromPrimaryKey!=null && toPrimaryKey!=null) {
-            if(!StringUtility.equals(fromPrimaryKey.getName(), toPrimaryKey.getName())) {
+            if(!ObjectUtils.equals(fromPrimaryKey.getName(), toPrimaryKey.getName())) {
                 stepError.append(
                     ApplicationResources.accessor.getMessage(
                         "JdbcResourceSynchronizer.comparePrimaryKey.mismatch.name",
@@ -877,7 +878,7 @@ public class JdbcResourceSynchronizer extends CronResourceSynchronizer<JdbcResou
             for(Column nonPrimaryKeyColumn : nonPrimaryKeyColumns) {
                 int index = nonPrimaryKeyColumn.getOrdinalPosition() - 1;
                 if(
-                    !StringUtility.equals(
+                    !ObjectUtils.equals(
                         values[index],
                         other.values[index]
                     )
