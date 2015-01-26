@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -25,6 +25,7 @@ package com.aoindustries.appcluster;
 import com.aoindustries.cron.MatcherSchedule;
 import com.aoindustries.cron.Schedule;
 import com.aoindustries.util.AoCollections;
+import com.aoindustries.util.PropertiesUtils;
 import com.aoindustries.util.StringUtility;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -123,13 +124,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
                                                 if(newLastModified!=fileLastModified) {
                                                     // Reload the configuration
                                                     fileLastModified = newLastModified;
-                                                    Properties newProperties = new Properties();
-                                                    InputStream in = new BufferedInputStream(new FileInputStream(file));
-                                                    try {
-                                                        newProperties.load(in);
-                                                    } finally {
-                                                        in.close();
-                                                    }
+                                                    Properties newProperties = PropertiesUtils.loadFromFile(file);
                                                     AppClusterPropertiesConfiguration.this.properties = newProperties;
                                                     notifyListeners = true;
                                                 }
