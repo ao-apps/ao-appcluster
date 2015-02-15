@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -51,7 +51,7 @@ public class Node {
         this.hostname = nodeConfiguration.getHostname();
         this.username = nodeConfiguration.getUsername();
         Set<? extends Name> configNameservers = nodeConfiguration.getNameservers();
-        Set<Nameserver> newNameservers = new LinkedHashSet<Nameserver>(configNameservers.size()*4/3+1);
+        Set<Nameserver> newNameservers = new LinkedHashSet<>(configNameservers.size()*4/3+1);
         for(Name nameserver : configNameservers) newNameservers.add(new Nameserver(cluster, nameserver));
         this.nameservers = AoCollections.optimalUnmodifiableSet(newNameservers);
     }

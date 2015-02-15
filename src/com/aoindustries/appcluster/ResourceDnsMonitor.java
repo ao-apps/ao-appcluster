@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -79,7 +79,7 @@ public class ResourceDnsMonitor {
     /**
      * Only one resolver will be created for each unique nameserver (case-insensitive on unique)
      */
-    private static final ConcurrentMap<Nameserver,SimpleResolver> resolvers = new ConcurrentHashMap<Nameserver,SimpleResolver>();
+    private static final ConcurrentMap<Nameserver,SimpleResolver> resolvers = new ConcurrentHashMap<>();
     private static SimpleResolver getSimpleResolver(Nameserver hostname) throws UnknownHostException {
         SimpleResolver resolver = resolvers.get(hostname);
         if(resolver==null) {
@@ -96,7 +96,7 @@ public class ResourceDnsMonitor {
      */
     private static Map<? extends Node,? extends ResourceNodeDnsResult> getNodeResults(Resource<?,?> resource, Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeRecordLookups, NodeDnsStatus nodeStatus, Collection<String> nodeStatusMessages) {
         Set<? extends ResourceNode<?,?>> resourceNodes = resource.getResourceNodes();
-        Map<Node,ResourceNodeDnsResult> nodeResults = new HashMap<Node,ResourceNodeDnsResult>(resourceNodes.size()*4/3+1);
+        Map<Node,ResourceNodeDnsResult> nodeResults = new HashMap<>(resourceNodes.size()*4/3+1);
         for(ResourceNode<?,?> resourceNode : resourceNodes) {
             nodeResults.put(
                 resourceNode.getNode(),
@@ -197,7 +197,7 @@ public class ResourceDnsMonitor {
                     Collection<String> unknownMessage = Collections.singleton(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.start.newThread.statusMessage"));
                     Collection<String> nodeDisabledMessages = Collections.singleton(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.nodeDisabled"));
                     Set<? extends ResourceNode<?,?>> resourceNodes = resource.getResourceNodes();
-                    Map<Node,ResourceNodeDnsResult> nodeResults = new HashMap<Node,ResourceNodeDnsResult>(resourceNodes.size()*4/3+1);
+                    Map<Node,ResourceNodeDnsResult> nodeResults = new HashMap<>(resourceNodes.size()*4/3+1);
                     for(ResourceNode<?,?> resourceNode : resourceNodes) {
                         Node node = resourceNode.getNode();
                         if(node.isEnabled()) {
@@ -239,7 +239,7 @@ public class ResourceDnsMonitor {
                                 // Find all the unique hostnames and nameservers that will be queried
                                 final Name[] allHostnames;
                                 {
-                                    final Set<Name> allHostnamesSet = new HashSet<Name>();
+                                    final Set<Name> allHostnamesSet = new HashSet<>();
                                     allHostnamesSet.addAll(masterRecords);
                                     for(ResourceNode<?,?> resourceNode : resourceNodes) {
                                         if(resourceNode.getNode().isEnabled()) allHostnamesSet.addAll(resourceNode.getNodeRecords());
@@ -255,9 +255,9 @@ public class ResourceDnsMonitor {
                                         long startTime = System.currentTimeMillis();
 
                                         // Query all enabled nameservers for all involved dns entries in parallel, getting all A records
-                                        final Map<Name,Map<Nameserver,Future<DnsLookupResult>>> allHostnameFutures = new HashMap<Name,Map<Nameserver,Future<DnsLookupResult>>>(allHostnames.length*4/3+1);
+                                        final Map<Name,Map<Nameserver,Future<DnsLookupResult>>> allHostnameFutures = new HashMap<>(allHostnames.length*4/3+1);
                                         for(final Name hostname : allHostnames) {
-                                            Map<Nameserver,Future<DnsLookupResult>> hostnameFutures = new HashMap<Nameserver,Future<DnsLookupResult>>(enabledNameservers.length*4/3+1);
+                                            Map<Nameserver,Future<DnsLookupResult>> hostnameFutures = new HashMap<>(enabledNameservers.length*4/3+1);
                                             allHostnameFutures.put(hostname, hostnameFutures);
                                             for(final Nameserver nameserver : enabledNameservers) {
                                                 hostnameFutures.put(
@@ -292,7 +292,7 @@ public class ResourceDnsMonitor {
                                                                                     if(masterRecords.contains(hostname)) {
                                                                                         long ttl = aRecord.getTTL();
                                                                                         if(ttl!=masterRecordsTtl) {
-                                                                                            if(statusMessages==null) statusMessages = new ArrayList<String>();
+                                                                                            if(statusMessages==null) statusMessages = new ArrayList<>();
                                                                                             statusMessages.add(ApplicationResources.accessor.getMessage("ResourceDnsMonitor.lookup.unexpectedTtl", masterRecordsTtl, ttl));
                                                                                         }
                                                                                     }
@@ -359,14 +359,14 @@ public class ResourceDnsMonitor {
                                         }
 
                                         // Get all the masterRecord results
-                                        Map<Name,Map<Nameserver,DnsLookupResult>> masterRecordLookups = new HashMap<Name,Map<Nameserver,DnsLookupResult>>(masterRecords.size()*4/3+1);
+                                        Map<Name,Map<Nameserver,DnsLookupResult>> masterRecordLookups = new HashMap<>(masterRecords.size()*4/3+1);
                                         MasterDnsStatus masterStatus = MasterDnsStatus.CONSISTENT;
-                                        List<String> masterStatusMessages = new ArrayList<String>();
+                                        List<String> masterStatusMessages = new ArrayList<>();
                                         Nameserver firstMasterNameserver = null;
                                         Name firstMasterRecord = null;
                                         Set<String> firstMasterAddresses = null;
                                         for(Name masterRecord : masterRecords) {
-                                            Map<Nameserver,DnsLookupResult> masterLookups = new HashMap<Nameserver,DnsLookupResult>(enabledNameservers.length*4/3+1);
+                                            Map<Nameserver,DnsLookupResult> masterLookups = new HashMap<>(enabledNameservers.length*4/3+1);
                                             masterRecordLookups.put(masterRecord, masterLookups);
                                             Map<Nameserver,Future<DnsLookupResult>> masterFutures = allHostnameFutures.get(masterRecord);
                                             boolean foundSuccessful = false;
@@ -431,20 +431,20 @@ public class ResourceDnsMonitor {
                                         }
 
                                         // Get the results for each node
-                                        Map<Node,ResourceNodeDnsResult> nodeResults = new HashMap<Node,ResourceNodeDnsResult>(resourceNodes.length*4/3+1);
-                                        Set<String> allNodeAddresses = new HashSet<String>(resourceNodes.length*4/3+1);
+                                        Map<Node,ResourceNodeDnsResult> nodeResults = new HashMap<>(resourceNodes.length*4/3+1);
+                                        Set<String> allNodeAddresses = new HashSet<>(resourceNodes.length*4/3+1);
                                         for(ResourceNode<?,?> resourceNode :  resourceNodes) {
                                             Node node = resourceNode.getNode();
                                             if(node.isEnabled()) {
                                                 Set<? extends Name> nodeRecords = resourceNode.getNodeRecords();
-                                                Map<Name,Map<Nameserver,DnsLookupResult>> nodeRecordLookups = new HashMap<Name,Map<Nameserver,DnsLookupResult>>(nodeRecords.size()*4/3+1);
+                                                Map<Name,Map<Nameserver,DnsLookupResult>> nodeRecordLookups = new HashMap<>(nodeRecords.size()*4/3+1);
                                                 NodeDnsStatus nodeStatus = NodeDnsStatus.SLAVE;
-                                                List<String> nodeStatusMessages = new ArrayList<String>();
+                                                List<String> nodeStatusMessages = new ArrayList<>();
                                                 Nameserver firstNodeNameserver = null;
                                                 Name firstNodeRecord = null;
                                                 Set<String> firstNodeAddresses = null;
                                                 for(Name nodeRecord : resourceNode.getNodeRecords()) {
-                                                    Map<Nameserver,DnsLookupResult> nodeLookups = new HashMap<Nameserver,DnsLookupResult>(enabledNameservers.length*4/3+1);
+                                                    Map<Nameserver,DnsLookupResult> nodeLookups = new HashMap<>(enabledNameservers.length*4/3+1);
                                                     nodeRecordLookups.put(nodeRecord, nodeLookups);
                                                     Map<Nameserver,Future<DnsLookupResult>> nodeFutures = allHostnameFutures.get(nodeRecord);
                                                     boolean foundSuccessful = false;
@@ -493,7 +493,7 @@ public class ResourceDnsMonitor {
                                                                                     )
                                                                                 );
                                                                                 // Re-add the previous with inconsistent state and additional message
-                                                                                List<String> newNodeStatusMessages = new ArrayList<String>(previousNodeResult.getNodeStatusMessages());
+                                                                                List<String> newNodeStatusMessages = new ArrayList<>(previousNodeResult.getNodeStatusMessages());
                                                                                 newNodeStatusMessages.add(
                                                                                     ApplicationResources.accessor.getMessage(
                                                                                         "ResourceDnsMonitor.nodeRecord.duplicateA",

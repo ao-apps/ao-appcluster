@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -64,7 +64,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
         this.type = resourceConfiguration.getType();
         @SuppressWarnings("unchecked")
         R rThis = (R)this;
-        Set<RN> newResourceNodes = new LinkedHashSet<RN>(resourceNodes.size()*4/3+1);
+        Set<RN> newResourceNodes = new LinkedHashSet<>(resourceNodes.size()*4/3+1);
         for(ResourceNode<?,?> resourceNode : resourceNodes) {
             @SuppressWarnings("unchecked")
             RN rn = (RN)resourceNode;
@@ -72,7 +72,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
             newResourceNodes.add(rn);
         }
         this.resourceNodes = AoCollections.optimalUnmodifiableSet(newResourceNodes);
-        final Set<Nameserver> newEnabledNameservers = new LinkedHashSet<Nameserver>();
+        final Set<Nameserver> newEnabledNameservers = new LinkedHashSet<>();
         for(ResourceNode<?,?> resourceNode : resourceNodes) {
             Node node = resourceNode.getNode();
             if(node.isEnabled()) newEnabledNameservers.addAll(node.getNameservers());
@@ -98,7 +98,7 @@ abstract public class Resource<R extends Resource<R,RN>,RN extends ResourceNode<
                 // The local node is not part of this resource.
                 synchronizers = Collections.emptyMap();
             } else {
-                Map<Node,ResourceSynchronizer<R,RN>> newSynchronizers = new LinkedHashMap<Node,ResourceSynchronizer<R,RN>>((this.resourceNodes.size()-1)*4/3+1);
+                Map<Node,ResourceSynchronizer<R,RN>> newSynchronizers = new LinkedHashMap<>((this.resourceNodes.size()-1)*4/3+1);
                 for(RN resourceNode : this.resourceNodes) {
                     Node node = resourceNode.getNode();
                     if(!node.equals(localNode)) {

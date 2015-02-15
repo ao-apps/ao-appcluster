@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -43,11 +43,8 @@ public class PropertiesConfigurationTest {
             config = new AppClusterPropertiesConfiguration(new File(url.getPath()));
         } else {
             Properties props = new Properties();
-            InputStream in = url.openStream();
-            try {
+            try (InputStream in = url.openStream()) {
                 props.load(in);
-            } finally {
-                in.close();
             }
             config = new AppClusterPropertiesConfiguration(props);
         }

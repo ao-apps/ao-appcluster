@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -25,6 +25,7 @@ package com.aoindustries.appcluster;
 import com.aoindustries.util.AoCollections;
 import java.sql.Timestamp;
 import java.text.Collator;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -50,7 +51,7 @@ public class ResourceDnsResult implements ResourceResult {
     static SortedSet<String> getUnmodifiableSortedSet(Collection<String> collection, Comparator<Object> collator) {
         if(collection==null || collection.isEmpty()) return AoCollections.emptySortedSet();
         if(collection.size()==1) return AoCollections.singletonSortedSet(collection.iterator().next());
-        SortedSet<String> sortedSet = new TreeSet<String>(collator);
+        SortedSet<String> sortedSet = new TreeSet<>(collator);
         sortedSet.addAll(collection);
         return Collections.unmodifiableSortedSet(sortedSet);
     }
@@ -58,8 +59,8 @@ public class ResourceDnsResult implements ResourceResult {
     static SortedSet<String> getUnmodifiableSortedSet(String[] array, Comparator<Object> collator) {
         if(array==null || array.length==0) return AoCollections.emptySortedSet();
         if(array.length==1) return AoCollections.singletonSortedSet(array[0]);
-        SortedSet<String> sortedSet = new TreeSet<String>(collator);
-        for(String elem : array) sortedSet.add(elem);
+        SortedSet<String> sortedSet = new TreeSet<>(collator);
+		sortedSet.addAll(Arrays.asList(array));
         return Collections.unmodifiableSortedSet(sortedSet);
     }
 
@@ -71,11 +72,11 @@ public class ResourceDnsResult implements ResourceResult {
      * @exception  IllegalArgumentException  if any dnsRecord->nameserver result is missing.
      */
     static Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> getUnmodifiableDnsLookupResults(Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> dnsRecordLookups, Set<? extends Name> dnsRecords, Set<? extends Nameserver> nameservers) throws IllegalArgumentException {
-        Map<Name,Map<? extends Nameserver,? extends DnsLookupResult>> newDnsRecordLookups = new LinkedHashMap<Name,Map<? extends Nameserver,? extends DnsLookupResult>>(dnsRecords.size()*4/3+1);
+        Map<Name,Map<? extends Nameserver,? extends DnsLookupResult>> newDnsRecordLookups = new LinkedHashMap<>(dnsRecords.size()*4/3+1);
         for(Name dnsRecord : dnsRecords) {
             Map<? extends Nameserver,? extends DnsLookupResult> dnsLookupResults = dnsRecordLookups.get(dnsRecord);
             if(dnsLookupResults==null) throw new IllegalArgumentException("Missing DNS record " + dnsRecord);
-            Map<Nameserver,DnsLookupResult> newDnsLookupResults = new LinkedHashMap<Nameserver,DnsLookupResult>(nameservers.size()*4/3+1);
+            Map<Nameserver,DnsLookupResult> newDnsLookupResults = new LinkedHashMap<>(nameservers.size()*4/3+1);
             for(Nameserver nameserver : nameservers) {
                 DnsLookupResult dnsLookupResult = dnsLookupResults.get(nameserver);
                 if(dnsLookupResult==null) throw new IllegalArgumentException("Missing DNS lookup result " + dnsLookupResult);
@@ -110,7 +111,7 @@ public class ResourceDnsResult implements ResourceResult {
         this.masterStatus = masterStatus;
         this.masterStatusMessages = getUnmodifiableSortedSet(masterStatusMessages, defaultLocaleCollator);
         Set<? extends ResourceNode<?,?>> resourceNodes = resource.getResourceNodes();
-        Map<Node,ResourceNodeDnsResult> newNodeResults = new LinkedHashMap<Node,ResourceNodeDnsResult>(resourceNodes.size()*4/3+1);
+        Map<Node,ResourceNodeDnsResult> newNodeResults = new LinkedHashMap<>(resourceNodes.size()*4/3+1);
         for(ResourceNode<?,?> resourceNode : resourceNodes) {
             Node node = resourceNode.getNode();
             ResourceNodeDnsResult nodeResult = nodeResults.get(node);

@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -74,7 +74,7 @@ public class AppCluster {
     private Node localNode; // Protected by startedLock
     private Set<? extends Resource<?,?>> resources = Collections.emptySet(); // Protected by startedLock
 
-    private final List<ResourceListener> resourceListeners = new ArrayList<ResourceListener>();
+    private final List<ResourceListener> resourceListeners = new ArrayList<>();
     private ExecutorService resourceListenersOnDnsResultExecutorService; // Protected by resourceListeners
     private ExecutorService resourceListenersOnSynchronizationResultExecutorService; // Protected by resourceListeners
 
@@ -126,14 +126,14 @@ public class AppCluster {
      */
     public static void checkConfiguration(Set<? extends NodeConfiguration> nodeConfigurations, Set<? extends ResourceConfiguration<?,?>> resourceConfigurations) throws AppClusterConfigurationException {
         // Each node must have a distinct display
-        Set<String> strings = new HashSet<String>(nodeConfigurations.size()*4/3+1);
+        Set<String> strings = new HashSet<>(nodeConfigurations.size()*4/3+1);
         for(NodeConfiguration nodeConfiguration : nodeConfigurations) {
             String display = nodeConfiguration.getDisplay();
             if(!strings.add(display)) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateNodeDisplay", display));
         }
 
         // Each node must have a distinct hostname
-        Set<Name> names = new HashSet<Name>(nodeConfigurations.size()*4/3+1);
+        Set<Name> names = new HashSet<>(nodeConfigurations.size()*4/3+1);
         for(NodeConfiguration nodeConfiguration : nodeConfigurations) {
             Name hostname = nodeConfiguration.getHostname();
             if(!names.add(hostname)) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppCluster.checkConfiguration.duplicateNodeHostname", hostname));
@@ -387,7 +387,7 @@ public class AppCluster {
     public Map<String,Node> getNodeMap() {
         Map<String,Node> nodeMap;
         synchronized(startedLock) {
-            nodeMap = new LinkedHashMap<String,Node>(nodes.size()*4/3+1);
+            nodeMap = new LinkedHashMap<>(nodes.size()*4/3+1);
             for(Node node : nodes) nodeMap.put(node.getId(), node);
         }
         return AoCollections.optimalUnmodifiableMap(nodeMap);
@@ -444,7 +444,7 @@ public class AppCluster {
      */
     public Map<String,? extends Resource<?,?>> getResourceMap() {
         synchronized(startedLock) {
-            LinkedHashMap<String,Resource<?,?>> map = new LinkedHashMap<String,Resource<?,?>>(resources.size()*4/3+1);
+            LinkedHashMap<String,Resource<?,?>> map = new LinkedHashMap<>(resources.size()*4/3+1);
             for(Resource<?,?> resource : resources) map.put(resource.getId(), resource);
             return AoCollections.optimalUnmodifiableMap(map);
         }
@@ -468,7 +468,7 @@ public class AppCluster {
                 checkConfiguration(nodeConfigurations, resourceConfigurations);
 
                 // Create the nodes
-                Set<Node> newNodes = new LinkedHashSet<Node>(nodeConfigurations.size()*4/3+1);
+                Set<Node> newNodes = new LinkedHashSet<>(nodeConfigurations.size()*4/3+1);
                 for(NodeConfiguration nodeConfiguration : nodeConfigurations) {
                     newNodes.add(new Node(this, nodeConfiguration));
                 }
@@ -521,10 +521,10 @@ public class AppCluster {
                 }
 
                 // Start per-resource monitoring and synchronization threads
-                Set<Resource<?,?>> newResources = new LinkedHashSet<Resource<?,?>>(resourceConfigurations.size()*4/3+1);
+                Set<Resource<?,?>> newResources = new LinkedHashSet<>(resourceConfigurations.size()*4/3+1);
                 for(ResourceConfiguration<?,?> resourceConfiguration : resourceConfigurations) {
                     Set<? extends ResourceNodeConfiguration<?,?>> resourceNodeConfigs = resourceConfiguration.getResourceNodeConfigurations();
-                    Collection<ResourceNode<?,?>> newResourceNodes = new ArrayList<ResourceNode<?,?>>(resourceNodeConfigs.size());
+                    Collection<ResourceNode<?,?>> newResourceNodes = new ArrayList<>(resourceNodeConfigs.size());
                     for(ResourceNodeConfiguration<?,?> resourceNodeConfig : resourceNodeConfigs) {
                         String nodeId = resourceNodeConfig.getNodeId();
                         Node node = getNode(nodeId);
@@ -536,9 +536,7 @@ public class AppCluster {
                     resource.start();
                 }
                 resources = AoCollections.optimalUnmodifiableSet(newResources);
-            } catch(TextParseException exc) {
-                throw new AppClusterConfigurationException(exc);
-            } catch(UnknownHostException exc) {
+            } catch(TextParseException | UnknownHostException exc) {
                 throw new AppClusterConfigurationException(exc);
             }
         }

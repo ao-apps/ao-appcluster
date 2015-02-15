@@ -27,11 +27,8 @@ import com.aoindustries.cron.Schedule;
 import com.aoindustries.util.AoCollections;
 import com.aoindustries.util.PropertiesUtils;
 import com.aoindustries.util.StringUtility;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,7 +58,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
      */
     private static final long FILE_CHECK_INTERVAL = 5000;
 
-    private final List<AppClusterConfigurationListener> listeners = new ArrayList<AppClusterConfigurationListener>();
+    private final List<AppClusterConfigurationListener> listeners = new ArrayList<>();
 
     private final File file;
 
@@ -97,14 +94,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
                     if(fileMonitorThread==null) {
                         // Load initial properties
                         fileLastModified = file.lastModified();
-                        Properties newProperties = new Properties();
-                        InputStream in = new BufferedInputStream(new FileInputStream(file));
-                        try {
-                            newProperties.load(in);
-                        } finally {
-                            in.close();
-                        }
-                        this.properties = newProperties;
+                        this.properties = PropertiesUtils.loadFromFile(file);
                         fileMonitorThread = new Thread(
                             new Runnable() {
                                 @Override
@@ -246,7 +236,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
         String paramValue = getString(propertyName, required);
         if(paramValue==null) return Collections.emptySet();
         List<String> values = StringUtility.splitStringCommaSpace(paramValue);
-        Set<String> set = new LinkedHashSet<String>(values.size()*4/3+1);
+        Set<String> set = new LinkedHashSet<>(values.size()*4/3+1);
         for(String value : values) {
             value = value.trim();
             if(value.length()>0 && !set.add(value)) {
@@ -265,7 +255,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
     public Set<? extends Name> getUniqueNames(String propertyName) throws AppClusterConfigurationException {
         try {
             List<String> values = StringUtility.splitStringCommaSpace(getString(propertyName, true));
-            Set<Name> set = new LinkedHashSet<Name>(values.size()*4/3+1);
+            Set<Name> set = new LinkedHashSet<>(values.size()*4/3+1);
             for(String value : values) {
                 value = value.trim();
                 if(value.length()>0 && !set.add(Name.fromString(value))) {
@@ -294,7 +284,7 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
     @Override
     public Set<? extends NodePropertiesConfiguration> getNodeConfigurations() throws AppClusterConfigurationException {
         Set<String> ids = getUniqueStrings("appcluster.nodes", true);
-        Set<NodePropertiesConfiguration> nodes = new LinkedHashSet<NodePropertiesConfiguration>(ids.size()*4/3+1);
+        Set<NodePropertiesConfiguration> nodes = new LinkedHashSet<>(ids.size()*4/3+1);
         for(String id : ids) {
             if(
                 !nodes.add(new NodePropertiesConfiguration(this, id))
@@ -303,21 +293,15 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
         return AoCollections.optimalUnmodifiableSet(nodes);
     }
 
-    private static final Map<String,ResourcePropertiesConfigurationFactory> factoryCache = new HashMap<String,ResourcePropertiesConfigurationFactory>();
-    private static ResourcePropertiesConfigurationFactory getResourcePropertiesConfigurationFactory(String classname) throws AppClusterConfigurationException {
+    private static final Map<String,ResourcePropertiesConfigurationFactory<?,?>> factoryCache = new HashMap<>();
+    private static ResourcePropertiesConfigurationFactory<?,?> getResourcePropertiesConfigurationFactory(String classname) throws AppClusterConfigurationException {
         synchronized(factoryCache) {
-            ResourcePropertiesConfigurationFactory factory = factoryCache.get(classname);
+            ResourcePropertiesConfigurationFactory<?,?> factory = factoryCache.get(classname);
             if(factory==null) {
                 try {
                     factory = Class.forName(classname).asSubclass(ResourcePropertiesConfigurationFactory.class).newInstance();
                     factoryCache.put(classname, factory);
-                } catch(ClassNotFoundException exc) {
-                    throw new AppClusterConfigurationException(exc);
-                } catch(ClassCastException exc) {
-                    throw new AppClusterConfigurationException(exc);
-                } catch(InstantiationException exc) {
-                    throw new AppClusterConfigurationException(exc);
-                } catch(IllegalAccessException exc) {
+                } catch(ClassNotFoundException | ClassCastException | InstantiationException | IllegalAccessException exc) {
                     throw new AppClusterConfigurationException(exc);
                 }
             }
@@ -329,16 +313,16 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
     public Set<? extends ResourceConfiguration<?,?>> getResourceConfigurations() throws AppClusterConfigurationException {
         // Get all of the resource types
         Set<String> types = getUniqueStrings("appcluster.resourceTypes", true);
-        Map<String,ResourcePropertiesConfigurationFactory<?,?>> factories = new HashMap<String,ResourcePropertiesConfigurationFactory<?,?>>(types.size()*4/3+1);
+        Map<String,ResourcePropertiesConfigurationFactory<?,?>> factories = new HashMap<>(types.size()*4/3+1);
         for(String type : types) {
             factories.put(type, getResourcePropertiesConfigurationFactory(getString("appcluster.resourceType."+type+".factory", true)));
         }
         Set<String> ids = getUniqueStrings("appcluster.resources", true);
-        Set<ResourceConfiguration<?,?>> resources = new LinkedHashSet<ResourceConfiguration<?,?>>(ids.size()*4/3+1);
+        Set<ResourceConfiguration<?,?>> resources = new LinkedHashSet<>(ids.size()*4/3+1);
         for(String id : ids) {
             String propertyName = "appcluster.resource."+id+".type";
             String type = getString(propertyName, true);
-            ResourcePropertiesConfigurationFactory factory = factories.get(type);
+            ResourcePropertiesConfigurationFactory<?,?> factory = factories.get(type);
             if(factory==null) throw new AppClusterConfigurationException(ApplicationResources.accessor.getMessage("AppClusterPropertiesConfiguration.getResourceConfigurations.unexpectedType", propertyName, type));
             if(!resources.add(factory.newResourcePropertiesConfiguration(this, id))) throw new AssertionError();
         }

@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -47,7 +47,7 @@ public class ImapResourcePropertiesConfiguration extends CronResourcePropertiesC
     public Set<? extends ImapResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
         String resourceId = getId();
         Set<String> nodeIds = properties.getUniqueStrings("appcluster.resource."+id+".nodes", true);
-        Set<ImapResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<ImapResourceNodePropertiesConfiguration>(nodeIds.size()*4/3+1);
+        Set<ImapResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<>(nodeIds.size()*4/3+1);
         for(String nodeId : nodeIds) {
             if(!resourceNodes.add(new ImapResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
         }

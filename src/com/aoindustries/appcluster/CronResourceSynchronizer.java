@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -81,7 +81,7 @@ abstract public class CronResourceSynchronizer<R extends CronResource<R,RN>,RN e
         super(localResourceNode, remoteResourceNode);
         this.synchronizeSchedule = synchronizeSchedule;
         this.testSchedule = testSchedule;
-        List<Schedule> combined = new ArrayList<Schedule>(2);
+        List<Schedule> combined = new ArrayList<>(2);
         combined.add(synchronizeSchedule);
         combined.add(testSchedule);
         this.combinedSchedule = new MultiSchedule(combined);

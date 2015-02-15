@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -199,7 +199,7 @@ public class LoggerResourceListener implements ResourceListener {
     private static boolean matches(ResourceSynchronizationResult oldResult, ResourceSynchronizationResult newResult) {
         // Handle null
         if(oldResult==null) return newResult==null;
-        if(newResult==null) return oldResult==null;
+        if(newResult==null) return false; // oldResult==null;
         // Both non-null
         List<ResourceSynchronizationResultStep> oldSteps = oldResult.getSteps();
         List<ResourceSynchronizationResultStep> newSteps = newResult.getSteps();

@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -75,7 +75,7 @@ public class Nameserver {
      */
     public ResourceStatus getStatus() {
         ResourceStatus status = ResourceStatus.UNKNOWN;
-        for(Resource resource : cluster.getResources()) {
+        for(Resource<?,?> resource : cluster.getResources()) {
             ResourceDnsResult resourceDnsResult = resource.getDnsMonitor().getLastResult();
             Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> masterDnsLookups = resourceDnsResult.getMasterRecordLookups();
             if(masterDnsLookups!=null) {

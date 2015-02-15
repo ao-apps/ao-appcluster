@@ -1,6 +1,6 @@
 /*
  * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * Copyright (C) 2011, 2015  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -124,7 +124,7 @@ public class Csync2ResourceSynchronizer extends CronResourceSynchronizer<Csync2R
         final Csync2Resource resource = localResourceNode.getResource();
         final String groups = StringUtility.join(resource.getGroups(), ",");
 
-        List<ResourceSynchronizationResultStep> steps = new ArrayList<ResourceSynchronizationResultStep>(2);
+        List<ResourceSynchronizationResultStep> steps = new ArrayList<>(2);
 
         // Step one: synchronize or scan
         {
