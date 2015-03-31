@@ -267,7 +267,7 @@ public class ResourceDnsMonitor {
                                                             @Override
                                                             public DnsLookupResult call() {
                                                                 try {
-                                                                    for(int attempt=0;attempt<2;attempt++) {
+                                                                    for(int attempt=0; attempt<DNS_ATTEMPTS; attempt++) {
                                                                         Lookup lookup = new Lookup(hostname, Type.A);
                                                                         lookup.setCache(null);
                                                                         lookup.setResolver(getSimpleResolver(nameserver));

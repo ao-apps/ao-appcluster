@@ -44,7 +44,7 @@ import org.xbill.DNS.Name;
 public class ResourceDnsResult implements ResourceResult {
 
     public static final int WARNING_SECONDS = 10 + (ResourceDnsMonitor.DNS_CHECK_INTERVAL + ResourceDnsMonitor.DNS_ATTEMPTS * ResourceDnsMonitor.DNS_CHECK_TIMEOUT) / 1000;
-    public static final int ERROR_SECONDS = WARNING_SECONDS + ResourceDnsMonitor.DNS_CHECK_INTERVAL/1000;
+    public static final int ERROR_SECONDS = WARNING_SECONDS + (ResourceDnsMonitor.DNS_CHECK_INTERVAL / 1000);
 
     static final Comparator<Object> defaultLocaleCollator = Collator.getInstance();
 
