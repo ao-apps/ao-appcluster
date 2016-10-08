@@ -630,6 +630,8 @@ public class ResourceDnsMonitor {
                                         Thread.sleep(DNS_CHECK_INTERVAL);
                                     } catch(InterruptedException exc) {
                                         logger.log(Level.WARNING, null, exc);
+										// Restore the interrupted status
+										Thread.currentThread().interrupt();
                                     }
                                 }
                             }

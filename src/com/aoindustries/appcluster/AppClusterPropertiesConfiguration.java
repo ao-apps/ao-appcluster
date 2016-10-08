@@ -106,6 +106,8 @@ public class AppClusterPropertiesConfiguration implements AppClusterConfiguratio
                                                 Thread.sleep(FILE_CHECK_INTERVAL);
                                             } catch(InterruptedException exc) {
                                                 logger.log(Level.WARNING, null, exc);
+												// Restore the interrupted status
+												Thread.currentThread().interrupt();
                                             }
                                             boolean notifyListeners = false;
                                             synchronized(fileMonitorLock) {
