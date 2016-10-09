@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -27,20 +27,20 @@ package com.aoindustries.appcluster;
  */
 public class AppClusterException extends Exception {
 
-    private static final long serialVersionUID = 4796418579890653703L;
+	private static final long serialVersionUID = 4796418579890653703L;
 
-    public AppClusterException() {
-    }
+	public AppClusterException() {
+	}
 
-    public AppClusterException(String message) {
-        super(message);
-    }
+	public AppClusterException(String message) {
+		super(message);
+	}
 
-    public AppClusterException(Throwable cause) {
-        super(cause);
-    }
+	public AppClusterException(Throwable cause) {
+		super(cause);
+	}
 
-    public AppClusterException(String message, Throwable cause) {
-        super(message, cause);
-    }
+	public AppClusterException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

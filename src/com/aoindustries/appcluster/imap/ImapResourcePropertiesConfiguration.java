@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011, 2015  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2015, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -39,23 +39,23 @@ import java.util.Set;
  */
 public class ImapResourcePropertiesConfiguration extends CronResourcePropertiesConfiguration<ImapResource,ImapResourceNode> implements ImapResourceConfiguration {
 
-    protected ImapResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
-        super(properties, id);
-    }
+	protected ImapResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+		super(properties, id);
+	}
 
-    @Override
-    public Set<? extends ImapResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
-        String resourceId = getId();
-        Set<String> nodeIds = properties.getUniqueStrings("appcluster.resource."+id+".nodes", true);
-        Set<ImapResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<>(nodeIds.size()*4/3+1);
-        for(String nodeId : nodeIds) {
-            if(!resourceNodes.add(new ImapResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
-        }
-        return AoCollections.optimalUnmodifiableSet(resourceNodes);
-    }
+	@Override
+	public Set<? extends ImapResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
+		String resourceId = getId();
+		Set<String> nodeIds = properties.getUniqueStrings("appcluster.resource."+id+".nodes", true);
+		Set<ImapResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<>(nodeIds.size()*4/3+1);
+		for(String nodeId : nodeIds) {
+			if(!resourceNodes.add(new ImapResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
+		}
+		return AoCollections.optimalUnmodifiableSet(resourceNodes);
+	}
 
-    @Override
-    public ImapResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        return new ImapResource(cluster, this, resourceNodes);
-    }
+	@Override
+	public ImapResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+		return new ImapResource(cluster, this, resourceNodes);
+	}
 }

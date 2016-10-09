@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -31,34 +31,34 @@ import com.aoindustries.cron.Schedule;
  */
 public abstract class CronResourcePropertiesConfiguration<R extends CronResource<R,RN>,RN extends CronResourceNode<R,RN>> extends ResourcePropertiesConfiguration<R,RN> implements CronResourceConfiguration<R,RN> {
 
-    private final int synchronizeTimeout;
-    private final int testTimeout;
+	private final int synchronizeTimeout;
+	private final int testTimeout;
 
-    protected CronResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
-        super(properties, id);
-        this.synchronizeTimeout = properties.getInt("appcluster.resource."+id+".timeout.sync");
-        this.testTimeout = properties.getInt("appcluster.resource."+id+".timeout.test");
-    }
+	protected CronResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+		super(properties, id);
+		this.synchronizeTimeout = properties.getInt("appcluster.resource."+id+".timeout.sync");
+		this.testTimeout = properties.getInt("appcluster.resource."+id+".timeout.test");
+	}
 
-    @Override
-    public int getSynchronizeTimeout() {
-        return synchronizeTimeout;
-    }
+	@Override
+	public int getSynchronizeTimeout() {
+		return synchronizeTimeout;
+	}
 
-    @Override
-    public Schedule getSynchronizeSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException {
-        assert localResourceNode.getResource()==remoteResourceNode.getResource();
-        return properties.getSchedule("appcluster.resource."+id+".schedule.sync."+localResourceNode.getNode().getId()+"."+remoteResourceNode.getNode().getId());
-    }
+	@Override
+	public Schedule getSynchronizeSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException {
+		assert localResourceNode.getResource()==remoteResourceNode.getResource();
+		return properties.getSchedule("appcluster.resource."+id+".schedule.sync."+localResourceNode.getNode().getId()+"."+remoteResourceNode.getNode().getId());
+	}
 
-    @Override
-    public int getTestTimeout() {
-        return testTimeout;
-    }
+	@Override
+	public int getTestTimeout() {
+		return testTimeout;
+	}
 
-    @Override
-    public Schedule getTestSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException {
-        assert localResourceNode.getResource()==remoteResourceNode.getResource();
-        return properties.getSchedule("appcluster.resource."+id+".schedule.test."+localResourceNode.getNode().getId()+"."+remoteResourceNode.getNode().getId());
-    }
+	@Override
+	public Schedule getTestSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException {
+		assert localResourceNode.getResource()==remoteResourceNode.getResource();
+		return properties.getSchedule("appcluster.resource."+id+".schedule.test."+localResourceNode.getNode().getId()+"."+remoteResourceNode.getNode().getId());
+	}
 }

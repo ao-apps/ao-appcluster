@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011, 2015  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2015, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -39,38 +39,38 @@ import java.util.Set;
  */
 public class Csync2ResourcePropertiesConfiguration extends CronResourcePropertiesConfiguration<Csync2Resource,Csync2ResourceNode> implements Csync2ResourceConfiguration {
 
-    private final boolean allowMultiMaster;
-    private final Set<String> groups;
+	private final boolean allowMultiMaster;
+	private final Set<String> groups;
 
-    protected Csync2ResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
-        super(properties, id);
-        this.allowMultiMaster = properties.getBoolean("appcluster.resource."+id+"."+type+".allowMultiMaster");
-        this.groups = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".groups", true);
-    }
+	protected Csync2ResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+		super(properties, id);
+		this.allowMultiMaster = properties.getBoolean("appcluster.resource."+id+"."+type+".allowMultiMaster");
+		this.groups = properties.getUniqueStrings("appcluster.resource."+id+"."+type+".groups", true);
+	}
 
-    @Override
-    public boolean getAllowMultiMaster() {
-        return allowMultiMaster;
-    }
+	@Override
+	public boolean getAllowMultiMaster() {
+		return allowMultiMaster;
+	}
 
-    @Override
-    public Set<String> getGroups() {
-        return groups;
-    }
+	@Override
+	public Set<String> getGroups() {
+		return groups;
+	}
 
-    @Override
-    public Set<? extends Csync2ResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
-        String resourceId = getId();
-        Set<String> nodeIds = properties.getUniqueStrings("appcluster.resource."+id+".nodes", true);
-        Set<Csync2ResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<>(nodeIds.size()*4/3+1);
-        for(String nodeId : nodeIds) {
-            if(!resourceNodes.add(new Csync2ResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
-        }
-        return AoCollections.optimalUnmodifiableSet(resourceNodes);
-    }
+	@Override
+	public Set<? extends Csync2ResourceNodePropertiesConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException {
+		String resourceId = getId();
+		Set<String> nodeIds = properties.getUniqueStrings("appcluster.resource."+id+".nodes", true);
+		Set<Csync2ResourceNodePropertiesConfiguration> resourceNodes = new LinkedHashSet<>(nodeIds.size()*4/3+1);
+		for(String nodeId : nodeIds) {
+			if(!resourceNodes.add(new Csync2ResourceNodePropertiesConfiguration(properties, resourceId, nodeId, type))) throw new AssertionError();
+		}
+		return AoCollections.optimalUnmodifiableSet(resourceNodes);
+	}
 
-    @Override
-    public Csync2Resource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        return new Csync2Resource(cluster, this, resourceNodes);
-    }
+	@Override
+	public Csync2Resource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+		return new Csync2Resource(cluster, this, resourceNodes);
+	}
 }

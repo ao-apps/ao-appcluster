@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -26,5 +26,5 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public interface AppClusterConfigurationListener {
-    void onConfigurationChanged();
+	void onConfigurationChanged();
 }

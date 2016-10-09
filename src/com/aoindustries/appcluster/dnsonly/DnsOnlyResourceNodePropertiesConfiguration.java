@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -34,12 +34,12 @@ import com.aoindustries.appcluster.ResourceNodePropertiesConfiguration;
  */
 public class DnsOnlyResourceNodePropertiesConfiguration extends ResourceNodePropertiesConfiguration<DnsOnlyResource,DnsOnlyResourceNode> implements DnsOnlyResourceNodeConfiguration {
 
-    protected DnsOnlyResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
-        super(properties, resourceId, nodeId);
-    }
+	protected DnsOnlyResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
+		super(properties, resourceId, nodeId);
+	}
 
-    @Override
-    public DnsOnlyResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
-        return new DnsOnlyResourceNode(node, this);
-    }
+	@Override
+	public DnsOnlyResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
+		return new DnsOnlyResourceNode(node, this);
+	}
 }

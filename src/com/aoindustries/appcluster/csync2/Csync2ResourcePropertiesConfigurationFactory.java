@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -34,8 +34,8 @@ import com.aoindustries.appcluster.ResourcePropertiesConfigurationFactory;
  */
 public class Csync2ResourcePropertiesConfigurationFactory implements ResourcePropertiesConfigurationFactory<Csync2Resource,Csync2ResourceNode> {
 
-    @Override
-    public ResourcePropertiesConfiguration<Csync2Resource,Csync2ResourceNode> newResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
-        return new Csync2ResourcePropertiesConfiguration(properties, id);
-    }
+	@Override
+	public ResourcePropertiesConfiguration<Csync2Resource,Csync2ResourceNode> newResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+		return new Csync2ResourcePropertiesConfiguration(properties, id);
+	}
 }

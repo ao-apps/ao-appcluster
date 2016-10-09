@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -36,14 +36,14 @@ import java.util.Set;
  */
 public interface DnsOnlyResourceConfiguration extends ResourceConfiguration<DnsOnlyResource,DnsOnlyResourceNode> {
 
-    /**
-     * @see DnsOnlyResource#getAllowMultiMaster()
-     */
-    boolean getAllowMultiMaster();
+	/**
+	 * @see DnsOnlyResource#getAllowMultiMaster()
+	 */
+	boolean getAllowMultiMaster();
 
-    @Override
-    Set<? extends DnsOnlyResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
+	@Override
+	Set<? extends DnsOnlyResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
 
-    @Override
-    DnsOnlyResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
+	@Override
+	DnsOnlyResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
 }

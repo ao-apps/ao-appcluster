@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -34,23 +34,23 @@ import com.aoindustries.cron.Schedule;
  */
 public interface CronResourceConfiguration<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> extends ResourceConfiguration<R,RN> {
 
-    /**
-     * Gets the number of seconds before a synchronization pass times-out.
-     */
-    int getSynchronizeTimeout();
+	/**
+	 * Gets the number of seconds before a synchronization pass times-out.
+	 */
+	int getSynchronizeTimeout();
 
-    /**
-     * Gets the synchronization schedule between the local node and the remote node.
-     */
-    Schedule getSynchronizeSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException;
+	/**
+	 * Gets the synchronization schedule between the local node and the remote node.
+	 */
+	Schedule getSynchronizeSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException;
 
-    /**
-     * Gets the number of seconds before a test pass times-out.
-     */
-    int getTestTimeout();
+	/**
+	 * Gets the number of seconds before a test pass times-out.
+	 */
+	int getTestTimeout();
 
-    /**
-     * Gets the test schedule between the local node and the remote node.
-     */
-    Schedule getTestSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException;
+	/**
+	 * Gets the test schedule between the local node and the remote node.
+	 */
+	Schedule getTestSchedule(RN localResourceNode, RN remoteResourceNode) throws AppClusterConfigurationException;
 }

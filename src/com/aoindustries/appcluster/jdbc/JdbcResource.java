@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -39,74 +39,74 @@ import java.util.Set;
  */
 public class JdbcResource extends CronResource<JdbcResource,JdbcResourceNode> {
 
-    private final Set<String> schemas;
-    private final Set<String> tableTypes;
-    private final Set<String> excludeTables;
-    private final Set<String> noWarnTables;
-    private final Map<String,String> prepareSlaves;
+	private final Set<String> schemas;
+	private final Set<String> tableTypes;
+	private final Set<String> excludeTables;
+	private final Set<String> noWarnTables;
+	private final Map<String,String> prepareSlaves;
 
-    protected JdbcResource(AppCluster cluster, JdbcResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        super(cluster, resourceConfiguration, resourceNodes);
-        this.schemas = AoCollections.unmodifiableCopySet(resourceConfiguration.getSchemas());
-        this.tableTypes = AoCollections.unmodifiableCopySet(resourceConfiguration.getTableTypes());
-        this.excludeTables = AoCollections.unmodifiableCopySet(resourceConfiguration.getExcludeTables());
-        this.noWarnTables = AoCollections.unmodifiableCopySet(resourceConfiguration.getNoWarnTables());
-        this.prepareSlaves = AoCollections.unmodifiableCopyMap(resourceConfiguration.getPrepareSlaves());
-    }
+	protected JdbcResource(AppCluster cluster, JdbcResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+		super(cluster, resourceConfiguration, resourceNodes);
+		this.schemas = AoCollections.unmodifiableCopySet(resourceConfiguration.getSchemas());
+		this.tableTypes = AoCollections.unmodifiableCopySet(resourceConfiguration.getTableTypes());
+		this.excludeTables = AoCollections.unmodifiableCopySet(resourceConfiguration.getExcludeTables());
+		this.noWarnTables = AoCollections.unmodifiableCopySet(resourceConfiguration.getNoWarnTables());
+		this.prepareSlaves = AoCollections.unmodifiableCopyMap(resourceConfiguration.getPrepareSlaves());
+	}
 
-    /**
-     * Multi master synchronization is not supported for JDBC.
-     */
-    @Override
-    public boolean getAllowMultiMaster() {
-        return false;
-    }
+	/**
+	 * Multi master synchronization is not supported for JDBC.
+	 */
+	@Override
+	public boolean getAllowMultiMaster() {
+		return false;
+	}
 
-    /**
-     * Gets the set of schemas that will be synchronized.
-     */
-    public Set<String> getSchemas() {
-        return schemas;
-    }
+	/**
+	 * Gets the set of schemas that will be synchronized.
+	 */
+	public Set<String> getSchemas() {
+		return schemas;
+	}
 
-    /**
-     * Gets the set of table types that will be synchronized.
-     */
-    public Set<String> getTableTypes() {
-        return tableTypes;
-    }
+	/**
+	 * Gets the set of table types that will be synchronized.
+	 */
+	public Set<String> getTableTypes() {
+		return tableTypes;
+	}
 
-    /**
-     * Gets the set of tables that will be excluded from synchronization, in schema.name format.
-     */
-    public Set<String> getExcludeTables() {
-        return excludeTables;
-    }
+	/**
+	 * Gets the set of tables that will be excluded from synchronization, in schema.name format.
+	 */
+	public Set<String> getExcludeTables() {
+		return excludeTables;
+	}
 
-    /**
-     * Gets the set of tables that will not cause warnings when the data is not an exact match, in schema.name format.
-     */
-    public Set<String> getNoWarnTables() {
-        return noWarnTables;
-    }
+	/**
+	 * Gets the set of tables that will not cause warnings when the data is not an exact match, in schema.name format.
+	 */
+	public Set<String> getNoWarnTables() {
+		return noWarnTables;
+	}
 
-    /**
-     * Gets the set of SQL statements that should be executed on the slave in preparation for a synchronization pass.
-     * This should be executed in iteration order.  The key is a unique name of the statement for reference and debugging,
-     * while the SQL statement is the value.
-     */
-    public Map<String,String> getPrepareSlaves() {
-        return prepareSlaves;
-    }
+	/**
+	 * Gets the set of SQL statements that should be executed on the slave in preparation for a synchronization pass.
+	 * This should be executed in iteration order.  The key is a unique name of the statement for reference and debugging,
+	 * while the SQL statement is the value.
+	 */
+	public Map<String,String> getPrepareSlaves() {
+		return prepareSlaves;
+	}
 
-    @Override
-    protected JdbcResourceSynchronizer newResourceSynchronizer(JdbcResourceNode localResourceNode, JdbcResourceNode remoteResourceNode, ResourceConfiguration<JdbcResource,JdbcResourceNode> resourceConfiguration) throws AppClusterConfigurationException {
-        JdbcResourceConfiguration jdbcResourceConfiguration = (JdbcResourceConfiguration)resourceConfiguration;
-        return new JdbcResourceSynchronizer(
-            localResourceNode,
-            remoteResourceNode,
-            jdbcResourceConfiguration.getSynchronizeSchedule(localResourceNode, remoteResourceNode),
-            jdbcResourceConfiguration.getTestSchedule(localResourceNode, remoteResourceNode)
-        );
-    }
+	@Override
+	protected JdbcResourceSynchronizer newResourceSynchronizer(JdbcResourceNode localResourceNode, JdbcResourceNode remoteResourceNode, ResourceConfiguration<JdbcResource,JdbcResourceNode> resourceConfiguration) throws AppClusterConfigurationException {
+		JdbcResourceConfiguration jdbcResourceConfiguration = (JdbcResourceConfiguration)resourceConfiguration;
+		return new JdbcResourceSynchronizer(
+			localResourceNode,
+			remoteResourceNode,
+			jdbcResourceConfiguration.getSynchronizeSchedule(localResourceNode, remoteResourceNode),
+			jdbcResourceConfiguration.getTestSchedule(localResourceNode, remoteResourceNode)
+		);
+	}
 }

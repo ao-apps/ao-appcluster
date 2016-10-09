@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -35,17 +35,17 @@ import com.aoindustries.appcluster.Node;
  */
 public class JdbcResourceNode extends CronResourceNode<JdbcResource,JdbcResourceNode> {
 
-    private final String dataSource;
+	private final String dataSource;
 
-    protected JdbcResourceNode(Node node, JdbcResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
-        super(node, resourceNodeConfiguration);
-        this.dataSource = resourceNodeConfiguration.getDataSource();
-    }
+	protected JdbcResourceNode(Node node, JdbcResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
+		super(node, resourceNodeConfiguration);
+		this.dataSource = resourceNodeConfiguration.getDataSource();
+	}
 
-    /**
-     * Gets the data source JNDI name to this node.
-     */
-    public String getDataSource() {
-        return dataSource;
-    }
+	/**
+	 * Gets the data source JNDI name to this node.
+	 */
+	public String getDataSource() {
+		return dataSource;
+	}
 }

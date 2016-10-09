@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -36,26 +36,26 @@ import java.util.Collection;
  */
 public class ImapResource extends CronResource<ImapResource,ImapResourceNode> {
 
-    protected ImapResource(AppCluster cluster, ImapResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        super(cluster, resourceConfiguration, resourceNodes);
-    }
+	protected ImapResource(AppCluster cluster, ImapResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+		super(cluster, resourceConfiguration, resourceNodes);
+	}
 
-    /**
-     * Multi master synchronization is not supported for IMAP.
-     */
-    @Override
-    public boolean getAllowMultiMaster() {
-        return false;
-    }
+	/**
+	 * Multi master synchronization is not supported for IMAP.
+	 */
+	@Override
+	public boolean getAllowMultiMaster() {
+		return false;
+	}
 
-    @Override
-    protected ImapResourceSynchronizer newResourceSynchronizer(ImapResourceNode localResourceNode, ImapResourceNode remoteResourceNode, ResourceConfiguration<ImapResource,ImapResourceNode> resourceConfiguration) throws AppClusterConfigurationException {
-        ImapResourceConfiguration imapResourceConfiguration = (ImapResourceConfiguration)resourceConfiguration;
-        return new ImapResourceSynchronizer(
-            localResourceNode,
-            remoteResourceNode,
-            imapResourceConfiguration.getSynchronizeSchedule(localResourceNode, remoteResourceNode),
-            imapResourceConfiguration.getTestSchedule(localResourceNode, remoteResourceNode)
-        );
-    }
+	@Override
+	protected ImapResourceSynchronizer newResourceSynchronizer(ImapResourceNode localResourceNode, ImapResourceNode remoteResourceNode, ResourceConfiguration<ImapResource,ImapResourceNode> resourceConfiguration) throws AppClusterConfigurationException {
+		ImapResourceConfiguration imapResourceConfiguration = (ImapResourceConfiguration)resourceConfiguration;
+		return new ImapResourceSynchronizer(
+			localResourceNode,
+			remoteResourceNode,
+			imapResourceConfiguration.getSynchronizeSchedule(localResourceNode, remoteResourceNode),
+			imapResourceConfiguration.getTestSchedule(localResourceNode, remoteResourceNode)
+		);
+	}
 }

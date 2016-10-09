@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -36,9 +36,9 @@ import java.util.Set;
  */
 public interface ImapResourceConfiguration extends CronResourceConfiguration<ImapResource,ImapResourceNode> {
 
-    @Override
-    Set<? extends ImapResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
+	@Override
+	Set<? extends ImapResourceNodeConfiguration> getResourceNodeConfigurations() throws AppClusterConfigurationException;
 
-    @Override
-    ImapResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
+	@Override
+	ImapResource newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
 }

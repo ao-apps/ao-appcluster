@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -32,53 +32,53 @@ import org.xbill.DNS.Name;
  */
 public abstract class ResourceNodePropertiesConfiguration<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> implements ResourceNodeConfiguration<R,RN> {
 
-    protected final AppClusterPropertiesConfiguration properties;
-    protected final String resourceId;
-    protected final String nodeId;
-    protected final Set<? extends Name> nodeRecords;
+	protected final AppClusterPropertiesConfiguration properties;
+	protected final String resourceId;
+	protected final String nodeId;
+	protected final Set<? extends Name> nodeRecords;
 
-    protected ResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId) throws AppClusterConfigurationException {
-        this.properties = properties;
-        this.resourceId = resourceId;
-        this.nodeId = nodeId;
-        this.nodeRecords = properties.getUniqueNames("appcluster.resource."+resourceId+".node."+nodeId+".nodeRecords");
-    }
+	protected ResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId) throws AppClusterConfigurationException {
+		this.properties = properties;
+		this.resourceId = resourceId;
+		this.nodeId = nodeId;
+		this.nodeRecords = properties.getUniqueNames("appcluster.resource."+resourceId+".node."+nodeId+".nodeRecords");
+	}
 
-    @Override
-    public String toString() {
-        return resourceId+'/'+nodeId;
-    }
+	@Override
+	public String toString() {
+		return resourceId+'/'+nodeId;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if(!(o instanceof ResourceNodeConfiguration)) return false;
-        ResourceNodeConfiguration<?,?> other = (ResourceNodeConfiguration)o;
-        return
-            resourceId.equals(other.getResourceId())
-            && nodeId.equals(other.getNodeId())
-        ;
-    }
+	@Override
+	public boolean equals(Object o) {
+		if(!(o instanceof ResourceNodeConfiguration)) return false;
+		ResourceNodeConfiguration<?,?> other = (ResourceNodeConfiguration)o;
+		return
+			resourceId.equals(other.getResourceId())
+			&& nodeId.equals(other.getNodeId())
+		;
+	}
 
-    @Override
-    public int hashCode() {
-        return resourceId.hashCode() * 31 + nodeId.hashCode();
-    }
+	@Override
+	public int hashCode() {
+		return resourceId.hashCode() * 31 + nodeId.hashCode();
+	}
 
-    @Override
-    public String getResourceId() {
-        return resourceId;
-    }
+	@Override
+	public String getResourceId() {
+		return resourceId;
+	}
 
-    @Override
-    public String getNodeId() {
-        return nodeId;
-    }
+	@Override
+	public String getNodeId() {
+		return nodeId;
+	}
 
-    @Override
-    public Set<? extends Name> getNodeRecords() {
-        return nodeRecords;
-    }
+	@Override
+	public Set<? extends Name> getNodeRecords() {
+		return nodeRecords;
+	}
 
-    @Override
-    public abstract RN newResourceNode(Node node) throws AppClusterConfigurationException;
+	@Override
+	public abstract RN newResourceNode(Node node) throws AppClusterConfigurationException;
 }

@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -32,32 +32,32 @@ import org.xbill.DNS.Name;
  */
 public interface ResourceNodeConfiguration<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> {
 
-    @Override
-    String toString();
+	@Override
+	String toString();
 
-    @Override
-    boolean equals(Object o);
+	@Override
+	boolean equals(Object o);
 
-    @Override
-    int hashCode();
+	@Override
+	int hashCode();
 
-    /**
-     * Gets the unique ID of the resource this configuration represents.
-     */
-    String getResourceId();
+	/**
+	 * Gets the unique ID of the resource this configuration represents.
+	 */
+	String getResourceId();
 
-    /**
-     * Gets the unique ID of the node this configuration represents.
-     */
-    String getNodeId();
+	/**
+	 * Gets the unique ID of the node this configuration represents.
+	 */
+	String getNodeId();
 
-    /**
-     * @see ResourceNode#getNodeRecords()
-     */
-    Set<? extends Name> getNodeRecords();
+	/**
+	 * @see ResourceNode#getNodeRecords()
+	 */
+	Set<? extends Name> getNodeRecords();
 
-    /**
-     * Creates a new resource node from this configuration.
-     */
-    RN newResourceNode(Node node) throws AppClusterConfigurationException;
+	/**
+	 * Creates a new resource node from this configuration.
+	 */
+	RN newResourceNode(Node node) throws AppClusterConfigurationException;
 }

@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -33,14 +33,14 @@ import java.util.Locale;
  */
 public final class ApplicationResources_ja extends EditableResourceBundle {
 
-    /**
-     * Do not use directly.
-     */
-    public ApplicationResources_ja() {
-        super(
-            Locale.JAPANESE,
-            ApplicationResources.bundleSet,
-            new File(System.getProperty("user.home")+"/common/ao/cvswork/ao-appcluster/src/com/aoindustries/appcluster/jdbc/ApplicationResources_ja.properties")
-        );
-    }
+	/**
+	 * Do not use directly.
+	 */
+	public ApplicationResources_ja() {
+		super(
+			Locale.JAPANESE,
+			ApplicationResources.bundleSet,
+			new File(System.getProperty("user.home")+"/common/ao/cvswork/ao-appcluster/src/com/aoindustries/appcluster/jdbc/ApplicationResources_ja.properties")
+		);
+	}
 }

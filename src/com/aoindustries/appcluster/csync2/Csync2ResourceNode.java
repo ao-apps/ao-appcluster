@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -33,17 +33,17 @@ import com.aoindustries.appcluster.Node;
  */
 public class Csync2ResourceNode extends CronResourceNode<Csync2Resource,Csync2ResourceNode> {
 
-    private final String exe;
+	private final String exe;
 
-    protected Csync2ResourceNode(Node node, Csync2ResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
-        super(node, resourceNodeConfiguration);
-        this.exe = resourceNodeConfiguration.getExe();
-    }
+	protected Csync2ResourceNode(Node node, Csync2ResourceNodeConfiguration resourceNodeConfiguration) throws AppClusterConfigurationException {
+		super(node, resourceNodeConfiguration);
+		this.exe = resourceNodeConfiguration.getExe();
+	}
 
-    /**
-     * Gets the path to the csync2 executable.
-     */
-    public String getExe() {
-        return exe;
-    }
+	/**
+	 * Gets the path to the csync2 executable.
+	 */
+	public String getExe() {
+		return exe;
+	}
 }

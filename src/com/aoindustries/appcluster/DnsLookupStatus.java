@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -30,29 +30,29 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public enum DnsLookupStatus {
-    SUCCESSFUL(ResourceStatus.HEALTHY),
-    WARNING(ResourceStatus.WARNING),
-    TRY_AGAIN(ResourceStatus.WARNING),
-    HOST_NOT_FOUND(ResourceStatus.ERROR),
-    TYPE_NOT_FOUND(ResourceStatus.ERROR),
-    UNRECOVERABLE(ResourceStatus.ERROR),
-    ERROR(ResourceStatus.ERROR);
+	SUCCESSFUL(ResourceStatus.HEALTHY),
+	WARNING(ResourceStatus.WARNING),
+	TRY_AGAIN(ResourceStatus.WARNING),
+	HOST_NOT_FOUND(ResourceStatus.ERROR),
+	TYPE_NOT_FOUND(ResourceStatus.ERROR),
+	UNRECOVERABLE(ResourceStatus.ERROR),
+	ERROR(ResourceStatus.ERROR);
 
-    private final ResourceStatus resourceStatus;
+	private final ResourceStatus resourceStatus;
 
-    private DnsLookupStatus(ResourceStatus resourceStatus) {
-        this.resourceStatus = resourceStatus;
-    }
+	private DnsLookupStatus(ResourceStatus resourceStatus) {
+		this.resourceStatus = resourceStatus;
+	}
 
-    @Override
-    public String toString() {
-        return ApplicationResources.accessor.getMessage("DnsLookupStatus." + name());
-    }
+	@Override
+	public String toString() {
+		return ApplicationResources.accessor.getMessage("DnsLookupStatus." + name());
+	}
 
-    /**
-     * Gets the resource status that this DNS lookup status will cause.
-     */
-    public ResourceStatus getResourceStatus() {
-        return resourceStatus;
-    }
+	/**
+	 * Gets the resource status that this DNS lookup status will cause.
+	 */
+	public ResourceStatus getResourceStatus() {
+		return resourceStatus;
+	}
 }

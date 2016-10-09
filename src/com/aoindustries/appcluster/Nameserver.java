@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011, 2015  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2015, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -32,69 +32,69 @@ import org.xbill.DNS.Name;
  */
 public class Nameserver {
 
-    private final AppCluster cluster;
-    private final Name hostname;
+	private final AppCluster cluster;
+	private final Name hostname;
 
-    Nameserver(AppCluster cluster, Name hostname) {
-        this.cluster = cluster;
-        this.hostname = hostname;
-    }
+	Nameserver(AppCluster cluster, Name hostname) {
+		this.cluster = cluster;
+		this.hostname = hostname;
+	}
 
-    @Override
-    public String toString() {
-        return hostname.toString();
-    }
+	@Override
+	public String toString() {
+		return hostname.toString();
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if(!(o instanceof Nameserver)) return false;
-        return hostname.equals(((Nameserver)o).hostname);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if(!(o instanceof Nameserver)) return false;
+		return hostname.equals(((Nameserver)o).hostname);
+	}
 
-    @Override
-    public int hashCode() {
-        return hostname.hashCode();
-    }
+	@Override
+	public int hashCode() {
+		return hostname.hashCode();
+	}
 
-    /**
-     * Gets the cluster this nameserver is part of.
-     */
-    public AppCluster getCluster() {
-        return cluster;
-    }
+	/**
+	 * Gets the cluster this nameserver is part of.
+	 */
+	public AppCluster getCluster() {
+		return cluster;
+	}
 
-    /**
-     * Gets the hostname of this nameserver.
-     */
-    public Name getHostname() {
-        return hostname;
-    }
+	/**
+	 * Gets the hostname of this nameserver.
+	 */
+	public Name getHostname() {
+		return hostname;
+	}
 
-    /**
-     * Gets the overall status of the this nameserver based on all resourceNodes that use this nameserver.
-     */
-    public ResourceStatus getStatus() {
-        ResourceStatus status = ResourceStatus.UNKNOWN;
-        for(Resource<?,?> resource : cluster.getResources()) {
-            ResourceDnsResult resourceDnsResult = resource.getDnsMonitor().getLastResult();
-            Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> masterDnsLookups = resourceDnsResult.getMasterRecordLookups();
-            if(masterDnsLookups!=null) {
-                for(Map<? extends Nameserver,? extends DnsLookupResult> lookups : masterDnsLookups.values()) {
-                    DnsLookupResult lookup = lookups.get(this);
-                    if(lookup!=null) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
-                }
-            }
+	/**
+	 * Gets the overall status of the this nameserver based on all resourceNodes that use this nameserver.
+	 */
+	public ResourceStatus getStatus() {
+		ResourceStatus status = ResourceStatus.UNKNOWN;
+		for(Resource<?,?> resource : cluster.getResources()) {
+			ResourceDnsResult resourceDnsResult = resource.getDnsMonitor().getLastResult();
+			Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> masterDnsLookups = resourceDnsResult.getMasterRecordLookups();
+			if(masterDnsLookups!=null) {
+				for(Map<? extends Nameserver,? extends DnsLookupResult> lookups : masterDnsLookups.values()) {
+					DnsLookupResult lookup = lookups.get(this);
+					if(lookup!=null) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
+				}
+			}
 
-            for(ResourceNodeDnsResult nodeDnsResult : resourceDnsResult.getNodeResultMap().values()) {
-                Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeDnsLookups = nodeDnsResult.getNodeRecordLookups();
-                if(nodeDnsLookups!=null) {
-                    for(Map<? extends Nameserver,? extends DnsLookupResult> lookups : nodeDnsLookups.values()) {
-                        DnsLookupResult lookup = lookups.get(this);
-                        if(lookup!=null) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
-                    }
-                }
-            }
-        }
-        return status;
-    }
+			for(ResourceNodeDnsResult nodeDnsResult : resourceDnsResult.getNodeResultMap().values()) {
+				Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeDnsLookups = nodeDnsResult.getNodeRecordLookups();
+				if(nodeDnsLookups!=null) {
+					for(Map<? extends Nameserver,? extends DnsLookupResult> lookups : nodeDnsLookups.values()) {
+						DnsLookupResult lookup = lookups.get(this);
+						if(lookup!=null) status = AppCluster.max(status, lookup.getStatus().getResourceStatus());
+					}
+				}
+			}
+		}
+		return status;
+	}
 }

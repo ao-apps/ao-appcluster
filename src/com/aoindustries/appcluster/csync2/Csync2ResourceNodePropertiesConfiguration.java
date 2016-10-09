@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -34,20 +34,20 @@ import com.aoindustries.appcluster.Node;
  */
 public class Csync2ResourceNodePropertiesConfiguration extends CronResourceNodePropertiesConfiguration<Csync2Resource,Csync2ResourceNode> implements Csync2ResourceNodeConfiguration {
 
-    private final String exe;
+	private final String exe;
 
-    protected Csync2ResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
-        super(properties, resourceId, nodeId);
-        this.exe = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".exe", true);
-    }
+	protected Csync2ResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
+		super(properties, resourceId, nodeId);
+		this.exe = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".exe", true);
+	}
 
-    @Override
-    public String getExe() {
-        return exe;
-    }
+	@Override
+	public String getExe() {
+		return exe;
+	}
 
-    @Override
-    public Csync2ResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
-        return new Csync2ResourceNode(node, this);
-    }
+	@Override
+	public Csync2ResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
+		return new Csync2ResourceNode(node, this);
+	}
 }

@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -31,29 +31,29 @@ import java.util.Collection;
  */
 abstract public class CronResource<R extends CronResource<R,RN>,RN extends CronResourceNode<R,RN>> extends Resource<R,RN> {
 
-    private final int synchronizeTimeout;
-    private final int testTimeout;
+	private final int synchronizeTimeout;
+	private final int testTimeout;
 
-    protected CronResource(AppCluster cluster, CronResourceConfiguration<R,RN> resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        super(cluster, resourceConfiguration, resourceNodes);
-        this.synchronizeTimeout = resourceConfiguration.getSynchronizeTimeout();
-        this.testTimeout = resourceConfiguration.getTestTimeout();
-    }
+	protected CronResource(AppCluster cluster, CronResourceConfiguration<R,RN> resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+		super(cluster, resourceConfiguration, resourceNodes);
+		this.synchronizeTimeout = resourceConfiguration.getSynchronizeTimeout();
+		this.testTimeout = resourceConfiguration.getTestTimeout();
+	}
 
-    /**
-     * The synchronize timeout for this resource in seconds.
-     */
-    public int getSynchronizeTimeout() {
-        return synchronizeTimeout;
-    }
+	/**
+	 * The synchronize timeout for this resource in seconds.
+	 */
+	public int getSynchronizeTimeout() {
+		return synchronizeTimeout;
+	}
 
-    /**
-     * The test timeout for this resource in seconds.
-     */
-    public int getTestTimeout() {
-        return testTimeout;
-    }
+	/**
+	 * The test timeout for this resource in seconds.
+	 */
+	public int getTestTimeout() {
+		return testTimeout;
+	}
 
-    @Override
-    abstract protected CronResourceSynchronizer<R,RN> newResourceSynchronizer(RN localResourceNode, RN remoteResourceNode, ResourceConfiguration<R,RN> resourceConfiguration) throws AppClusterConfigurationException;
+	@Override
+	abstract protected CronResourceSynchronizer<R,RN> newResourceSynchronizer(RN localResourceNode, RN remoteResourceNode, ResourceConfiguration<R,RN> resourceConfiguration) throws AppClusterConfigurationException;
 }

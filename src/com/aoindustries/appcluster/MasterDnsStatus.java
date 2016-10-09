@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -29,29 +29,29 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public enum MasterDnsStatus {
-    UNKNOWN(ResourceStatus.UNKNOWN),
-    DISABLED(ResourceStatus.DISABLED),
-    STOPPED(ResourceStatus.STOPPED),
-    STARTING(ResourceStatus.STARTING),
-    CONSISTENT(ResourceStatus.HEALTHY),
-    WARNING(ResourceStatus.WARNING),
-    INCONSISTENT(ResourceStatus.INCONSISTENT);
+	UNKNOWN(ResourceStatus.UNKNOWN),
+	DISABLED(ResourceStatus.DISABLED),
+	STOPPED(ResourceStatus.STOPPED),
+	STARTING(ResourceStatus.STARTING),
+	CONSISTENT(ResourceStatus.HEALTHY),
+	WARNING(ResourceStatus.WARNING),
+	INCONSISTENT(ResourceStatus.INCONSISTENT);
 
-    private final ResourceStatus resourceStatus;
+	private final ResourceStatus resourceStatus;
 
-    private MasterDnsStatus(ResourceStatus resourceStatus) {
-        this.resourceStatus = resourceStatus;
-    }
+	private MasterDnsStatus(ResourceStatus resourceStatus) {
+		this.resourceStatus = resourceStatus;
+	}
 
-    @Override
-    public String toString() {
-        return ApplicationResources.accessor.getMessage("MasterDnsStatus." + name());
-    }
+	@Override
+	public String toString() {
+		return ApplicationResources.accessor.getMessage("MasterDnsStatus." + name());
+	}
 
-    /**
-     * Gets the resource status that this master DNS status will cause.
-     */
-    public ResourceStatus getResourceStatus() {
-        return resourceStatus;
-    }
+	/**
+	 * Gets the resource status that this master DNS status will cause.
+	 */
+	public ResourceStatus getResourceStatus() {
+		return resourceStatus;
+	}
 }

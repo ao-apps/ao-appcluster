@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -29,45 +29,45 @@ package com.aoindustries.appcluster;
  * @author  AO Industries, Inc.
  */
 public enum NodeDnsStatus {
-    UNKNOWN(ResourceStatus.UNKNOWN, ResourceStatus.UNKNOWN.getCssStyle()),
-    DISABLED(ResourceStatus.DISABLED, ResourceStatus.DISABLED.getCssStyle()),
-    STOPPED(ResourceStatus.STOPPED, ResourceStatus.STOPPED.getCssStyle()),
-    STARTING(ResourceStatus.STARTING, ResourceStatus.STARTING.getCssStyle()),
-    SLAVE(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle()),
-    MASTER(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle() + "font-weight:bold;"),
-    INCONSISTENT(ResourceStatus.INCONSISTENT, ResourceStatus.INCONSISTENT.getCssStyle());
+	UNKNOWN(ResourceStatus.UNKNOWN, ResourceStatus.UNKNOWN.getCssStyle()),
+	DISABLED(ResourceStatus.DISABLED, ResourceStatus.DISABLED.getCssStyle()),
+	STOPPED(ResourceStatus.STOPPED, ResourceStatus.STOPPED.getCssStyle()),
+	STARTING(ResourceStatus.STARTING, ResourceStatus.STARTING.getCssStyle()),
+	SLAVE(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle()),
+	MASTER(ResourceStatus.HEALTHY, ResourceStatus.HEALTHY.getCssStyle() + "font-weight:bold;"),
+	INCONSISTENT(ResourceStatus.INCONSISTENT, ResourceStatus.INCONSISTENT.getCssStyle());
 
-    private final ResourceStatus resourceStatus;
-    private final String cssStyle;
+	private final ResourceStatus resourceStatus;
+	private final String cssStyle;
 
-    private NodeDnsStatus(ResourceStatus resourceStatus, String cssStyle) {
-        this.resourceStatus = resourceStatus;
-        this.cssStyle = cssStyle;
-    }
+	private NodeDnsStatus(ResourceStatus resourceStatus, String cssStyle) {
+		this.resourceStatus = resourceStatus;
+		this.cssStyle = cssStyle;
+	}
 
-    @Override
-    public String toString() {
-        return ApplicationResources.accessor.getMessage("NodeDnsStatus." + name());
-    }
+	@Override
+	public String toString() {
+		return ApplicationResources.accessor.getMessage("NodeDnsStatus." + name());
+	}
 
-    /**
-     * Gets the resource status that this node DNS status will cause.
-     */
-    public ResourceStatus getResourceStatus() {
-        return resourceStatus;
-    }
+	/**
+	 * Gets the resource status that this node DNS status will cause.
+	 */
+	public ResourceStatus getResourceStatus() {
+		return resourceStatus;
+	}
 
-    /**
-     * JavaBeans compatibility.
-     */
-    public String getName() {
-        return name();
-    }
+	/**
+	 * JavaBeans compatibility.
+	 */
+	public String getName() {
+		return name();
+	}
 
-    /**
-     * Gets the CSS style to use for this status or "" for no specific style requirement.
-     */
-    public String getCssStyle() {
-        return cssStyle;
-    }
+	/**
+	 * Gets the CSS style to use for this status or "" for no specific style requirement.
+	 */
+	public String getCssStyle() {
+		return cssStyle;
+	}
 }

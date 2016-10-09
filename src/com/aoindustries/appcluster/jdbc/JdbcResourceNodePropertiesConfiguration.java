@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -34,20 +34,20 @@ import com.aoindustries.appcluster.Node;
  */
 public class JdbcResourceNodePropertiesConfiguration extends CronResourceNodePropertiesConfiguration<JdbcResource,JdbcResourceNode> implements JdbcResourceNodeConfiguration {
 
-    private final String dataSource;
+	private final String dataSource;
 
-    protected JdbcResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
-        super(properties, resourceId, nodeId);
-        this.dataSource = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".dataSource", true);
-    }
+	protected JdbcResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId, String type) throws AppClusterConfigurationException {
+		super(properties, resourceId, nodeId);
+		this.dataSource = properties.getString("appcluster.resource."+resourceId+".node."+nodeId+"."+type+".dataSource", true);
+	}
 
-    @Override
-    public String getDataSource() {
-        return dataSource;
-    }
+	@Override
+	public String getDataSource() {
+		return dataSource;
+	}
 
-    @Override
-    public JdbcResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
-        return new JdbcResourceNode(node, this);
-    }
+	@Override
+	public JdbcResourceNode newResourceNode(Node node) throws AppClusterConfigurationException {
+		return new JdbcResourceNode(node, this);
+	}
 }

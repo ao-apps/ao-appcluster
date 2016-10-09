@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -34,77 +34,77 @@ import java.util.List;
  */
 public class ResourceSynchronizationResult implements ResourceResult {
 
-    private final ResourceNode<?,?> localResourceNode;
-    private final ResourceNode<?,?> remoteResourceNode;
-    private final ResourceSynchronizationMode mode;
-    private final List<ResourceSynchronizationResultStep> steps;
+	private final ResourceNode<?,?> localResourceNode;
+	private final ResourceNode<?,?> remoteResourceNode;
+	private final ResourceSynchronizationMode mode;
+	private final List<ResourceSynchronizationResultStep> steps;
 
-    /**
-     * @param steps At least one step is required.
-     */
-    public ResourceSynchronizationResult(
-        ResourceNode<?,?> localResourceNode,
-        ResourceNode<?,?> remoteResourceNode,
-        ResourceSynchronizationMode mode,
-        Collection<ResourceSynchronizationResultStep> steps
-    ) {
-        this.localResourceNode = localResourceNode;
-        this.remoteResourceNode = remoteResourceNode;
-        this.mode = mode;
-        if(steps==null) throw new IllegalArgumentException("steps==null");
-        if(steps.isEmpty()) throw new IllegalArgumentException("steps.isEmpty()");
-        this.steps = AoCollections.unmodifiableCopyList(steps);
-    }
+	/**
+	 * @param steps At least one step is required.
+	 */
+	public ResourceSynchronizationResult(
+		ResourceNode<?,?> localResourceNode,
+		ResourceNode<?,?> remoteResourceNode,
+		ResourceSynchronizationMode mode,
+		Collection<ResourceSynchronizationResultStep> steps
+	) {
+		this.localResourceNode = localResourceNode;
+		this.remoteResourceNode = remoteResourceNode;
+		this.mode = mode;
+		if(steps==null) throw new IllegalArgumentException("steps==null");
+		if(steps.isEmpty()) throw new IllegalArgumentException("steps.isEmpty()");
+		this.steps = AoCollections.unmodifiableCopyList(steps);
+	}
 
-    public ResourceNode<?,?> getLocalResourceNode() {
-        return localResourceNode;
-    }
+	public ResourceNode<?,?> getLocalResourceNode() {
+		return localResourceNode;
+	}
 
-    public ResourceNode<?,?> getRemoteResourceNode() {
-        return remoteResourceNode;
-    }
+	public ResourceNode<?,?> getRemoteResourceNode() {
+		return remoteResourceNode;
+	}
 
-    /**
-     * The start time is the earliest start time of any step.
-     */
-    @Override
-    public Timestamp getStartTime() {
-        long startTime = Long.MAX_VALUE;
-        for(ResourceSynchronizationResultStep step : steps) startTime = Math.min(startTime, step.startTime);
-        return new Timestamp(startTime);
-    }
+	/**
+	 * The start time is the earliest start time of any step.
+	 */
+	@Override
+	public Timestamp getStartTime() {
+		long startTime = Long.MAX_VALUE;
+		for(ResourceSynchronizationResultStep step : steps) startTime = Math.min(startTime, step.startTime);
+		return new Timestamp(startTime);
+	}
 
-    /**
-     * The end time is the latest end time of any step.
-     */
-    @Override
-    public Timestamp getEndTime() {
-        long endTime = Long.MIN_VALUE;
-        for(ResourceSynchronizationResultStep step : steps) endTime = Math.max(endTime, step.endTime);
-        return new Timestamp(endTime);
-    }
+	/**
+	 * The end time is the latest end time of any step.
+	 */
+	@Override
+	public Timestamp getEndTime() {
+		long endTime = Long.MIN_VALUE;
+		for(ResourceSynchronizationResultStep step : steps) endTime = Math.max(endTime, step.endTime);
+		return new Timestamp(endTime);
+	}
 
-    /**
-     * The resource status is the highest level resource status of any step.
-     */
-    @Override
-    public ResourceStatus getResourceStatus() {
-        ResourceStatus status = ResourceStatus.UNKNOWN;
-        for(ResourceSynchronizationResultStep step : steps) status = AppCluster.max(status, step.getResourceStatus());
-        return status;
-    }
+	/**
+	 * The resource status is the highest level resource status of any step.
+	 */
+	@Override
+	public ResourceStatus getResourceStatus() {
+		ResourceStatus status = ResourceStatus.UNKNOWN;
+		for(ResourceSynchronizationResultStep step : steps) status = AppCluster.max(status, step.getResourceStatus());
+		return status;
+	}
 
-    /**
-     * Gets the mode of this synchronization.
-     */
-    public ResourceSynchronizationMode getMode() {
-        return mode;
-    }
+	/**
+	 * Gets the mode of this synchronization.
+	 */
+	public ResourceSynchronizationMode getMode() {
+		return mode;
+	}
 
-    /**
-     * Gets the steps for this synchronization.
-     */
-    public List<ResourceSynchronizationResultStep> getSteps() {
-        return steps;
-    }
+	/**
+	 * Gets the steps for this synchronization.
+	 */
+	public List<ResourceSynchronizationResultStep> getSteps() {
+		return steps;
+	}
 }

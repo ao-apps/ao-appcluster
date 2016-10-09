@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -34,48 +34,48 @@ import org.xbill.DNS.Name;
  */
 public class ResourceNodeDnsResult {
 
-    private final ResourceNode<?,?> resourceNode;
-    private final Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeRecordLookups;
-    private final NodeDnsStatus nodeStatus;
-    private final SortedSet<String> nodeStatusMessages;
+	private final ResourceNode<?,?> resourceNode;
+	private final Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeRecordLookups;
+	private final NodeDnsStatus nodeStatus;
+	private final SortedSet<String> nodeStatusMessages;
 
-    ResourceNodeDnsResult(
-        ResourceNode<?,?> resourceNode,
-        Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeRecordLookups,
-        NodeDnsStatus nodeStatus,
-        Collection<String> nodeStatusMessages
-    ) {
-        this.resourceNode = resourceNode;
-        this.nodeRecordLookups = nodeRecordLookups==null ? null : ResourceDnsResult.getUnmodifiableDnsLookupResults(nodeRecordLookups, resourceNode.getNodeRecords(), resourceNode.getResource().getEnabledNameservers());
-        this.nodeStatus = nodeStatus;
-        this.nodeStatusMessages = ResourceDnsResult.getUnmodifiableSortedSet(nodeStatusMessages, ResourceDnsResult.defaultLocaleCollator);
-    }
+	ResourceNodeDnsResult(
+		ResourceNode<?,?> resourceNode,
+		Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> nodeRecordLookups,
+		NodeDnsStatus nodeStatus,
+		Collection<String> nodeStatusMessages
+	) {
+		this.resourceNode = resourceNode;
+		this.nodeRecordLookups = nodeRecordLookups==null ? null : ResourceDnsResult.getUnmodifiableDnsLookupResults(nodeRecordLookups, resourceNode.getNodeRecords(), resourceNode.getResource().getEnabledNameservers());
+		this.nodeStatus = nodeStatus;
+		this.nodeStatusMessages = ResourceDnsResult.getUnmodifiableSortedSet(nodeStatusMessages, ResourceDnsResult.defaultLocaleCollator);
+	}
 
-    public ResourceNode<?,?> getResourceNode() {
-        return resourceNode;
-    }
+	public ResourceNode<?,?> getResourceNode() {
+		return resourceNode;
+	}
 
-    /**
-     * Gets the mapping of all nodeRecord DNS lookups in the form nodeRecord->enabledNameserver->result.
-     * If no lookups have been performed, such as during STOPPED or UNKNOWN state, returns <code>null</code>.
-     * Otherwise, it contains an entry for every nodeRecord querying every enabled nameserver.
-     */
-    public Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> getNodeRecordLookups() {
-        return nodeRecordLookups;
-    }
+	/**
+	 * Gets the mapping of all nodeRecord DNS lookups in the form nodeRecord->enabledNameserver->result.
+	 * If no lookups have been performed, such as during STOPPED or UNKNOWN state, returns <code>null</code>.
+	 * Otherwise, it contains an entry for every nodeRecord querying every enabled nameserver.
+	 */
+	public Map<? extends Name,? extends Map<? extends Nameserver,? extends DnsLookupResult>> getNodeRecordLookups() {
+		return nodeRecordLookups;
+	}
 
-    /**
-     * Gets the status of the node.
-     */
-    public NodeDnsStatus getNodeStatus() {
-        return nodeStatus;
-    }
+	/**
+	 * Gets the status of the node.
+	 */
+	public NodeDnsStatus getNodeStatus() {
+		return nodeStatus;
+	}
 
-    /**
-     * Gets the node status messages.
-     * If no message, returns an empty set.
-     */
-    public SortedSet<String> getNodeStatusMessages() {
-        return nodeStatusMessages;
-    }
+	/**
+	 * Gets the node status messages.
+	 * If no message, returns an empty set.
+	 */
+	public SortedSet<String> getNodeStatusMessages() {
+		return nodeStatusMessages;
+	}
 }

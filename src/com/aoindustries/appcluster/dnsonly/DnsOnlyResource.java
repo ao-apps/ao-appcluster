@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -37,22 +37,22 @@ import java.util.Collection;
  */
 public class DnsOnlyResource extends Resource<DnsOnlyResource,DnsOnlyResourceNode> {
 
-    private final DnsOnlyResourceConfiguration resourceConfiguration;
-    private final boolean allowMultiMaster;
+	private final DnsOnlyResourceConfiguration resourceConfiguration;
+	private final boolean allowMultiMaster;
 
-    protected DnsOnlyResource(AppCluster cluster, DnsOnlyResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
-        super(cluster, resourceConfiguration, resourceNodes);
-        this.resourceConfiguration = resourceConfiguration;
-        this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
-    }
+	protected DnsOnlyResource(AppCluster cluster, DnsOnlyResourceConfiguration resourceConfiguration, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException {
+		super(cluster, resourceConfiguration, resourceNodes);
+		this.resourceConfiguration = resourceConfiguration;
+		this.allowMultiMaster = resourceConfiguration.getAllowMultiMaster();
+	}
 
-    @Override
-    public boolean getAllowMultiMaster() {
-        return allowMultiMaster;
-    }
+	@Override
+	public boolean getAllowMultiMaster() {
+		return allowMultiMaster;
+	}
 
-    @Override
-    protected ResourceSynchronizer<DnsOnlyResource,DnsOnlyResourceNode> newResourceSynchronizer(DnsOnlyResourceNode localResourceNode, DnsOnlyResourceNode remoteResourceNode, ResourceConfiguration<DnsOnlyResource,DnsOnlyResourceNode> resourceConfiguration) {
-        return null;
-    }
+	@Override
+	protected ResourceSynchronizer<DnsOnlyResource,DnsOnlyResourceNode> newResourceSynchronizer(DnsOnlyResourceNode localResourceNode, DnsOnlyResourceNode remoteResourceNode, ResourceConfiguration<DnsOnlyResource,DnsOnlyResourceNode> resourceConfiguration) {
+		return null;
+	}
 }

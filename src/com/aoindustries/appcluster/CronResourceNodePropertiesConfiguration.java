@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -29,10 +29,10 @@ package com.aoindustries.appcluster;
  */
 abstract public class CronResourceNodePropertiesConfiguration<R extends CronResource<R,RN>,RN extends CronResourceNode<R,RN>> extends ResourceNodePropertiesConfiguration<R,RN> implements CronResourceNodeConfiguration<R,RN> {
 
-    protected CronResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId) throws AppClusterConfigurationException {
-        super(properties, resourceId, nodeId);
-    }
+	protected CronResourceNodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String resourceId, String nodeId) throws AppClusterConfigurationException {
+		super(properties, resourceId, nodeId);
+	}
 
-    @Override
-    abstract public RN newResourceNode(Node node) throws AppClusterConfigurationException;
+	@Override
+	abstract public RN newResourceNode(Node node) throws AppClusterConfigurationException;
 }

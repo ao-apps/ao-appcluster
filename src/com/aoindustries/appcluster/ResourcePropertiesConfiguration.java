@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -33,73 +33,73 @@ import org.xbill.DNS.Name;
  */
 public abstract class ResourcePropertiesConfiguration<R extends Resource<R,RN>,RN extends ResourceNode<R,RN>> implements ResourceConfiguration<R,RN> {
 
-    protected final AppClusterPropertiesConfiguration properties;
-    protected final String id;
-    protected final boolean enabled;
-    protected final String display;
-    protected final Set<? extends Name> masterRecords;
-    protected final int masterRecordsTtl;
-    protected final String type;
+	protected final AppClusterPropertiesConfiguration properties;
+	protected final String id;
+	protected final boolean enabled;
+	protected final String display;
+	protected final Set<? extends Name> masterRecords;
+	protected final int masterRecordsTtl;
+	protected final String type;
 
-    protected ResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
-        this.properties = properties;
-        this.id = id;
-        this.enabled = properties.getBoolean("appcluster.resource."+id+".enabled");
-        this.display = properties.getString("appcluster.resource."+id+".display", true);
-        this.masterRecords = properties.getUniqueNames("appcluster.resource."+id+".masterRecords");
-        this.masterRecordsTtl = properties.getInt("appcluster.resource."+id+".masterRecordsTtl");
-        this.type = properties.getString("appcluster.resource."+id+".type", true);
-    }
+	protected ResourcePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+		this.properties = properties;
+		this.id = id;
+		this.enabled = properties.getBoolean("appcluster.resource."+id+".enabled");
+		this.display = properties.getString("appcluster.resource."+id+".display", true);
+		this.masterRecords = properties.getUniqueNames("appcluster.resource."+id+".masterRecords");
+		this.masterRecordsTtl = properties.getInt("appcluster.resource."+id+".masterRecordsTtl");
+		this.type = properties.getString("appcluster.resource."+id+".type", true);
+	}
 
-    @Override
-    public String toString() {
-        return display;
-    }
+	@Override
+	public String toString() {
+		return display;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if(!(o instanceof ResourceConfiguration)) return false;
-        return id.equals(((ResourceConfiguration)o).getId());
-    }
+	@Override
+	public boolean equals(Object o) {
+		if(!(o instanceof ResourceConfiguration)) return false;
+		return id.equals(((ResourceConfiguration)o).getId());
+	}
 
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
+	@Override
+	public int hashCode() {
+		return id.hashCode();
+	}
 
-    @Override
-    public String getId() {
-        return id;
-    }
+	@Override
+	public String getId() {
+		return id;
+	}
 
-    @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
+	@Override
+	public boolean isEnabled() {
+		return enabled;
+	}
 
-    @Override
-    public String getDisplay() {
-        return display;
-    }
+	@Override
+	public String getDisplay() {
+		return display;
+	}
 
-    @Override
-    public Set<? extends Name> getMasterRecords() {
-        return masterRecords;
-    }
+	@Override
+	public Set<? extends Name> getMasterRecords() {
+		return masterRecords;
+	}
 
-    @Override
-    public int getMasterRecordsTtl() {
-        return masterRecordsTtl;
-    }
+	@Override
+	public int getMasterRecordsTtl() {
+		return masterRecordsTtl;
+	}
 
-    @Override
-    public String getType() {
-        return type;
-    }
+	@Override
+	public String getType() {
+		return type;
+	}
 
-    @Override
-    abstract public Set<? extends ResourceNodePropertiesConfiguration<R,RN>> getResourceNodeConfigurations() throws AppClusterConfigurationException;
+	@Override
+	abstract public Set<? extends ResourceNodePropertiesConfiguration<R,RN>> getResourceNodeConfigurations() throws AppClusterConfigurationException;
 
-    @Override
-    abstract public R newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
+	@Override
+	abstract public R newResource(AppCluster cluster, Collection<? extends ResourceNode<?,?>> resourceNodes) throws AppClusterConfigurationException;
 }

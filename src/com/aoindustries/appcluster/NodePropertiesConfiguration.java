@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -32,67 +32,67 @@ import org.xbill.DNS.Name;
  */
 public class NodePropertiesConfiguration implements NodeConfiguration {
 
-    protected final AppClusterPropertiesConfiguration properties;
-    protected final String id;
-    protected final boolean enabled;
-    protected final String display;
-    protected final Name hostname;
-    protected final String username;
-    protected final Set<? extends Name> nameservers;
+	protected final AppClusterPropertiesConfiguration properties;
+	protected final String id;
+	protected final boolean enabled;
+	protected final String display;
+	protected final Name hostname;
+	protected final String username;
+	protected final Set<? extends Name> nameservers;
 
-    protected NodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
-        this.properties = properties;
-        this.id = id;
-        this.enabled = properties.getBoolean("appcluster.node."+id+".enabled");
-        this.display = properties.getString("appcluster.node."+id+".display", true);
-        this.hostname = properties.getName("appcluster.node."+id+".hostname");
-        this.username = properties.getString("appcluster.node."+id+".username", true);
-        this.nameservers = properties.getUniqueNames("appcluster.node."+id+".nameservers");
-    }
+	protected NodePropertiesConfiguration(AppClusterPropertiesConfiguration properties, String id) throws AppClusterConfigurationException {
+		this.properties = properties;
+		this.id = id;
+		this.enabled = properties.getBoolean("appcluster.node."+id+".enabled");
+		this.display = properties.getString("appcluster.node."+id+".display", true);
+		this.hostname = properties.getName("appcluster.node."+id+".hostname");
+		this.username = properties.getString("appcluster.node."+id+".username", true);
+		this.nameservers = properties.getUniqueNames("appcluster.node."+id+".nameservers");
+	}
 
-    @Override
-    public String toString() {
-        return display;
-    }
+	@Override
+	public String toString() {
+		return display;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if(!(o instanceof NodeConfiguration)) return false;
-        return id.equals(((NodeConfiguration)o).getId());
-    }
+	@Override
+	public boolean equals(Object o) {
+		if(!(o instanceof NodeConfiguration)) return false;
+		return id.equals(((NodeConfiguration)o).getId());
+	}
 
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
+	@Override
+	public int hashCode() {
+		return id.hashCode();
+	}
 
-    @Override
-    public String getId() {
-        return id;
-    }
+	@Override
+	public String getId() {
+		return id;
+	}
 
-    @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
+	@Override
+	public boolean isEnabled() {
+		return enabled;
+	}
 
-    @Override
-    public String getDisplay() {
-        return display;
-    }
+	@Override
+	public String getDisplay() {
+		return display;
+	}
 
-    @Override
-    public Name getHostname() {
-        return hostname;
-    }
+	@Override
+	public Name getHostname() {
+		return hostname;
+	}
 
-    @Override
-    public String getUsername() {
-        return username;
-    }
+	@Override
+	public String getUsername() {
+		return username;
+	}
 
-    @Override
-    public Set<? extends Name> getNameservers() {
-        return nameservers;
-    }
+	@Override
+	public Set<? extends Name> getNameservers() {
+		return nameservers;
+	}
 }

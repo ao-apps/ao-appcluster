@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -29,18 +29,18 @@ package com.aoindustries.appcluster;
  */
 public enum ResourceSynchronizationMode {
 
-    SYNCHRONIZE,
-    TEST_ONLY;
+	SYNCHRONIZE,
+	TEST_ONLY;
 
-    @Override
-    public String toString() {
-        return ApplicationResources.accessor.getMessage("ResourceSynchronizationMode." + name());
-    }
+	@Override
+	public String toString() {
+		return ApplicationResources.accessor.getMessage("ResourceSynchronizationMode." + name());
+	}
 
-    /**
-     * JavaBeans compatibility.
-     */
-    public String getName() {
-        return name();
-    }
+	/**
+	 * JavaBeans compatibility.
+	 */
+	public String getName() {
+		return name();
+	}
 }

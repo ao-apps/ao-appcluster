@@ -1,6 +1,6 @@
 /*
- * ao-appcluster - Coordinates system components installed in master/slave replication.
- * Copyright (C) 2011, 2015  AO Industries, Inc.
+ * ao-appcluster - Application-level clustering tools.
+ * Copyright (C) 2011, 2015, 2016  AO Industries, Inc.
  *     support@aoindustries.com
  *     7262 Bull Pen Cir
  *     Mobile, AL 36695
@@ -35,27 +35,27 @@ import static org.junit.Assert.*;
  */
 public class PropertiesConfigurationTest {
 
-    @Test
-    public void testRealWorldConfig() throws IOException, AppClusterConfigurationException, InterruptedException {
-        URL url = PropertiesConfigurationTest.class.getResource("appcluster.properties");
-        AppClusterPropertiesConfiguration config;
-        if(url.getProtocol().equals("file")) {
-            config = new AppClusterPropertiesConfiguration(new File(url.getPath()));
-        } else {
-            Properties props = new Properties();
-            try (InputStream in = url.openStream()) {
-                props.load(in);
-            }
-            config = new AppClusterPropertiesConfiguration(props);
-        }
-        AppCluster cluster = new AppCluster(config);
-        cluster.addResourceListener(new LoggerResourceListener());
-        cluster.start();
-        try {
-            assertEquals("Production Cluster", cluster.getDisplay());
-            Thread.sleep(60000);
-        } finally {
-            cluster.stop();
-        }
-    }
+	@Test
+	public void testRealWorldConfig() throws IOException, AppClusterConfigurationException, InterruptedException {
+		URL url = PropertiesConfigurationTest.class.getResource("appcluster.properties");
+		AppClusterPropertiesConfiguration config;
+		if(url.getProtocol().equals("file")) {
+			config = new AppClusterPropertiesConfiguration(new File(url.getPath()));
+		} else {
+			Properties props = new Properties();
+			try (InputStream in = url.openStream()) {
+				props.load(in);
+			}
+			config = new AppClusterPropertiesConfiguration(props);
+		}
+		AppCluster cluster = new AppCluster(config);
+		cluster.addResourceListener(new LoggerResourceListener());
+		cluster.start();
+		try {
+			assertEquals("Production Cluster", cluster.getDisplay());
+			Thread.sleep(60000);
+		} finally {
+			cluster.stop();
+		}
+	}
 }
