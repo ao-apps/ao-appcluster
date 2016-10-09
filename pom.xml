@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-ao-appcluster - Application-level clustering tools.
+ao-appcluster - Parent POM for application-level clustering tools.
 Copyright (C) 2016  AO Industries, Inc.
     support@aoindustries.com
     7262 Bull Pen Cir
@@ -35,7 +35,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 
 	<name>AO AppCluster</name>
 	<url>https://www.aoindustries.com/ao-appcluster/</url>
-	<description>Application-level clustering tools.</description>
+	<description>Parent POM for application-level clustering tools.</description>
 	<inceptionYear>2011</inceptionYear>
 
 	<licenses>
