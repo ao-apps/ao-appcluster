@@ -229,6 +229,10 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 
 </script>]]>
 							</bottom>
+							<detectJavaApiLink>false</detectJavaApiLink>
+							<links>
+								<link>https://docs.oracle.com/javase/6/docs/api/</link>
+							</links>
 						</configuration>
 						<executions>
 							<execution>
