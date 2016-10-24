@@ -39,7 +39,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		<core:child book="/ao-appcluster/imap" page="/index.jspx" />
 		<core:child book="/ao-appcluster/jdbc" page="/index.jspx" />
 		<p>
-			<ao:out value="${currentPage.description}" />
+			@{description.html}
 		</p>
 		<section:section label="Project Links">
 			<ul>
