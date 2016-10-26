@@ -31,6 +31,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 	<core:page
 		title="@{project.name}"
 		description="@{project.description}"
+		datePublished="2016-10-23T20:07:00-0500"
 	>
 		<core:child book="/ao-appcluster/all" page="/index.jspx" />
 		<core:child book="/ao-appcluster/core" page="/index.jspx" />
