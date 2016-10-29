@@ -26,10 +26,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 	xmlns:changelog="https://semanticcms.com/changelog/taglib/"
 	xmlns:core="https://semanticcms.com/core/taglib/"
 	xmlns:fn="http://java.sun.com/jsp/jstl/functions"
-	xmlns:joda="http://www.joda.org/joda/time/tags"
 	xmlns:jsp="http://java.sun.com/JSP/Page"
-	xmlns:news="https://semanticcms.com/news/taglib/"
-	xmlns:section="https://semanticcms.com/section/taglib/"
 	version="2.1"
 >
 	<jsp:directive.page language="java" pageEncoding="UTF-8" session="false" />
