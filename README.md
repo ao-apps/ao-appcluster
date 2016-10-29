@@ -3,6 +3,7 @@ Parent POM for application-level clustering tools.
 
 ## Project Links
 * [Project Home](https://www.aoindustries.com/ao-appcluster/)
+* [Changelog](https://www.aoindustries.com/ao-appcluster/changelog)
 * [Maven Central Repository](https://search.maven.org/#search%7Cgav%7C1%7Cg:%22com.aoindustries%22%20AND%20a:%22ao-appcluster%22)
 * [GitHub](https://github.com/aoindustries/ao-appcluster)
 
