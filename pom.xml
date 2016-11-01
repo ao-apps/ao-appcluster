@@ -55,11 +55,11 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 	</scm>
 
 	<modules>
-		<module>ao-appcluster-all</module>
-		<module>ao-appcluster-core</module>
-		<module>ao-appcluster-csync2</module>
-		<module>ao-appcluster-dnsonly</module>
-		<module>ao-appcluster-imap</module>
-		<module>ao-appcluster-jdbc</module>
+		<module>all</module>
+		<module>core</module>
+		<module>csync2</module>
+		<module>dnsonly</module>
+		<module>imap</module>
+		<module>jdbc</module>
 	</modules>
 </project>
