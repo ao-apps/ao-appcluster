@@ -16,3 +16,21 @@
 [submodule "ao-appcluster-jdbc"]
 	path = ao-appcluster-jdbc
 	url = git@github.com:aoindustries/ao-appcluster-jdbc.git
+[submodule "all"]
+	path = all
+	url = git@github.com:aoindustries/ao-appcluster-all.git
+[submodule "core"]
+	path = core
+	url = git@github.com:aoindustries/ao-appcluster-core.git
+[submodule "csync2"]
+	path = csync2
+	url = git@github.com:aoindustries/ao-appcluster-csync2.git
+[submodule "dnsonly"]
+	path = dnsonly
+	url = git@github.com:aoindustries/ao-appcluster-dnsonly.git
+[submodule "imap"]
+	path = imap
+	url = git@github.com:aoindustries/ao-appcluster-imap.git
+[submodule "jdbc"]
+	path = jdbc
+	url = git@github.com:aoindustries/ao-appcluster-jdbc.git
