@@ -42,7 +42,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 	</properties>
 
 	<name>AO AppCluster</name>
-	<url>https://www.aoindustries.com${bookPath}/</url><!-- Can't inherit due to multi-module -->
+	<url>https://aoindustries.com${bookPath}/</url><!-- Can't inherit due to multi-module -->
 	<description>Parent POM for application-level clustering tools.</description>
 	<inceptionYear>2011</inceptionYear>
 
