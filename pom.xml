@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-ao-appcluster - Parent POM for application-level clustering tools.
+ao-appcluster - Aggregator POM for application-level clustering tools.
 Copyright (C) 2016  AO Industries, Inc.
     support@aoindustries.com
     7262 Bull Pen Cir
@@ -36,14 +36,9 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 	<version>1.0.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<properties>
-		<javadoc.breadcrumbs><![CDATA[<a target="_top" href="${project.parent.url}">${project.parent.name}</a>
-/ <a target="_top" href="${project.url}">${shortTitle}</a>]]></javadoc.breadcrumbs>
-	</properties>
-
 	<name>AO AppCluster</name>
-	<url>https://aoindustries.com/${project.artifactId}/</url>
-	<description>Parent POM for application-level clustering tools.</description>
+	<url>https://aoindustries.com/ao-appcluster/</url>
+	<description>Aggregator POM for application-level clustering tools.</description>
 	<inceptionYear>2011</inceptionYear>
 
 	<scm>

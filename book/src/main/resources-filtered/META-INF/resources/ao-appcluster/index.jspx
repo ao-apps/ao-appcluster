@@ -1,5 +1,5 @@
 <!--
-ao-appcluster - Parent POM for application-level clustering tools.
+ao-appcluster - Aggregator POM for application-level clustering tools.
 Copyright (C) 2016  AO Industries, Inc.
     support@aoindustries.com
     7262 Bull Pen Cir
@@ -32,7 +32,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		title="@{documented.name}"
 		description="@{documented.description}"
 		datePublished="2016-10-23T20:07:00-0500"
-		dateModified="2016-10-28T00:11:09-0500"
+		dateModified="2016-11-13T23:56:09-0600"
 	>
 		<core:child page="changelog.jspx" />
 		<core:child book="/ao-appcluster/all" page="/index.jspx" />
