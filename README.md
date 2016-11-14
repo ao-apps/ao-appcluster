@@ -1,5 +1,5 @@
 # [<img src="ao-logo.png" alt="AO Logo" width="35" height="40">](https://aoindustries.com/) [AO AppCluster](https://aoindustries.com/ao-appcluster/)
-Parent POM for application-level clustering tools.
+Aggregator POM for application-level clustering tools.
 
 ## Project Links
 * [Project Home](https://aoindustries.com/ao-appcluster/)
