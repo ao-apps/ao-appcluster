@@ -1,6 +1,6 @@
 <!--
 ao-appcluster - Aggregator POM for application-level clustering tools.
-Copyright (C) 2016  AO Industries, Inc.
+Copyright (C) 2016, 2017  AO Industries, Inc.
     support@aoindustries.com
     7262 Bull Pen Cir
     Mobile, AL 36695
@@ -32,7 +32,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		title="@{documented.name}"
 		description="@{documented.description}"
 		datePublished="2016-10-23T20:07:00-0500"
-		dateModified="2016-11-13T23:56:09-0600"
+		dateModified="2017-07-17T21:00:59-0500"
 	>
 		<core:child page="changelog.jspx" />
 		<core:child book="/ao-appcluster/all" page="/index.jspx" />
@@ -41,6 +41,15 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		<core:child book="/ao-appcluster/dnsonly" page="/index.jspx" />
 		<core:child book="/ao-appcluster/imap" page="/index.jspx" />
 		<core:child book="/ao-appcluster/jdbc" page="/index.jspx" />
+		<ao:include
+			page="/ao-badges/badges.inc.jspx"
+			arg.projectStatus="${currentPage.property.projectStatus}"
+			arg.managementStatus="${currentPage.property.managementStatus}"
+			arg.packagingStatus="${currentPage.property.packagingStatus}"
+			arg.javaVersion="${currentPage.property.javaVersion}"
+			arg.semanticVersioning="${currentPage.property.semanticVersioning}"
+			arg.license="${currentPage.property.license}"
+		/>
 		<p>
 			@{documented.description}
 		</p>
