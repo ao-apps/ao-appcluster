@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 ao-appcluster - Aggregator POM for application-level clustering tools.
-Copyright (C) 2016, 2017  AO Industries, Inc.
+Copyright (C) 2016, 2017, 2019  AO Industries, Inc.
     support@aoindustries.com
     7262 Bull Pen Cir
     Mobile, AL 36695
@@ -35,13 +35,13 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		datePublished="2016-10-23T20:07:00-0500"
 		dateModified="2017-07-18T18:37:05-0500"
 	>
-		<core:child page="changelog" />
-		<core:child book="/ao-appcluster/all" page="/" />
-		<core:child book="/ao-appcluster/core" page="/" />
-		<core:child book="/ao-appcluster/csync2" page="/" />
-		<core:child book="/ao-appcluster/dnsonly" page="/" />
-		<core:child book="/ao-appcluster/imap" page="/" />
-		<core:child book="/ao-appcluster/jdbc" page="/" />
+		<core:child page="changelog.jspx" />
+		<core:child book="/ao-appcluster/all" page="/index.jspx" />
+		<core:child book="/ao-appcluster/core" page="/index.jspx" />
+		<core:child book="/ao-appcluster/csync2" page="/index.jspx" />
+		<core:child book="/ao-appcluster/dnsonly" page="/index.jspx" />
+		<core:child book="/ao-appcluster/imap" page="/index.jspx" />
+		<core:child book="/ao-appcluster/jdbc" page="/index.jspx" />
 		<ao:include
 			page="/ao-badges/badges.inc.jspx"
 			arg.projectStatus="${currentPage.property.projectStatus}"
@@ -55,20 +55,20 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		</p>
 		<section:section label="Project Links">
 			<ul>
-				<li><core:link page="/">Project Home</core:link></li>
-				<li><core:link page="changelog">Changelog</core:link></li>
+				<li><core:link page="index.jspx">Project Home</core:link></li>
+				<li><core:link page="changelog.jspx">Changelog</core:link></li>
 				<li><ao:a href="https://search.maven.org/#search%7Cgav%7C1%7Cg:%22@{documented.groupId}%22%20AND%20a:%22@{documented.artifactId}%22">Maven Central Repository</ao:a></li>
 				<li><ao:a href="@{documented.scm.url}">GitHub</ao:a></li>
 			</ul>
 		</section:section>
 		<section:section label="Modules">
 			<ul>
-				<li><core:link book="/ao-appcluster/all" page="/" /></li>
-				<li><core:link book="/ao-appcluster/core" page="/" /></li>
-				<li><core:link book="/ao-appcluster/csync2" page="/" /></li>
-				<li><core:link book="/ao-appcluster/dnsonly" page="/" /></li>
-				<li><core:link book="/ao-appcluster/imap" page="/" /></li>
-				<li><core:link book="/ao-appcluster/jdbc" page="/" /></li>
+				<li><core:link book="/ao-appcluster/all" page="/index.jspx" /></li>
+				<li><core:link book="/ao-appcluster/core" page="/index.jspx" /></li>
+				<li><core:link book="/ao-appcluster/csync2" page="/index.jspx" /></li>
+				<li><core:link book="/ao-appcluster/dnsonly" page="/index.jspx" /></li>
+				<li><core:link book="/ao-appcluster/imap" page="/index.jspx" /></li>
+				<li><core:link book="/ao-appcluster/jdbc" page="/index.jspx" /></li>
 			</ul>
 		</section:section>
 	</core:page>
