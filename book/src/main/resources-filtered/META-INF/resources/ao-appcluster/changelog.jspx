@@ -37,7 +37,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		shortTitle="Changelog"
 		tocLevels="1"
 		datePublished="2016-10-28T00:43:47-0500"
-		dateModified="2019-06-03T13:22:49-0500"
+		dateModified="2019-06-03T18:48:01-0500"
 	>
 		<!-- The current snapshot, unreleased version -->
 		<c:set var="version" value="@{com.aoindustries:ao-appcluster:pom.version}" />
@@ -53,9 +53,11 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 				artifactId="@{documented.artifactId}"
 				scmUrl="@{documented.scm.url}"
 			>
+				<!-- TODO:
 				<ul>
-					<li>TODO: New project <core:link book="/ao-appcluster/bom" page="/index.jspx" /> for managed dependencies.</li>
+					<li>New project <core:link book="/ao-appcluster/bom" page="/index.jspx" /> for managed dependencies.</li>
 				</ul>
+				-->
 			</changelog:release>
 		</c:if>
 
