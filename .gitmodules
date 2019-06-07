@@ -16,3 +16,6 @@
 [submodule "jdbc"]
 	path = jdbc
 	url = git@github.com:aoindustries/ao-appcluster-jdbc.git
+[submodule "bom"]
+	path = bom
+	url = git@aoindustries.github.com:aoindustries/ao-appcluster-bom.git
