@@ -36,7 +36,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		shortTitle="Changelog"
 		tocLevels="1"
 		datePublished="2016-10-28T00:43:47-0500"
-		dateModified="2019-08-16T23:49:55-0500"
+		dateModified="2019-10-05T07:00:48-0500"
 	>
 		<!-- The current snapshot, unreleased version -->
 		<c:set var="version" value="@{com.aoindustries:ao-appcluster:pom.version}" />
@@ -55,6 +55,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 				<ul>
 					<li>Updated version of <core:link book="/ao-appcluster/bom" page="/index.jspx" />.</li>
 					<li>Updated version of <core:link book="/ao-appcluster/all" page="/index.jspx" />.</li>
+					<li>Updated version of <core:link book="/ao-appcluster/csync2" page="/index.jspx" />.</li>
 					<li>Updated version of <core:link book="/ao-appcluster/jdbc" page="/index.jspx" />.</li>
 				</ul>
 			</changelog:release>
