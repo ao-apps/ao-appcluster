@@ -57,6 +57,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		<module>all/book</module>
 		<module>core</module>
 		<module>core/book</module>
+		<module>core/devel</module>
 		<module>csync2</module>
 		<module>csync2/book</module>
 		<module>dnsonly</module>
@@ -65,5 +66,6 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		<module>imap/book</module>
 		<module>jdbc</module>
 		<module>jdbc/book</module>
+		<module>jdbc/devel</module>
 	</modules>
 </project>
