@@ -25,15 +25,15 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>com.aoindustries</groupId><artifactId>ao-oss-parent</artifactId><version>1.16.0-SNAPSHOT</version>
-		<relativePath>../ao-oss-parent/pom.xml</relativePath>
+		<groupId>com.aoapps</groupId><artifactId>ao-oss-parent</artifactId><version>1.16.0-SNAPSHOT</version>
+		<relativePath>../parent/pom.xml</relativePath>
 	</parent>
 
-	<groupId>com.aoindustries</groupId><artifactId>ao-appcluster</artifactId><version>1.2.0-SNAPSHOT</version>
+	<groupId>com.aoapps</groupId><artifactId>ao-appcluster</artifactId><version>1.2.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>AO AppCluster</name>
-	<url>https://aoindustries.com/ao-appcluster/</url>
+	<url>https://oss.aoapps.com/appcluster/</url>
 	<description>Aggregator POM for application-level clustering tools.</description>
 	<inceptionYear>2011</inceptionYear>
 

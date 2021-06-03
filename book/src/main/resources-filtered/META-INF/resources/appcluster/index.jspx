@@ -22,7 +22,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 -->
 <jsp:root
-	xmlns:ao="https://aoindustries.com/ao-taglib/"
+	xmlns:ao="https://oss.aoapps.com/taglib/"
 	xmlns:core="https://semanticcms.com/core/taglib/"
 	xmlns:jsp="http://java.sun.com/JSP/Page"
 	xmlns:section="https://semanticcms.com/section/taglib/"
@@ -34,16 +34,16 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		title="@{documented.name}"
 		description="@{documented.description}"
 		datePublished="2016-10-23T20:07:00-05:00"
-		dateModified="2020-03-24T14:01:33-05:00"
+		dateModified="2021-05-31T01:25:50-05:00"
 	>
 		<core:child page="changelog.jspx" />
-		<core:child book="/ao-appcluster/bom" page="/index.jspx" />
-		<core:child book="/ao-appcluster/all" page="/index.jspx" />
-		<core:child book="/ao-appcluster/core" page="/index.jspx" />
-		<core:child book="/ao-appcluster/csync2" page="/index.jspx" />
-		<core:child book="/ao-appcluster/dnsonly" page="/index.jspx" />
-		<core:child book="/ao-appcluster/imap" page="/index.jspx" />
-		<core:child book="/ao-appcluster/jdbc" page="/index.jspx" />
+		<core:child book="/appcluster/bom" page="/index.jspx" />
+		<core:child book="/appcluster/all" page="/index.jspx" />
+		<core:child book="/appcluster/core" page="/index.jspx" />
+		<core:child book="/appcluster/csync2" page="/index.jspx" />
+		<core:child book="/appcluster/dnsonly" page="/index.jspx" />
+		<core:child book="/appcluster/imap" page="/index.jspx" />
+		<core:child book="/appcluster/jdbc" page="/index.jspx" />
 		<header>
 			<ao:include
 				page="/ao-badges/badges.inc.jspx"
@@ -67,13 +67,13 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		</section:nav>
 		<section:section label="Modules">
 			<ul>
-				<li><core:link book="/ao-appcluster/bom" page="/index.jspx" /></li>
-				<li><core:link book="/ao-appcluster/all" page="/index.jspx" /></li>
-				<li><core:link book="/ao-appcluster/core" page="/index.jspx" /></li>
-				<li><core:link book="/ao-appcluster/csync2" page="/index.jspx" /></li>
-				<li><core:link book="/ao-appcluster/dnsonly" page="/index.jspx" /></li>
-				<li><core:link book="/ao-appcluster/imap" page="/index.jspx" /></li>
-				<li><core:link book="/ao-appcluster/jdbc" page="/index.jspx" /></li>
+				<li><core:link book="/appcluster/bom" page="/index.jspx" /></li>
+				<li><core:link book="/appcluster/all" page="/index.jspx" /></li>
+				<li><core:link book="/appcluster/core" page="/index.jspx" /></li>
+				<li><core:link book="/appcluster/csync2" page="/index.jspx" /></li>
+				<li><core:link book="/appcluster/dnsonly" page="/index.jspx" /></li>
+				<li><core:link book="/appcluster/imap" page="/index.jspx" /></li>
+				<li><core:link book="/appcluster/jdbc" page="/index.jspx" /></li>
 			</ul>
 		</section:section>
 	</core:page>
