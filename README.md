@@ -7,6 +7,8 @@
 [![semantic versioning: 2.0.0](https://oss.aoapps.com/ao-badges/semver-2.0.0.svg)](http://semver.org/spec/v2.0.0.html)
 [![license: LGPL v3](https://oss.aoapps.com/ao-badges/license-lgpl-3.0.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 
+[![Build](https://github.com/aoindustries/ao-appcluster/workflows/Build/badge.svg?branch=master)](https://github.com/aoindustries/ao-appcluster/actions?query=workflow%3ABuild)
+
 Aggregator POM for application-level clustering tools.
 
 ## Project Links
