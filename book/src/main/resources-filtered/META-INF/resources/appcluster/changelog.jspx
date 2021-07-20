@@ -37,7 +37,7 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 		shortTitle="Changelog"
 		tocLevels="1"
 		datePublished="2016-10-28T00:43:47-05:00"
-		dateModified="2021-06-27T16:13:41-05:00"
+		dateModified="2021-07-20T02:25:05-05:00"
 	>
 		<c:if test="${fn:endsWith('@{project.version}', '-SNAPSHOT') and !fn:endsWith('@{project.version}', '-POST-SNAPSHOT')}">
 			<changelog:release
@@ -47,14 +47,23 @@ along with ao-appcluster.  If not, see <http://www.gnu.org/licenses />.
 				artifactId="@{documented.artifactId}"
 				repository="@{nexusUrl}content/repositories/snapshots/"
 				scmUrl="@{project.scm.url}"
-			>
-				<ul>
-					<li>Minimum Java version changed from 1.8 to 11.</li>
-					<li>Now supports Java 9+ modules.</li>
-					<li>Maven artifact relocated from <code>com.aoindustries:ao-appcluster</code> to <code>com.aoapps:ao-appcluster</code>.</li>
-				</ul>
-			</changelog:release>
+			/>
 		</c:if>
+
+		<changelog:release
+			projectName="@{documented.name}"
+			version="2.0.0"
+			datePublished="2021-07-20T02:25:05-05:00"
+			groupId="@{project.groupId}"
+			artifactId="@{documented.artifactId}"
+			scmUrl="@{project.scm.url}"
+		>
+			<ul>
+				<li>Minimum Java version changed from 1.8 to 11.</li>
+				<li>Now supports Java 9+ modules.</li>
+				<li>Maven artifact relocated from <code>com.aoindustries:ao-appcluster</code> to <code>com.aoapps:ao-appcluster</code>.</li>
+			</ul>
+		</changelog:release>
 
 		<changelog:release
 			projectName="@{documented.name}"
