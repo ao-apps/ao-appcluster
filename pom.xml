@@ -29,7 +29,7 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
 		<relativePath>../parent/pom.xml</relativePath>
 	</parent>
 
-	<groupId>com.aoapps</groupId><artifactId>ao-appcluster</artifactId><version>2.0.1</version>
+	<groupId>com.aoapps</groupId><artifactId>ao-appcluster</artifactId><version>2.0.1-POST-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<properties>
@@ -71,7 +71,7 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
 		<connection>scm:git:git://github.com/ao-apps/ao-appcluster.git</connection>
 		<developerConnection>scm:git:git@github.com:ao-apps/ao-appcluster.git</developerConnection>
 		<url>https://github.com/ao-apps/ao-appcluster</url>
-		<tag>ao-appcluster-2.0.1</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<issueManagement>
