@@ -1,28 +1,28 @@
 [submodule "bom"]
-	path = bom
-	url = git@github.com:ao-apps/ao-appcluster-bom.git
-	branch = .
+  path = bom
+  url = git@github.com:ao-apps/ao-appcluster-bom.git
+  branch = .
 [submodule "all"]
-	path = all
-	url = git@github.com:ao-apps/ao-appcluster-all.git
-	branch = .
+  path = all
+  url = git@github.com:ao-apps/ao-appcluster-all.git
+  branch = .
 [submodule "core"]
-	path = core
-	url = git@github.com:ao-apps/ao-appcluster-core.git
-	branch = .
+  path = core
+  url = git@github.com:ao-apps/ao-appcluster-core.git
+  branch = .
 [submodule "csync2"]
-	path = csync2
-	url = git@github.com:ao-apps/ao-appcluster-csync2.git
-	branch = .
+  path = csync2
+  url = git@github.com:ao-apps/ao-appcluster-csync2.git
+  branch = .
 [submodule "dnsonly"]
-	path = dnsonly
-	url = git@github.com:ao-apps/ao-appcluster-dnsonly.git
-	branch = .
+  path = dnsonly
+  url = git@github.com:ao-apps/ao-appcluster-dnsonly.git
+  branch = .
 [submodule "imap"]
-	path = imap
-	url = git@github.com:ao-apps/ao-appcluster-imap.git
-	branch = .
+  path = imap
+  url = git@github.com:ao-apps/ao-appcluster-imap.git
+  branch = .
 [submodule "jdbc"]
-	path = jdbc
-	url = git@github.com:ao-apps/ao-appcluster-jdbc.git
-	branch = .
+  path = jdbc
+  url = git@github.com:ao-apps/ao-appcluster-jdbc.git
+  branch = .
