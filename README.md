@@ -20,7 +20,7 @@ Aggregator POM for application-level clustering tools.
 ## Project Links
 * [Project Home](https://oss.aoapps.com/appcluster/)
 * [Changelog](https://oss.aoapps.com/appcluster/changelog)
-* [Maven Central Repository](https://central.sonatype.com/search?namespace=com.aoapps&q=a%3Aao-appcluster)
+* [Maven Central Repository](https://central.sonatype.com/artifact/com.aoapps/ao-appcluster)
 * [GitHub](https://github.com/ao-apps/ao-appcluster)
 
 ## Modules
