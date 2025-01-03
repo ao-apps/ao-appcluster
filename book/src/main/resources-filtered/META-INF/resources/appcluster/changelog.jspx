@@ -37,7 +37,7 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
     shortTitle="Changelog"
     tocLevels="1"
     datePublished="2016-10-28T00:43:47-05:00"
-    dateModified="2025-01-03T04:13:23Z"
+    dateModified="2025-01-03T17:14:46Z"
   >
     <c:set var="latestRelease" value="2.0.1" />
     <c:if test="${
@@ -57,6 +57,7 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
           <li>Updated version of <core:link book="/appcluster/bom" page="/index.jspx" />.</li>
           <li>Updated version of <core:link book="/appcluster/all" page="/index.jspx" />.</li>
           <li>Updated version of <core:link book="/appcluster/core" page="/index.jspx" />.</li>
+          <li>Updated version of <core:link book="/appcluster/jdbc" page="/index.jspx" />.</li>
         </ul>
       </changelog:release>
     </c:if>
