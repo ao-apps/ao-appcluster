@@ -105,10 +105,10 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
 
   <profiles>
     <profile>
-      <id>javaee</id>
+      <id>jakartaee</id>
       <activation>
         <property>
-          <name>javaee.skip</name>
+          <name>jakartaee.skip</name>
           <value>!true</value>
         </property>
       </activation>
@@ -121,6 +121,25 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
         <module>dnsonly/book</module>
         <module>imap/book</module>
         <module>jdbc/book</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>javaee</id>
+      <activation>
+        <property>
+          <name>javaee.skip</name>
+          <value>!true</value>
+        </property>
+      </activation>
+      <modules>
+        <module>book-javaee</module>
+        <module>bom/book-javaee</module>
+        <module>all/book-javaee</module>
+        <module>core/book-javaee</module>
+        <module>csync2/book-javaee</module>
+        <module>dnsonly/book-javaee</module>
+        <module>imap/book-javaee</module>
+        <module>jdbc/book-javaee</module>
       </modules>
     </profile>
   </profiles>
