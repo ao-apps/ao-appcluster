@@ -103,23 +103,37 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
     </repository>
   </repositories>
 
+  <profiles>
+    <profile>
+      <id>javaee</id>
+      <activation>
+        <property>
+          <name>javaee.skip</name>
+          <value>!true</value>
+        </property>
+      </activation>
+      <modules>
+        <module>book</module>
+        <module>bom/book</module>
+        <module>all/book</module>
+        <module>core/book</module>
+        <module>csync2/book</module>
+        <module>dnsonly/book</module>
+        <module>imap/book</module>
+        <module>jdbc/book</module>
+      </modules>
+    </profile>
+  </profiles>
+
   <modules>
-    <module>book</module>
     <module>bom</module>
-    <module>bom/book</module>
     <module>all</module>
-    <module>all/book</module>
     <module>core</module>
-    <module>core/book</module>
     <module>core/devel</module>
     <module>csync2</module>
-    <module>csync2/book</module>
     <module>dnsonly</module>
-    <module>dnsonly/book</module>
     <module>imap</module>
-    <module>imap/book</module>
     <module>jdbc</module>
-    <module>jdbc/book</module>
     <module>jdbc/devel</module>
   </modules>
 </project>
