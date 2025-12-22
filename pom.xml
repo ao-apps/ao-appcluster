@@ -103,26 +103,19 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
     </repository>
   </repositories>
 
+  <modules>
+    <module>bom</module>
+    <module>all</module>
+    <module>core</module>
+    <module>core/devel</module>
+    <module>csync2</module>
+    <module>dnsonly</module>
+    <module>imap</module>
+    <module>jdbc</module>
+    <module>jdbc/devel</module>
+  </modules>
+
   <profiles>
-    <profile>
-      <id>jakartaee</id>
-      <activation>
-        <property>
-          <name>jakartaee.skip</name>
-          <value>!true</value>
-        </property>
-      </activation>
-      <modules>
-        <module>book</module>
-        <module>bom/book</module>
-        <module>all/book</module>
-        <module>core/book</module>
-        <module>csync2/book</module>
-        <module>dnsonly/book</module>
-        <module>imap/book</module>
-        <module>jdbc/book</module>
-      </modules>
-    </profile>
     <profile>
       <id>javaee</id>
       <activation>
@@ -142,17 +135,24 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
         <module>jdbc/book-javaee</module>
       </modules>
     </profile>
+    <profile>
+      <id>jakartaee</id>
+      <activation>
+        <property>
+          <name>jakartaee.skip</name>
+          <value>!true</value>
+        </property>
+      </activation>
+      <modules>
+        <module>book</module>
+        <module>bom/book</module>
+        <module>all/book</module>
+        <module>core/book</module>
+        <module>csync2/book</module>
+        <module>dnsonly/book</module>
+        <module>imap/book</module>
+        <module>jdbc/book</module>
+      </modules>
+    </profile>
   </profiles>
-
-  <modules>
-    <module>bom</module>
-    <module>all</module>
-    <module>core</module>
-    <module>core/devel</module>
-    <module>csync2</module>
-    <module>dnsonly</module>
-    <module>imap</module>
-    <module>jdbc</module>
-    <module>jdbc/devel</module>
-  </modules>
 </project>
