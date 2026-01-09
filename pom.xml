@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 ao-appcluster - Aggregator POM for application-level clustering tools.
-Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025  AO Industries, Inc.
+Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026  AO Industries, Inc.
     support@aoindustries.com
     7262 Bull Pen Cir
     Mobile, AL 36695
@@ -116,25 +116,6 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
   </modules>
 
   <profiles>
-    <profile>
-      <id>javaee</id>
-      <activation>
-        <property>
-          <name>javaee.skip</name>
-          <value>!true</value>
-        </property>
-      </activation>
-      <modules>
-        <module>book-javaee</module>
-        <module>bom/book-javaee</module>
-        <module>all/book-javaee</module>
-        <module>core/book-javaee</module>
-        <module>csync2/book-javaee</module>
-        <module>dnsonly/book-javaee</module>
-        <module>imap/book-javaee</module>
-        <module>jdbc/book-javaee</module>
-      </modules>
-    </profile>
     <profile>
       <id>jakartaee</id>
       <activation>
