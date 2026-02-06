@@ -29,12 +29,12 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>
 
-  <groupId>com.aoapps</groupId><artifactId>ao-appcluster-book</artifactId><version>3.0.0</version>
+  <groupId>com.aoapps</groupId><artifactId>ao-appcluster-book</artifactId><version>3.0.0-POST-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <properties>
     <!-- Must be set to ${git.commit.time} for snapshots or ISO 8601 timestamp for releases. -->
-    <project.build.outputTimestamp>2026-02-06T04:57:18Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>${git.commit.time}</project.build.outputTimestamp>
     <module.name>com.aoapps.appcluster.book</module.name>
     <subproject.subpath>book/</subproject.subpath>
     <!-- Java 17 -->
@@ -84,7 +84,7 @@ along with ao-appcluster.  If not, see <https://www.gnu.org/licenses/>.
     <connection>scm:git:git://github.com/ao-apps/ao-appcluster.git</connection>
     <developerConnection>scm:git:git@github.com:ao-apps/ao-appcluster.git</developerConnection>
     <url>https://github.com/ao-apps/ao-appcluster</url>
-    <tag>ao-appcluster-book-3.0.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
